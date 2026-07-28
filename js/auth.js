@@ -99,6 +99,8 @@ async function verifySession() {
     } catch {
         showSessionVerificationError();
     }
+
+    return user;
 }
 
 
@@ -136,7 +138,8 @@ async function verifySession() {
         return;
     }
 
-    verifySession();
+    window.currentUserPromise =
+        verifySession();
 })();
 
 

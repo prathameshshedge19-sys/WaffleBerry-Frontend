@@ -18,11 +18,45 @@ const startChatButton =
    HOMEPAGE TYPING ANIMATION
 ================================================== */
 
-const headingText =
+const fallbackHeadingText =
     "Hello, I'm Berry.";
 
 const descriptionText =
     "I preserve memories, stories and conversations so the people you love are never forgotten.";
+
+
+function getFirstName(fullName) {
+    if (typeof fullName !== "string") {
+        return "";
+    }
+
+    const trimmedName = fullName.trim();
+
+    if (!trimmedName) {
+        return "";
+    }
+
+    return trimmedName.split(/\s+/)[0];
+}
+
+
+async function getHeadingText() {
+    try {
+        const currentUser =
+            await window.currentUserPromise;
+
+        const firstName =
+            getFirstName(currentUser?.full_name);
+
+        if (firstName) {
+            return `Hello, ${firstName}. I'm Berry.`;
+        }
+    } catch {
+        // Keep the default greeting if user data is unavailable.
+    }
+
+    return fallbackHeadingText;
+}
 
 
 function typeText(element, text, speed) {
@@ -61,6 +95,14 @@ async function startHomepageTyping() {
     ) {
         return;
     }
+
+    const headingText =
+        await getHeadingText();
+
+    typedHeading.setAttribute(
+        "aria-label",
+        headingText
+    );
 
     await new Promise((resolve) => {
         window.setTimeout(resolve, 400);

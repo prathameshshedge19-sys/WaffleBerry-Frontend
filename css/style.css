@@ -2021,3 +2021,66 @@ button {
 .social-login-button span {
     line-height: 1;
 }
+
+/* Disabled social sign-in options */
+.social-login-button:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+}
+
+.social-login-button:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.social-login-button:disabled .social-logo {
+    filter: grayscale(1);
+}
+
+.social-button-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.social-button-text small {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+}
+
+
+/* Link underline reset for navigation and account actions */
+.nav-link,
+.nav-link:visited,
+.nav-link:hover,
+.nav-link:focus,
+.nav-link:active,
+#startChatButton,
+#startChatButton:visited,
+#startChatButton:hover,
+#startChatButton:focus,
+#startChatButton:active,
+.logout-button,
+.logout-button:visited,
+.logout-button:hover,
+.logout-button:focus,
+.logout-button:active {
+    text-decoration: none;
+}
+
+
+/* Button-style link underline reset */
+.secondary-button,
+.secondary-button:visited,
+.secondary-button:hover,
+.secondary-button:focus,
+.secondary-button:active,
+#missionChatButton,
+#missionChatButton:visited,
+#missionChatButton:hover,
+#missionChatButton:focus,
+#missionChatButton:active {
+    text-decoration: none;
+}
