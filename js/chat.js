@@ -358,6 +358,8 @@ function createConversationButton(
         );
     button.textContent =
         conversation.title || "New Chat";
+    button.title =
+        conversation.title || "New Chat";
     button.classList.toggle(
         "active",
         conversation.conversation_id ===
@@ -780,7 +782,9 @@ async function loadConversations() {
 }
 
 
-function moveActiveConversationToTop() {
+function moveActiveConversationToTop(
+    updatedConversation
+) {
     const conversation =
         getActiveConversation();
 
@@ -788,13 +792,28 @@ function moveActiveConversationToTop() {
         return;
     }
 
-    conversation.updated_at =
-        new Date().toISOString();
+    if (
+        updatedConversation &&
+        updatedConversation
+            .conversation_id ===
+            conversation
+                .conversation_id
+    ) {
+        Object.assign(
+            conversation,
+            updatedConversation
+        );
+    } else {
+        conversation.updated_at =
+            new Date().toISOString();
+    }
+
     state.conversations =
         sortConversations(
             state.conversations
         );
     renderConversationList();
+    updateConversationHeader();
 }
 
 
@@ -863,7 +882,9 @@ async function sendMessage(event) {
             chatInput.style.height = "";
         }
 
-        moveActiveConversationToTop();
+        moveActiveConversationToTop(
+            response.conversation
+        );
         setChatStatus(
             "Message saved."
         );
