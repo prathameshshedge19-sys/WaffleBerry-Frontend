@@ -1,22 +1,18 @@
 "use strict";
 
-/* ==================================================
-   HOME ELEMENT REFERENCES
-================================================== */
-
+(function initializeHomePage() {
 const typedHeading =
     document.getElementById("typedHeading");
 
 const typedDescription =
-    document.getElementById("typedDescription");
+    document.getElementById(
+        "typedDescription"
+    );
 
 const startChatButton =
-    document.getElementById("startChatButton");
-
-
-/* ==================================================
-   HOMEPAGE TYPING ANIMATION
-================================================== */
+    document.getElementById(
+        "startChatButton"
+    );
 
 const fallbackHeadingText =
     "Hello, I'm Berry.";
@@ -30,29 +26,36 @@ function getFirstName(fullName) {
         return "";
     }
 
-    const trimmedName = fullName.trim();
-
-    if (!trimmedName) {
-        return "";
-    }
-
-    return trimmedName.split(/\s+/)[0];
+    return (
+        fullName
+            .trim()
+            .split(/\s+/)
+            .find(Boolean) || ""
+    );
 }
 
 
 async function getHeadingText() {
     try {
+        await window.authReady;
+
         const currentUser =
-            await window.currentUserPromise;
+            window.WaffleBerryApi
+                .getStoredUser();
 
         const firstName =
-            getFirstName(currentUser?.full_name);
+            getFirstName(
+                currentUser?.full_name
+            );
 
         if (firstName) {
-            return `Hello, ${firstName}. I'm Berry.`;
+            return (
+                `Hello, ${firstName}. ` +
+                "I'm Berry."
+            );
         }
     } catch {
-        // Keep the default greeting if user data is unavailable.
+        // Use the default greeting.
     }
 
     return fallbackHeadingText;
@@ -64,7 +67,9 @@ function typeText(element, text, speed) {
         let index = 0;
 
         element.textContent = "";
-        element.classList.add("typing-active");
+        element.classList.add(
+            "typing-active"
+        );
 
         const interval =
             window.setInterval(() => {
@@ -74,7 +79,9 @@ function typeText(element, text, speed) {
                 index += 1;
 
                 if (index >= text.length) {
-                    window.clearInterval(interval);
+                    window.clearInterval(
+                        interval
+                    );
 
                     element.classList.remove(
                         "typing-active"
@@ -134,8 +141,17 @@ async function startHomepageTyping() {
 }
 
 
-/* ==================================================
-   START ANIMATION
-================================================== */
+if (startChatButton) {
+    startChatButton.addEventListener(
+        "click",
+        (event) => {
+            event.preventDefault();
+            window.location.href =
+                "chat.html?new=1";
+        }
+    );
+}
+
 
 startHomepageTyping();
+})();

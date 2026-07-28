@@ -1,159 +1,92 @@
 "use strict";
 
-/* ==================================================
-   SESSION HELPERS
-================================================== */
+(function initializeAuthentication() {
+const {
+    STORAGE_KEYS,
+    ApiError,
+    apiRequest,
+    clearStoredSession,
+    getStoredAccessToken,
+    getStoredUser
+} = window.WaffleBerryApi;
+
+
+function redirectToLogin() {
+    window.location.replace("login.html");
+}
+
 
 function clearInvalidSession() {
-    try {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("currentUser");
-    } finally {
-        window.location.replace("login.html");
+    clearStoredSession();
+    redirectToLogin();
+}
+
+
+function showSessionStatus(message) {
+    let statusElement =
+        document.getElementById(
+            "sessionStatusMessage"
+        );
+
+    if (!statusElement) {
+        statusElement =
+            document.createElement("div");
+        statusElement.id =
+            "sessionStatusMessage";
+        statusElement.className =
+            "app-status-message error-state";
+        statusElement.setAttribute(
+            "role",
+            "status"
+        );
+
+        document.body.appendChild(
+            statusElement
+        );
     }
+
+    statusElement.textContent = message;
 }
 
-
-function showSessionVerificationError() {
-    window.alert(
-        "Unable to verify your session.\nPlease try again."
-    );
-}
-
-
-/* ==================================================
-   BACKEND SESSION VERIFICATION
-================================================== */
 
 async function verifySession() {
-    const accessToken =
-        localStorage.getItem("accessToken");
-
-    if (
-        typeof accessToken !== "string" ||
-        accessToken.trim() === ""
-    ) {
+    if (!getStoredAccessToken()) {
         clearInvalidSession();
-        return;
+        return null;
     }
 
-    let response;
-
     try {
-        response = await fetch(
-            "http://127.0.0.1:8000/api/v1/me",
-            {
-                method: "GET",
-                headers: {
-                    Authorization:
-                        `Bearer ${accessToken}`
-                }
-            }
+        await apiRequest("/conversations");
+        return getStoredUser();
+    } catch (error) {
+        if (
+            error instanceof ApiError &&
+            error.status === 401
+        ) {
+            clearInvalidSession();
+            return null;
+        }
+
+        showSessionStatus(
+            error.message ||
+            "Unable to verify your session. Please try again."
         );
-    } catch {
-        showSessionVerificationError();
-        return;
+
+        return null;
     }
-
-    if (
-        response.status === 401 ||
-        response.status === 403
-    ) {
-        clearInvalidSession();
-        return;
-    }
-
-    if (!response.ok) {
-        showSessionVerificationError();
-        return;
-    }
-
-    let user;
-
-    try {
-        user = await response.json();
-    } catch {
-        clearInvalidSession();
-        return;
-    }
-
-    const hasValidUser =
-        user !== null &&
-        typeof user === "object" &&
-        !Array.isArray(user) &&
-        Number.isInteger(user.user_id) &&
-        typeof user.full_name === "string" &&
-        typeof user.email === "string" &&
-        typeof user.created_at === "string";
-
-    if (!hasValidUser) {
-        clearInvalidSession();
-        return;
-    }
-
-    try {
-        localStorage.setItem(
-            "currentUser",
-            JSON.stringify(user)
-        );
-    } catch {
-        showSessionVerificationError();
-    }
-
-    return user;
 }
 
 
-/* ==================================================
-   AUTHENTICATION GUARD
-================================================== */
+window.authReady = verifySession();
+window.currentUserPromise =
+    window.authReady.then(() =>
+        getStoredUser()
+    );
 
-(function guardProtectedPage() {
-    let isLocallyAuthenticated = false;
-
-    try {
-        const accessToken =
-            localStorage.getItem("accessToken");
-
-        const currentUser =
-            localStorage.getItem("currentUser");
-
-        const hasAccessToken =
-            typeof accessToken === "string" &&
-            accessToken.trim() !== "";
-
-        const hasCurrentUser =
-            currentUser !== null;
-
-        if (hasAccessToken && hasCurrentUser) {
-            JSON.parse(currentUser);
-            isLocallyAuthenticated = true;
-        }
-    } catch {
-        isLocallyAuthenticated = false;
-    }
-
-    if (!isLocallyAuthenticated) {
-        clearInvalidSession();
-        return;
-    }
-
-    window.currentUserPromise =
-        verifySession();
-})();
-
-
-/* ==================================================
-   LOGOUT
-================================================== */
 
 function logout() {
-    try {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("currentUser");
-    } finally {
-        window.location.replace("login.html");
-    }
+    clearStoredSession();
+    redirectToLogin();
 }
 
 
@@ -165,14 +98,17 @@ document.addEventListener(
                 ".logout-button"
             );
 
-        logoutButtons.forEach((logoutButton) => {
-            logoutButton.addEventListener(
-                "click",
-                (event) => {
-                    event.preventDefault();
-                    logout();
-                }
-            );
-        });
+        logoutButtons.forEach(
+            (logoutButton) => {
+                logoutButton.addEventListener(
+                    "click",
+                    (event) => {
+                        event.preventDefault();
+                        logout();
+                    }
+                );
+            }
+        );
     }
 );
+})();

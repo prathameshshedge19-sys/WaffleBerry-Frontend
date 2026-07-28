@@ -16,6 +16,7 @@
 
     <title>Chat | Waffle Berry</title>
 
+    <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
 
     <link rel="stylesheet" href="css/style.css">
@@ -123,6 +124,26 @@
                         Online
                     </div>
 
+                    <button
+                        id="newChatButton"
+                        class="secondary-button new-chat-button"
+                        type="button"
+                    >
+                        + New Chat
+                    </button>
+
+                    <div class="conversation-sidebar">
+                        <p class="conversation-sidebar-label">
+                            Conversations
+                        </p>
+
+                        <div
+                            id="conversationList"
+                            class="conversation-list"
+                            aria-live="polite"
+                        ></div>
+                    </div>
+
                     <a
                         class="secondary-button"
                         href="home.html"
@@ -137,9 +158,12 @@
                     <header class="chat-header">
 
                         <div>
-                            <h2>Conversation with Berry</h2>
+                            <h2 id="conversationTitle">Conversation with Berry</h2>
 
-                            <p>
+                            <p
+                                id="chatStatus"
+                                aria-live="polite"
+                            >
                                 Share a memory, story or meaningful moment.
                             </p>
                         </div>
@@ -148,7 +172,7 @@
                             id="clearChatButton"
                             class="icon-button"
                             type="button"
-                            aria-label="Clear conversation"
+                            aria-label="Delete conversation"
                         >
                             🗑️
                         </button>
@@ -159,25 +183,7 @@
                         id="chatMessages"
                         class="chat-messages"
                         aria-live="polite"
-                    >
-
-                        <div class="message-row berry-row">
-
-                            <img
-                                src="assets/waffle-berry-mascot.png"
-                                alt=""
-                                class="message-avatar"
-                            >
-
-                            <div class="message berry-message">
-                                Hello! I’m Berry. Tell me about a memory,
-                                a person you love or a story you never want
-                                to forget.
-                            </div>
-
-                        </div>
-
-                    </div>
+                    ></div>
 
                     <div
                         id="typingIndicator"
@@ -201,16 +207,16 @@
                             ＋
                         </button>
 
-                        <input
+                        <textarea
                             id="chatInput"
-                            type="text"
+                            rows="1"
                             placeholder="Share a memory with Berry..."
                             autocomplete="off"
-                            maxlength="500"
                             required
-                        >
+                        ></textarea>
 
                         <button
+                            id="sendButton"
                             class="send-button"
                             type="submit"
                         >

@@ -1,8 +1,12 @@
 "use strict";
 
-/* ==================================================
-   LOGIN ELEMENT REFERENCES
-================================================== */
+(function initializeLoginPage() {
+const {
+    ApiError,
+    apiRequest,
+    clearStoredSession,
+    storeSession
+} = window.WaffleBerryApi;
 
 const loginForm =
     document.getElementById("loginForm");
@@ -22,36 +26,53 @@ const passwordInput =
 const togglePassword =
     document.getElementById("togglePassword");
 
-const googleSignIn =
-    document.getElementById("googleSignIn");
-
-const appleSignIn =
-    document.getElementById("appleSignIn");
-
 const createAccountButton =
-    document.getElementById("createAccountButton");
+    document.getElementById(
+        "createAccountButton"
+    );
 
 const authTitle =
     document.getElementById("authTitle");
 
 const authDescription =
-    document.getElementById("authDescription");
+    document.getElementById(
+        "authDescription"
+    );
+
+const authSubmitButton =
+    document.getElementById(
+        "authSubmitButton"
+    );
 
 const authSubmitText =
-    document.getElementById("authSubmitText");
+    document.getElementById(
+        "authSubmitText"
+    );
 
 const authTogglePrompt =
-    document.getElementById("authTogglePrompt");
+    document.getElementById(
+        "authTogglePrompt"
+    );
 
 const loginMessage =
     document.getElementById("loginMessage");
 
 let authMode = "login";
+let isSubmitting = false;
 
 
-/* ==================================================
-   AUTHENTICATION MODE
-================================================== */
+function setLoginMessage(message, type = "") {
+    if (!loginMessage) {
+        return;
+    }
+
+    loginMessage.textContent = message;
+    loginMessage.classList.toggle(
+        "error-state",
+        type === "error"
+    );
+}
+
 
 function setAuthMode(mode) {
     authMode = mode;
@@ -111,34 +132,68 @@ function setAuthMode(mode) {
                 : "current-password";
     }
 
-    if (loginMessage) {
-        loginMessage.textContent = "";
-    }
-}
-
-setAuthMode("login");
-
-
-/* ==================================================
-   ENTER WEBSITE
-================================================== */
-
-function enterWebsite() {
-    if (loginMessage) {
-        loginMessage.textContent =
-            "Signing you in...";
-    }
-
-    window.setTimeout(() => {
-        window.location.href =
-            "home.html";
-    }, 700);
+    setLoginMessage("");
 }
 
 
-/* ==================================================
-   EMAIL AND PASSWORD LOGIN
-================================================== */
+function setSubmitting(submitting) {
+    isSubmitting = submitting;
+
+    if (authSubmitButton) {
+        authSubmitButton.disabled =
+            submitting;
+    }
+
+    if (createAccountButton) {
+        createAccountButton.disabled =
+            submitting;
+    }
+}
+
+
+async function login(email, password) {
+    const response = await apiRequest(
+        "/login",
+        {
+            method: "POST",
+            authenticated: false,
+            body: {
+                email,
+                password
+            }
+        }
+    );
+
+    if (
+        !response?.access_token ||
+        response.token_type !== "bearer" ||
+        !response.user
+    ) {
+        throw new ApiError(
+            "The server returned an invalid login response.",
+            { kind: "server" }
+        );
+    }
+
+    storeSession(
+        response.access_token,
+        response.user
+    );
+}
+
+
+function getLoginErrorMessage(error) {
+    if (!(error instanceof ApiError)) {
+        return "Unable to sign in. Please try again.";
+    }
+
+    if (error.status === 401) {
+        return "Invalid email or password.";
+    }
+
+    return error.message;
+}
+
 
 if (
     loginForm &&
@@ -150,15 +205,16 @@ if (
         async (event) => {
             event.preventDefault();
 
+            if (isSubmitting) {
+                return;
+            }
+
             const email =
                 emailInput.value.trim();
-
             const password =
-                passwordInput.value.trim();
-
+                passwordInput.value;
             const isRegisterMode =
                 authMode === "register";
-
             const fullName =
                 fullNameInput
                     ? fullNameInput.value.trim()
@@ -169,183 +225,69 @@ if (
                 !password ||
                 (isRegisterMode && !fullName)
             ) {
-                if (loginMessage) {
-                    loginMessage.textContent =
-                        isRegisterMode
-                            ? "Please enter your full name, email and password."
-                            : "Please enter your email and password.";
-                }
-
+                setLoginMessage(
+                    isRegisterMode
+                        ? "Please enter your full name, email and password."
+                        : "Please enter your email and password.",
+                    "error"
+                );
                 return;
             }
 
-            if (loginMessage) {
-                loginMessage.textContent =
-                    isRegisterMode
-                        ? "Creating your account..."
-                        : "Signing you in...";
-            }
+            setSubmitting(true);
+            setLoginMessage(
+                isRegisterMode
+                    ? "Creating your account..."
+                    : "Signing you in..."
+            );
 
             try {
-                const endpoint =
-                    isRegisterMode
-                        ? "http://127.0.0.1:8000/api/v1/users"
-                        : "http://127.0.0.1:8000/api/v1/login";
-
-                const requestBody =
-                    isRegisterMode
-                        ? {
-                            full_name: fullName,
-                            email,
-                            password
+                if (isRegisterMode) {
+                    await apiRequest(
+                        "/users",
+                        {
+                            method: "POST",
+                            authenticated: false,
+                            body: {
+                                full_name:
+                                    fullName,
+                                email,
+                                password
+                            }
                         }
-                        : {
-                            email,
-                            password
-                        };
+                    );
+                }
 
-                const response = await fetch(
-                    endpoint,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(
-                            requestBody
-                        )
-                    }
+                await login(email, password);
+
+                setLoginMessage(
+                    "Signing you in..."
                 );
 
-                const responseText =
-                    await response.text();
-
-                let responseData;
-
-                try {
-                    responseData =
-                        JSON.parse(responseText);
-                } catch {
-                    responseData = null;
-                }
-
-                if (!response.ok) {
-                    const backendError =
-                        responseData?.detail ||
-                        responseData?.message ||
-                        responseText ||
-                        (
-                            isRegisterMode
-                                ? "Unable to create your account."
-                                : "Unable to sign you in."
-                        );
-
-                    throw new Error(
-                        typeof backendError === "string"
-                            ? backendError
-                            : JSON.stringify(backendError)
-                    );
-                }
-
-                if (!isRegisterMode) {
-                    const accessToken =
-                        responseData?.access_token;
-
-                    const tokenType =
-                        responseData?.token_type;
-
-                    const currentUser =
-                        responseData?.user;
-
-                    if (
-                        !accessToken ||
-                        tokenType !== "bearer" ||
-                        !currentUser
-                    ) {
-                        throw new Error(
-                            "Unable to sign you in."
-                        );
-                    }
-
-                    localStorage.setItem(
-                        "accessToken",
-                        accessToken
-                    );
-
-                    localStorage.setItem(
-                        "currentUser",
-                        JSON.stringify(currentUser)
-                    );
-                }
-
-                enterWebsite();
+                window.location.href =
+                    "home.html";
             } catch (error) {
-                if (!isRegisterMode) {
-                    localStorage.removeItem(
-                        "accessToken"
-                    );
-
-                    localStorage.removeItem(
-                        "currentUser"
-                    );
-                }
-
-                if (loginMessage) {
-                    loginMessage.textContent =
-                        error.message;
-                }
+                clearStoredSession();
+                setLoginMessage(
+                    getLoginErrorMessage(error),
+                    "error"
+                );
+            } finally {
+                setSubmitting(false);
             }
         }
     );
 }
 
-
-/* ==================================================
-   GOOGLE LOGIN
-================================================== */
-
-if (googleSignIn) {
-    googleSignIn.addEventListener(
-        "click",
-        () => {
-            if (loginMessage) {
-                loginMessage.textContent =
-                    "Connecting with Google...";
-            }
-
-            enterWebsite();
-        }
-    );
-}
-
-
-/* ==================================================
-   APPLE LOGIN
-================================================== */
-
-if (appleSignIn) {
-    appleSignIn.addEventListener(
-        "click",
-        () => {
-            if (loginMessage) {
-                loginMessage.textContent =
-                    "Connecting with Apple...";
-            }
-
-            enterWebsite();
-        }
-    );
-}
-
-
-/* ==================================================
-   CREATE ACCOUNT
-================================================== */
 
 if (createAccountButton) {
     createAccountButton.addEventListener(
         "click",
         () => {
+            if (isSubmitting) {
+                return;
+            }
+
             setAuthMode(
                 authMode === "login"
                     ? "register"
@@ -355,10 +297,6 @@ if (createAccountButton) {
     );
 }
 
-
-/* ==================================================
-   SHOW OR HIDE PASSWORD
-================================================== */
 
 if (
     togglePassword &&
@@ -390,3 +328,7 @@ if (
         }
     );
 }
+
+
+setAuthMode("login");
+})();
