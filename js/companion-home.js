@@ -35,6 +35,18 @@ const chatAction =
     document.getElementById(
         "chatFreelyAction"
     );
+const guidedStoriesAction =
+    document.getElementById(
+        "guidedStoriesAction"
+    );
+const storyProgressAction =
+    document.getElementById(
+        "storyProgressAction"
+    );
+const voicePresenceAction =
+    document.getElementById(
+        "voicePresenceAction"
+    );
 const talkTitle =
     document.getElementById(
         "talkToCompanionTitle"
@@ -112,6 +124,22 @@ if (chatAction) {
         });
     chatAction.href =
         `chat.html?${parameters}`;
+
+    [
+        guidedStoriesAction,
+        storyProgressAction,
+        voicePresenceAction
+    ]
+        .filter(Boolean)
+        .forEach((action) => {
+            action.href =
+                action === guidedStoriesAction
+                    ? `legacy-studio.html?${parameters}`
+                    : action ===
+                        voicePresenceAction
+                    ? `voice-presence.html?${parameters}`
+                    : `guided-stories.html?${parameters}`;
+        });
 }
 
 document.title =
@@ -221,17 +249,6 @@ document
             }
         );
     });
-
-document
-    .querySelector(
-        "[data-guided-stories]"
-    )
-    ?.addEventListener(
-        "click",
-        () => showPlaceholder(
-            "Guided Stories arrive in Phase 6.2"
-        )
-    );
 
 deleteAction?.addEventListener(
     "click",

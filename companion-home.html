@@ -76,7 +76,7 @@
 
         <section
             class="companion-home-section"
-            aria-labelledby="companionHomeTitle"
+            aria-labelledby="companionHomePrompt"
         >
             <div class="companion-home-shell">
                 <div class="companion-home-settings">
@@ -106,14 +106,14 @@
                             View Stored Memories
                         </button>
 
-                        <button
+                        <a
+                            id="storyProgressAction"
                             class="legacy-menu-item"
-                            type="button"
+                            href="guided-stories.html"
                             role="menuitem"
-                            data-placeholder-message="Coming in Phase 6.2"
                         >
                             Story Progress
-                        </button>
+                        </a>
 
                         <button
                             class="legacy-menu-item"
@@ -123,6 +123,15 @@
                         >
                             Rename Legacy
                         </button>
+
+                        <a
+                            id="voicePresenceAction"
+                            class="legacy-menu-item"
+                            href="voice-presence.html"
+                            role="menuitem"
+                        >
+                            Voice &amp; Presence
+                        </a>
 
                         <div
                             class="legacy-menu-divider"
@@ -141,24 +150,12 @@
                 </div>
 
                 <header class="companion-home-welcome">
-                    <div
-                        id="companionHomeAvatar"
-                        class="companion-home-avatar"
-                        aria-hidden="true"
-                    ></div>
-
-                    <div>
-                        <p
-                            id="companionHomeRelationship"
-                            class="eyebrow"
-                        ></p>
-
-                        <h1 id="companionHomeTitle"></h1>
-
-                        <p class="companion-home-question">
-                            Who's here today?
-                        </p>
-                    </div>
+                    <h1
+                        id="companionHomePrompt"
+                        class="companion-home-question"
+                    >
+                        Who's here today?
+                    </h1>
                 </header>
 
                 <div class="companion-feature-grid">
@@ -190,10 +187,10 @@
                         </span>
                     </a>
 
-                    <button
+                    <a
+                        id="guidedStoriesAction"
                         class="glass-card companion-feature-card"
-                        type="button"
-                        data-guided-stories
+                        href="guided-stories.html"
                     >
                         <span
                             class="companion-feature-icon"
@@ -217,7 +214,7 @@
                         >
                             →
                         </span>
-                    </button>
+                    </a>
                 </div>
             </div>
         </section>
@@ -239,7 +236,7 @@
                 </span>
 
                 <h2 id="companionPlaceholderTitle">
-                    Guided Stories arrive in Phase 6.2
+                    Coming soon
                 </h2>
 
                 <button

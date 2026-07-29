@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Share a life story with Berry.">
+    <title>Story Session | Waffle Berry</title>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main id="website" class="website-unlocked story-session-page">
+        <div class="particles" aria-hidden="true">
+            <span class="particle particle-1">✦</span>
+            <span class="particle particle-2">●</span>
+            <span class="particle particle-3">♥</span>
+            <span class="particle particle-4">✦</span>
+            <span class="particle particle-5">●</span>
+        </div>
+
+        <nav
+            data-back-navigation
+            data-back-href="guided-stories.html?view=chapters"
+            data-back-param="legacyId"
+        ></nav>
+
+        <header class="navbar">
+            <a href="experience.html" class="brand">
+                <span class="brand-icon">🧇</span>
+                <span class="brand-text">Waffle Berry</span>
+            </a>
+            <div class="navbar-actions">
+                <a class="logout-button" href="login.html">Sign out</a>
+                <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="story-session-section">
+            <article class="glass-card story-session-shell">
+                <header class="story-session-header">
+                    <div>
+                        <p class="eyebrow">Life Chapter</p>
+                        <h1 id="storySessionTitle"></h1>
+                    </div>
+                    <span id="storySessionProgress" class="story-session-progress"></span>
+                </header>
+
+                <div
+                    id="storyConversation"
+                    class="story-conversation"
+                    role="log"
+                    aria-live="polite"
+                ></div>
+
+                <form id="storyComposer" class="story-composer">
+                    <label class="sr-only" for="storyReply">Share your story</label>
+                    <textarea
+                        id="storyReply"
+                        rows="3"
+                        placeholder="Share your story..."
+                        required
+                    ></textarea>
+                    <div class="story-composer-actions">
+                        <button id="pauseStoryButton" class="secondary-button" type="button">
+                            Pause Story
+                        </button>
+                        <button id="finishStoryButton" class="secondary-button" type="button">
+                            Finish Story
+                        </button>
+                        <button id="sendStoryButton" class="primary-button" type="submit" disabled>
+                            Send
+                        </button>
+                    </div>
+                </form>
+                <div
+                    id="storyCompletionStatus"
+                    class="story-completion-status"
+                    role="status"
+                    aria-live="polite"
+                    hidden
+                >
+                    <p id="storyCompletionMessage"></p>
+                    <div class="story-completion-actions">
+                        <button id="retryExtractionButton" class="secondary-button" type="button" hidden>
+                            Try Memory Preparation Again
+                        </button>
+                        <a id="reviewStoryMemories" class="primary-button" href="memory-review.html" hidden>
+                            Review Memories
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+    <script src="js/theme.js"></script>
+    <script src="js/back-navigation.js"></script>
+    <script src="js/legacy-state.js"></script>
+    <script src="js/guided-stories-state.js"></script>
+    <script src="js/guided-stories-content.js"></script>
+    <script src="js/story-session.js"></script>
+</body>
+</html>

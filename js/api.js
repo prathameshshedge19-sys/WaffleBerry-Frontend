@@ -372,9 +372,9 @@ function parseSseFrame(frame) {
 }
 
 
-async function streamChatMessage(
-    conversationId,
-    content,
+async function streamSseRequest(
+    path,
+    body,
     options = {}
 ) {
     const {
@@ -397,7 +397,7 @@ async function streamChatMessage(
 
     try {
         response = await fetch(
-            `${API_BASE_URL}/conversations/${conversationId}/messages/stream`,
+            `${API_BASE_URL}${path}`,
             {
                 method: "POST",
                 headers: {
@@ -407,9 +407,7 @@ async function streamChatMessage(
                     Authorization:
                         `Bearer ${accessToken}`
                 },
-                body: JSON.stringify({
-                    content
-                }),
+                body: JSON.stringify(body),
                 signal
             }
         );
@@ -527,6 +525,148 @@ async function streamChatMessage(
     }
 }
 
+function streamChatMessage(
+    conversationId,
+    content,
+    options = {}
+) {
+    return streamSseRequest(
+        `/conversations/${conversationId}/messages/stream`,
+        { content },
+        options
+    );
+}
+
+
+function streamStoryGuide(
+    context,
+    options = {}
+) {
+    return streamSseRequest(
+        "/stories/stream",
+        context,
+        options
+    );
+}
+
+function listMemoryReview(legacyId, filters = {}) {
+    const query = new URLSearchParams();
+    Object.entries(filters).forEach(
+        ([key, value]) => {
+            if (
+                value !== undefined &&
+                value !== null &&
+                value !== ""
+            ) {
+                query.set(key, value);
+            }
+        }
+    );
+    const suffix = query.toString()
+        ? `?${query}`
+        : "";
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/review${suffix}`
+    );
+}
+
+function getMemoryReview(legacyId, memoryId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}`
+    );
+}
+
+function reviewMemoryAction(
+    legacyId,
+    memoryId,
+    action,
+    expectedUpdatedAt
+) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}/${action}`,
+        {
+            method: "POST",
+            body: {
+                expected_updated_at:
+                    expectedUpdatedAt
+            }
+        }
+    );
+}
+
+function editMemoryReview(
+    legacyId,
+    memoryId,
+    body
+) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}`,
+        { method: "PATCH", body }
+    );
+}
+
+function synchronizeLegacy(legacy) {
+    return apiRequest(
+        "/legacies",
+        { method: "POST", body: legacy }
+    );
+}
+
+function listOwnedLegacies() {
+    return apiRequest("/legacies");
+}
+
+function createStorySession(legacyId, chapter) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions`,
+        { method: "POST", body: chapter }
+    );
+}
+
+function streamPersistedStory(
+    legacyId,
+    storySessionId,
+    payload,
+    options = {}
+) {
+    return streamSseRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions/${encodeURIComponent(storySessionId)}/messages/stream`,
+        payload,
+        options
+    );
+}
+
+function completeStorySession(
+    legacyId,
+    storySessionId
+) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions/${encodeURIComponent(storySessionId)}/complete`,
+        { method: "POST" }
+    );
+}
+
+function getStoryExtractionRun(
+    legacyId,
+    storySessionId,
+    runId
+) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions/${encodeURIComponent(storySessionId)}/extraction-runs/${encodeURIComponent(runId)}`
+    );
+}
+
+function retryStoryExtraction(
+    legacyId,
+    storySessionId,
+    runId
+) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions/${encodeURIComponent(storySessionId)}/extraction-runs/${encodeURIComponent(runId)}/retry`,
+        { method: "POST" }
+    );
+}
+
 
 window.WaffleBerryApi = Object.freeze({
     API_BASE_URL,
@@ -535,6 +675,18 @@ window.WaffleBerryApi = Object.freeze({
     apiRequest,
     getFriendlyChatError,
     streamChatMessage,
+    streamStoryGuide,
+    listMemoryReview,
+    getMemoryReview,
+    reviewMemoryAction,
+    editMemoryReview,
+    synchronizeLegacy,
+    listOwnedLegacies,
+    createStorySession,
+    streamPersistedStory,
+    completeStorySession,
+    getStoryExtractionRun,
+    retryStoryExtraction,
     supportsResponseStreaming,
     clearStoredSession,
     getStoredAccessToken,

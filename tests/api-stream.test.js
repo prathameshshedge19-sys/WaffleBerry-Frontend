@@ -115,6 +115,46 @@ test("parses several SSE events in one chunk", async () => {
     ]);
 });
 
+test("Story Guide reuses the shared SSE parser", async () => {
+    let requestUrl = "";
+    let requestBody = null;
+    global.fetch = async (url, options) => {
+        requestUrl = url;
+        requestBody =
+            JSON.parse(options.body);
+        return streamingResponse([
+            "event: delta\ndata: {\"text\":\"Tell me more.\"}\n\n"
+        ]);
+    };
+    const events = [];
+    const context = {
+        current_chapter: "Childhood",
+        relationship: "Father",
+        display_name: "Dad",
+        history: []
+    };
+
+    await window.WaffleBerryApi
+        .streamStoryGuide(context, {
+            onEvent(event) {
+                events.push(event);
+            }
+        });
+
+    assert.match(
+        requestUrl,
+        /\/stories\/stream$/
+    );
+    assert.deepEqual(
+        requestBody,
+        context
+    );
+    assert.equal(
+        events[0].data.text,
+        "Tell me more."
+    );
+});
+
 test("preserves JSON-encoded newlines and special characters", async () => {
     const text = "Line one\nLine \"two\" ☺";
     global.fetch = async () =>

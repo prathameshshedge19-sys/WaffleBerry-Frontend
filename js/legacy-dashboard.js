@@ -469,5 +469,10 @@ document
     });
 
 
-renderLegacies();
+window.WaffleBerryLegacyState
+    .hydratePersisted()
+    .catch(() => {
+        // Existing authentication and local-state behavior remains available.
+    })
+    .finally(renderLegacies);
 })();

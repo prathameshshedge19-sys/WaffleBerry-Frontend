@@ -7,6 +7,8 @@ const DRAFT_STORAGE_KEY =
     "waffleBerryLegacyDraftId";
 const ACTIVE_STORAGE_KEY =
     "waffleBerryActiveLegacyId";
+const HIDDEN_LEGACIES_KEY =
+    "waffleBerryHiddenPersistedLegacies";
 
 
 function storageKey(baseKey) {
@@ -62,6 +64,13 @@ function normalizeLegacy(value) {
         )
             ? value.createdAt
             : "";
+    const backendLegacyId =
+        Number.isInteger(
+            Number(value?.backendLegacyId)
+        ) &&
+        Number(value?.backendLegacyId) > 0
+            ? Number(value.backendLegacyId)
+            : null;
 
     if (
         !id ||
@@ -76,7 +85,8 @@ function normalizeLegacy(value) {
         id,
         relationship,
         displayName,
-        createdAt
+        createdAt,
+        backendLegacyId
     };
 }
 
@@ -127,6 +137,84 @@ function store(legacies) {
     );
 }
 
+function hiddenPersistedIds() {
+    try {
+        const parsed = JSON.parse(
+            localStorage.getItem(
+                storageKey(HIDDEN_LEGACIES_KEY)
+            ) || "[]"
+        );
+        return new Set(
+            Array.isArray(parsed)
+                ? parsed.map(String)
+                : []
+        );
+    } catch {
+        return new Set();
+    }
+}
+
+async function hydratePersisted() {
+    const persisted =
+        await window.WaffleBerryApi
+            .listOwnedLegacies();
+    const hidden = hiddenPersistedIds();
+    const current = list();
+    const byBackendId = new Map(
+        current
+            .filter((item) =>
+                item.backendLegacyId
+            )
+            .map((item) => [
+                item.backendLegacyId,
+                item
+            ])
+    );
+    persisted.forEach((item) => {
+        if (
+            hidden.has(
+                String(item.legacy_id)
+            )
+        ) {
+            return;
+        }
+        const existing =
+            byBackendId.get(item.legacy_id);
+        if (existing) {
+            existing.displayName =
+                item.display_name;
+            existing.relationship =
+                item.relationship;
+            return;
+        }
+        const correlation =
+            item.client_correlation_id;
+        const localMatch = current.find(
+            (legacy) =>
+                legacy.id === correlation
+        );
+        if (localMatch) {
+            localMatch.backendLegacyId =
+                item.legacy_id;
+            return;
+        }
+        current.push({
+            id: correlation ||
+                `persisted-${item.legacy_id}`,
+            relationship:
+                item.relationship,
+            displayName:
+                item.display_name,
+            createdAt:
+                item.created_at,
+            backendLegacyId:
+                item.legacy_id
+        });
+    });
+    store(current);
+    return current;
+}
+
 
 function startDraft() {
     const id = createId();
@@ -174,6 +262,11 @@ function create(details) {
         id,
         relationship,
         displayName,
+        backendLegacyId:
+            existingIndex >= 0
+                ? legacies[existingIndex]
+                    .backendLegacyId
+                : null,
         createdAt:
             existingIndex >= 0
                 ? legacies[existingIndex]
@@ -189,6 +282,40 @@ function create(details) {
 
     store(legacies);
     return legacy;
+}
+
+async function ensurePersisted(id) {
+    const legacy = get(id);
+    if (!legacy) {
+        return null;
+    }
+    if (legacy.backendLegacyId) {
+        return legacy;
+    }
+    const persisted =
+        await window.WaffleBerryApi
+            .synchronizeLegacy({
+                display_name:
+                    legacy.displayName,
+                relationship:
+                    legacy.relationship,
+                client_correlation_id:
+                    legacy.id
+            });
+    const legacies = list();
+    const index = legacies.findIndex(
+        (item) => item.id === legacy.id
+    );
+    if (index < 0) {
+        return null;
+    }
+    legacies[index] = {
+        ...legacies[index],
+        backendLegacyId:
+            persisted.legacy_id
+    };
+    store(legacies);
+    return legacies[index];
 }
 
 
@@ -248,6 +375,20 @@ function remove(id) {
         return false;
     }
 
+    const removed = legacies.find(
+        (legacy) => legacy.id === id
+    );
+    if (removed?.backendLegacyId) {
+        const hidden = hiddenPersistedIds();
+        hidden.add(
+            String(removed.backendLegacyId)
+        );
+        localStorage.setItem(
+            storageKey(HIDDEN_LEGACIES_KEY),
+            JSON.stringify([...hidden])
+        );
+    }
+
     store(remainingLegacies);
 
     const activeStorageKey =
@@ -270,8 +411,10 @@ function remove(id) {
 window.WaffleBerryLegacyState =
     Object.freeze({
         create,
+        ensurePersisted,
         get,
         getActive,
+        hydratePersisted,
         list,
         remove,
         select,
