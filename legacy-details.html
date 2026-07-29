@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="View temporary Waffle Berry legacy details."
+    >
+
+    <title>Legacy Details | Waffle Berry</title>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <main
+        id="website"
+        class="website-unlocked legacy-page"
+    >
+
+        <div class="particles" aria-hidden="true">
+            <span class="particle particle-1">✦</span>
+            <span class="particle particle-2">●</span>
+            <span class="particle particle-3">♥</span>
+            <span class="particle particle-4">✦</span>
+            <span class="particle particle-5">●</span>
+            <span class="particle particle-6">♥</span>
+        </div>
+
+        <header class="navbar">
+            <a
+                href="legacy-dashboard.html"
+                class="brand"
+                aria-label="Back to Your Legacies"
+            >
+                <span class="brand-icon">🧇</span>
+                <span class="brand-text">Waffle Berry</span>
+            </a>
+
+            <div class="navbar-actions">
+                <a
+                    class="logout-button"
+                    href="login.html"
+                    title="Sign out"
+                >
+                    Sign out
+                </a>
+
+                <button
+                    id="themeToggle"
+                    class="theme-toggle"
+                    type="button"
+                    aria-label="Switch to dark mode"
+                >
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <section
+            class="legacy-placeholder-section"
+            aria-labelledby="legacyDetailsTitle"
+        >
+            <article class="glass-card legacy-placeholder-card">
+                <p class="eyebrow">Legacy details</p>
+
+                <h1 id="legacyDetailsTitle">
+                    This legacy is ready for the next stage.
+                </h1>
+
+                <dl class="legacy-summary">
+                    <div>
+                        <dt>Legacy name:</dt>
+                        <dd id="summaryDisplayName">Not available</dd>
+                    </div>
+
+                    <div>
+                        <dt>Relationship:</dt>
+                        <dd id="summaryRelationship">Not available</dd>
+                    </div>
+                </dl>
+
+                <p
+                    id="legacyDetailsStatus"
+                    class="legacy-placeholder-note"
+                    aria-live="polite"
+                >
+                    This legacy is ready for the next stage.
+                </p>
+
+                <a
+                    class="primary-button legacy-back-button"
+                    href="legacy-dashboard.html"
+                >
+                    <span>Back to Your Legacies</span>
+                    <span class="button-arrow">←</span>
+                </a>
+            </article>
+        </section>
+
+    </main>
+
+    <script src="js/theme.js"></script>
+    <script src="js/legacy-state.js"></script>
+    <script src="js/legacy-details.js"></script>
+
+</body>
+
+</html>

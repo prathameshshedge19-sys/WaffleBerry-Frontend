@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Begin preserving a legacy with Berry."
+    >
+
+    <title>Begin a Legacy | Waffle Berry</title>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <main
+        id="website"
+        class="website-unlocked legacy-page"
+    >
+
+        <div class="particles" aria-hidden="true">
+            <span class="particle particle-1">✦</span>
+            <span class="particle particle-2">●</span>
+            <span class="particle particle-3">♥</span>
+            <span class="particle particle-4">✦</span>
+            <span class="particle particle-5">●</span>
+            <span class="particle particle-6">♥</span>
+            <span class="particle particle-7">✦</span>
+            <span class="particle particle-8">●</span>
+        </div>
+
+        <header class="navbar">
+
+            <a
+                href="experience.html"
+                class="brand"
+                aria-label="Back to Waffle Berry experiences"
+            >
+                <span class="brand-icon">🧇</span>
+                <span class="brand-text">Waffle Berry</span>
+            </a>
+
+            <div class="navbar-actions">
+                <a
+                    class="logout-button"
+                    href="login.html"
+                    title="Sign out"
+                >
+                    Sign out
+                </a>
+
+                <button
+                    id="themeToggle"
+                    class="theme-toggle"
+                    type="button"
+                    aria-label="Switch to dark mode"
+                >
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+
+        </header>
+
+        <section
+            class="legacy-section"
+            aria-labelledby="legacyTitle"
+        >
+
+            <div class="legacy-shell">
+
+                <header class="legacy-welcome">
+                    <img
+                        class="legacy-berry-avatar"
+                        src="assets/waffle-berry-mascot.png"
+                        alt="Berry, your Waffle Berry companion"
+                    >
+
+                    <div class="glass-card legacy-welcome-message">
+                        <p class="eyebrow">Begin a Legacy</p>
+
+                        <h1 id="legacyTitle">
+                            Hello. I’m Berry.
+                        </h1>
+
+                        <p>
+                            Together we’ll preserve the stories, memories, and
+                            personality of someone important to you.
+                        </p>
+
+                        <p class="legacy-welcome-closing">
+                            Let’s begin.
+                        </p>
+                    </div>
+                </header>
+
+                <form
+                    id="legacyForm"
+                    class="glass-card legacy-form"
+                    novalidate
+                >
+
+                    <fieldset class="legacy-step">
+                        <legend>
+                            <span class="legacy-step-number">1</span>
+                            Who are you creating this legacy for?
+                        </legend>
+
+                        <div
+                            class="relationship-grid"
+                            role="radiogroup"
+                            aria-label="Choose a relationship"
+                        >
+                            <label class="relationship-option">
+                                <input
+                                    type="radio"
+                                    name="relationship"
+                                    value="Mother"
+                                >
+                                <span>Mother</span>
+                            </label>
+
+                            <label class="relationship-option">
+                                <input
+                                    type="radio"
+                                    name="relationship"
+                                    value="Father"
+                                >
+                                <span>Father</span>
+                            </label>
+
+                            <label class="relationship-option">
+                                <input
+                                    type="radio"
+                                    name="relationship"
+                                    value="Grandmother"
+                                >
+                                <span>Grandmother</span>
+                            </label>
+
+                            <label class="relationship-option">
+                                <input
+                                    type="radio"
+                                    name="relationship"
+                                    value="Grandfather"
+                                >
+                                <span>Grandfather</span>
+                            </label>
+
+                            <label class="relationship-option">
+                                <input
+                                    type="radio"
+                                    name="relationship"
+                                    value="Partner"
+                                >
+                                <span>Partner</span>
+                            </label>
+
+                            <label class="relationship-option">
+                                <input
+                                    type="radio"
+                                    name="relationship"
+                                    value="Friend"
+                                >
+                                <span>Friend</span>
+                            </label>
+
+                            <label class="relationship-option">
+                                <input
+                                    type="radio"
+                                    name="relationship"
+                                    value="Myself"
+                                >
+                                <span>Myself</span>
+                            </label>
+
+                            <label class="relationship-option">
+                                <input
+                                    type="radio"
+                                    name="relationship"
+                                    value="Other"
+                                >
+                                <span>Other</span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <section
+                        id="legacyNameStep"
+                        class="legacy-step legacy-name-step"
+                        aria-labelledby="legacyNameQuestion"
+                        hidden
+                    >
+                        <h2 id="legacyNameQuestion">
+                            <span class="legacy-step-number">2</span>
+                            What should I call this person?
+                        </h2>
+
+                        <label
+                            class="legacy-name-label"
+                            for="legacyDisplayName"
+                        >
+                            Display name
+                        </label>
+
+                        <input
+                            id="legacyDisplayName"
+                            class="legacy-name-input"
+                            type="text"
+                            placeholder="For example: Granny"
+                            maxlength="80"
+                            autocomplete="off"
+                        >
+
+                        <p
+                            id="legacyPreview"
+                            class="legacy-preview"
+                            aria-live="polite"
+                        >
+                            I’ll help preserve their legacy.
+                        </p>
+                    </section>
+
+                    <button
+                        id="legacyContinueButton"
+                        class="primary-button legacy-continue"
+                        type="submit"
+                        disabled
+                    >
+                        <span>Continue</span>
+                        <span class="button-arrow">→</span>
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="js/theme.js"></script>
+    <script src="js/legacy-state.js"></script>
+    <script src="js/begin-legacy.js"></script>
+
+</body>
+
+</html>

@@ -265,7 +265,7 @@ if (
                 );
 
                 window.location.href =
-                    "home.html";
+                    "experience.html";
             } catch (error) {
                 clearStoredSession();
                 setLoginMessage(

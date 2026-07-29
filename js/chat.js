@@ -10,6 +10,10 @@ const {
     streamChatMessage,
     supportsResponseStreaming
 } = window.WaffleBerryApi;
+const companionIdentity =
+    window.WaffleBerryCompanionIdentity;
+
+companionIdentity.applyToDocument();
 
 const STREAM_INACTIVITY_TIMEOUT_MS = 45000;
 const NON_STREAMING_TIMEOUT_MS = 60000;
@@ -145,7 +149,9 @@ function createTypingIndicator() {
     row.setAttribute("aria-live", "polite");
     row.setAttribute(
         "aria-label",
-        "Berry is typing"
+        companionIdentity.text(
+            "{name} is thinking"
+        )
     );
 
     const avatar =
@@ -164,12 +170,26 @@ function createTypingIndicator() {
         "true"
     );
 
+    const label =
+        document.createElement("span");
+    label.className =
+        "typing-companion-label";
+    label.textContent =
+        companionIdentity.text(
+            "{name} is thinking"
+        );
+
+    const dots =
+        document.createElement("span");
+    dots.className = "typing-dots";
+
     for (let index = 0; index < 3; index += 1) {
-        indicator.appendChild(
-            document.createElement("span")
+        dots.appendChild(
+            document.createElement("i")
         );
     }
 
+    indicator.append(label, dots);
     row.appendChild(avatar);
     row.appendChild(indicator);
     return row;
@@ -276,6 +296,23 @@ function showMessageState(
 }
 
 
+function showCompanionWelcome() {
+    if (!chatMessages) {
+        return;
+    }
+
+    hideTypingIndicator();
+    state.renderedMessageIds.clear();
+    chatMessages.replaceChildren(
+        createBerryMessage(
+            companionIdentity
+                .welcomeMessage()
+        )
+    );
+    scrollChatToBottom("smooth");
+}
+
+
 function appendInlineError(error) {
     if (!chatMessages) {
         return;
@@ -283,7 +320,9 @@ function appendInlineError(error) {
 
     const errorElement =
         createBerryMessage(
-            getFriendlyChatError(error),
+            companionIdentity.personalize(
+                getFriendlyChatError(error)
+            ),
             { isError: true }
         );
     chatMessages.appendChild(errorElement);
@@ -608,9 +647,7 @@ function renderMessages(messages) {
     });
 
     if (!chatMessages.children.length) {
-        showMessageState(
-            "No messages yet. Share a memory to begin."
-        );
+        showCompanionWelcome();
     }
 
     scrollChatToBottom();
@@ -664,7 +701,9 @@ function updateConversationHeader() {
 
     conversationTitle.textContent =
         getActiveConversation()?.title ||
-        "Conversation with Berry";
+        companionIdentity.text(
+            "Conversation with {name}"
+        );
 }
 
 
@@ -797,7 +836,9 @@ async function loadMessageHistory(
         setChatStatus(
             messages.length
                 ? "Your conversation is up to date."
-                : "Start by sharing a memory."
+                : companionIdentity.text(
+                    "Begin your conversation with {name}."
+                )
         );
     } catch (error) {
         if (
@@ -1010,10 +1051,7 @@ async function createConversation() {
                 );
 
                 state.historyRequestId += 1;
-                showMessageState(
-                    "No messages yet. Share a memory to begin.",
-                    "empty-state"
-                );
+                showCompanionWelcome();
                 setChatStatus(
                     "New chat ready."
                 );
@@ -1221,7 +1259,9 @@ async function sendMessage(event) {
 
     showTypingIndicator(conversationId);
     setChatStatus(
-        "Berry is responding...",
+        companionIdentity.text(
+            "{name} is responding..."
+        ),
         "loading"
     );
 
@@ -1369,7 +1409,9 @@ async function sendMessage(event) {
                             }
 
                             setChatStatus(
-                                "Berry’s response is complete."
+                                companionIdentity.text(
+                                    "{name}’s response is complete."
+                                )
                             );
                             scrollChatToBottom();
                         } else if (
@@ -1377,7 +1419,9 @@ async function sendMessage(event) {
                         ) {
                             throw new ApiError(
                                 data.message ||
-                                    "Berry’s response failed.",
+                                    companionIdentity.text(
+                                        "{name}’s response failed."
+                                    ),
                                 {
                                     kind:
                                         data.code ||
@@ -1457,7 +1501,9 @@ async function sendMessage(event) {
 
         if (didTimeout) {
             error = new ApiError(
-                "Berry took too long to respond.",
+                companionIdentity.text(
+                    "{name} took too long to respond."
+                ),
                 { kind: "timeout" }
             );
         }
