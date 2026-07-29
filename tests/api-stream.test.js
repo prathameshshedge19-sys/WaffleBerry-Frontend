@@ -156,3 +156,80 @@ test("parses the final SSE frame without a trailing blank line", async () => {
         }
     ]);
 });
+
+test("maps structured non-streaming AI errors to safe categories", async () => {
+    global.fetch = async () =>
+        new Response(
+            JSON.stringify({
+                detail: {
+                    code: "quota_exceeded",
+                    message: "Safe quota message."
+                }
+            }),
+            {
+                status: 429,
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                }
+            }
+        );
+
+    await assert.rejects(
+        window.WaffleBerryApi.apiRequest(
+            "/conversations/4/messages",
+            {
+                method: "POST",
+                body: { content: "Hi" }
+            }
+        ),
+        (error) => {
+            assert.equal(
+                error.kind,
+                "quota_exceeded"
+            );
+            assert.equal(
+                window.WaffleBerryApi
+                    .getFriendlyChatError(
+                        error
+                    ),
+                "Berry is temporarily unavailable because the AI usage balance has been exhausted."
+            );
+            return true;
+        }
+    );
+});
+
+test("maps streaming reliability codes consistently", () => {
+    const cases = [
+        [
+            "rate_limited",
+            "Berry is receiving too many requests right now. Please try again shortly."
+        ],
+        [
+            "timeout",
+            "Berry took too long to respond. Please try again."
+        ],
+        [
+            "provider_unavailable",
+            "Berry’s AI service is temporarily unavailable. Please try again shortly."
+        ],
+        [
+            "stream_interrupted",
+            "Berry’s response was interrupted. Please try again."
+        ]
+    ];
+
+    cases.forEach(([kind, expected]) => {
+        const error =
+            new window.WaffleBerryApi.ApiError(
+                "Ignored backend text",
+                { kind }
+            );
+        assert.equal(
+            window.WaffleBerryApi
+                .getFriendlyChatError(error),
+            expected
+        );
+    });
+});

@@ -6,6 +6,7 @@ const {
     ApiError,
     apiRequest,
     clearStoredSession,
+    getFriendlyChatError,
     streamChatMessage,
     supportsResponseStreaming
 } = window.WaffleBerryApi;
@@ -272,57 +273,6 @@ function showMessageState(
             retryAction
         )
     );
-}
-
-
-function getFriendlyChatError(error) {
-    if (
-        error instanceof ApiError &&
-        error.status === 401
-    ) {
-        return "Your session has expired. Please sign in again.";
-    }
-
-    if (
-        error instanceof ApiError &&
-        (error.kind === "network" ||
-            error.kind ===
-                "provider_connection")
-    ) {
-        return "I couldn’t reach the server. Please check your connection and try again.";
-    }
-
-    if (
-        error instanceof ApiError &&
-        (error.status === 429 ||
-            error.status === 402 ||
-            error.kind === "rate_limit" ||
-            error.kind === "rate-limit")
-    ) {
-        return "Berry is temporarily unavailable because the AI usage limit has been reached.";
-    }
-
-    if (
-        error instanceof ApiError &&
-        (error.kind === "timeout" ||
-            error.kind === "provider_timeout")
-    ) {
-        return "Berry took too long to respond. Please try again.";
-    }
-
-    if (
-        error instanceof ApiError &&
-        (error.kind === "aborted" ||
-            error.kind ===
-                "stream_interrupted" ||
-            error.kind ===
-                "invalid_response" ||
-            error.kind === "stream")
-    ) {
-        return "Berry’s response was interrupted. Please try again.";
-    }
-
-    return "I couldn’t generate a response just now. Please try again.";
 }
 
 

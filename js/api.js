@@ -97,15 +97,20 @@ function getApiErrorMessage(status, data) {
     }
 
     if (status === 404) {
-        return data?.detail || "The requested item was not found.";
+        return typeof data?.detail === "string"
+            ? data.detail
+            : "The requested item was not found.";
     }
 
     if (status === 422) {
         return getValidationMessage(data?.detail);
     }
 
-    if (status >= 500) {
-        return "The server could not complete the request. Please try again.";
+    if (
+        typeof data?.detail?.message ===
+        "string"
+    ) {
+        return data.detail.message;
     }
 
     if (typeof data?.detail === "string") {
@@ -116,7 +121,14 @@ function getApiErrorMessage(status, data) {
 }
 
 
-function getErrorKind(status) {
+function getErrorKind(status, data) {
+    if (
+        typeof data?.detail?.code ===
+        "string"
+    ) {
+        return data.detail.code;
+    }
+
     if (status === 401) {
         return "authentication";
     }
@@ -138,6 +150,65 @@ function getErrorKind(status) {
     }
 
     return "request";
+}
+
+
+function getFriendlyChatError(error) {
+    if (
+        error instanceof ApiError &&
+        error.status === 401
+    ) {
+        return "Your session has expired. Please sign in again.";
+    }
+
+    if (
+        error instanceof ApiError &&
+        (error.kind === "network" ||
+            error.kind === "connection_error")
+    ) {
+        return "I couldn’t reach the server. Please check your connection and try again.";
+    }
+
+    if (
+        error instanceof ApiError &&
+        error.kind === "quota_exceeded"
+    ) {
+        return "Berry is temporarily unavailable because the AI usage balance has been exhausted.";
+    }
+
+    if (
+        error instanceof ApiError &&
+        (error.kind === "rate_limited" ||
+            error.kind === "rate-limit")
+    ) {
+        return "Berry is receiving too many requests right now. Please try again shortly.";
+    }
+
+    if (
+        error instanceof ApiError &&
+        error.kind === "timeout"
+    ) {
+        return "Berry took too long to respond. Please try again.";
+    }
+
+    if (
+        error instanceof ApiError &&
+        error.kind === "provider_unavailable"
+    ) {
+        return "Berry’s AI service is temporarily unavailable. Please try again shortly.";
+    }
+
+    if (
+        error instanceof ApiError &&
+        (error.kind === "aborted" ||
+            error.kind === "stream_interrupted" ||
+            error.kind === "invalid_response" ||
+            error.kind === "stream")
+    ) {
+        return "Berry’s response was interrupted. Please try again.";
+    }
+
+    return "I couldn’t generate a response just now. Please try again.";
 }
 
 
@@ -225,7 +296,8 @@ async function apiRequest(path, options = {}) {
             {
                 status: response.status,
                 kind: getErrorKind(
-                    response.status
+                    response.status,
+                    data
                 ),
                 details: data
             }
@@ -368,8 +440,10 @@ async function streamChatMessage(
             {
                 status: response.status,
                 kind: getErrorKind(
-                    response.status
-                )
+                    response.status,
+                    data
+                ),
+                details: data
             }
         );
     }
@@ -459,6 +533,7 @@ window.WaffleBerryApi = Object.freeze({
     STORAGE_KEYS,
     ApiError,
     apiRequest,
+    getFriendlyChatError,
     streamChatMessage,
     supportsResponseStreaming,
     clearStoredSession,
