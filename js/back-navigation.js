@@ -8,6 +8,8 @@ document
     .forEach((container) => {
         const destination =
             container.dataset.backHref;
+        const parameterName =
+            container.dataset.backParam;
 
         if (!destination) {
             return;
@@ -35,7 +37,24 @@ document
 
         link.className =
             "app-back-button";
-        link.href = destination;
+        const parameterValue =
+            parameterName
+                ? new URLSearchParams(
+                    window.location.search
+                ).get(parameterName)
+                : null;
+
+        link.href = parameterValue
+            ? `${destination}${
+                destination.includes("?")
+                    ? "&"
+                    : "?"
+            }${encodeURIComponent(
+                parameterName
+            )}=${encodeURIComponent(
+                parameterValue
+            )}`
+            : destination;
         link.setAttribute(
             "aria-label",
             "Back"

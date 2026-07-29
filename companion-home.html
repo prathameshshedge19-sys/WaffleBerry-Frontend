@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Choose how to spend time with your Waffle Berry companion."
+    >
+
+    <title>Companion Home | Waffle Berry</title>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <main
+        id="website"
+        class="website-unlocked companion-home-page"
+    >
+        <div class="particles" aria-hidden="true">
+            <span class="particle particle-1">✦</span>
+            <span class="particle particle-2">●</span>
+            <span class="particle particle-3">♥</span>
+            <span class="particle particle-4">✦</span>
+            <span class="particle particle-5">●</span>
+            <span class="particle particle-6">♥</span>
+            <span class="particle particle-7">✦</span>
+            <span class="particle particle-8">●</span>
+        </div>
+
+        <nav
+            data-back-navigation
+            data-back-href="legacy-dashboard.html"
+        ></nav>
+
+        <header class="navbar">
+            <a
+                href="experience.html"
+                class="brand"
+                aria-label="Waffle Berry experiences"
+            >
+                <span class="brand-icon">🧇</span>
+                <span class="brand-text">Waffle Berry</span>
+            </a>
+
+            <div class="navbar-actions">
+                <a
+                    class="logout-button"
+                    href="login.html"
+                    title="Sign out"
+                >
+                    Sign out
+                </a>
+
+                <button
+                    id="themeToggle"
+                    class="theme-toggle"
+                    type="button"
+                    aria-label="Switch to dark mode"
+                >
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <section
+            class="companion-home-section"
+            aria-labelledby="companionHomeTitle"
+        >
+            <div class="companion-home-shell">
+                <div class="companion-home-settings">
+                    <button
+                        id="companionSettingsTrigger"
+                        class="companion-settings-trigger"
+                        type="button"
+                        aria-label="Legacy settings"
+                        aria-haspopup="menu"
+                        aria-expanded="false"
+                    >
+                        ⚙
+                    </button>
+
+                    <div
+                        id="companionSettingsMenu"
+                        class="legacy-menu-popover companion-settings-menu"
+                        role="menu"
+                        hidden
+                    >
+                        <button
+                            class="legacy-menu-item"
+                            type="button"
+                            role="menuitem"
+                            data-placeholder-message="Coming in Phase 6.6"
+                        >
+                            View Stored Memories
+                        </button>
+
+                        <button
+                            class="legacy-menu-item"
+                            type="button"
+                            role="menuitem"
+                            data-placeholder-message="Coming in Phase 6.2"
+                        >
+                            Story Progress
+                        </button>
+
+                        <button
+                            class="legacy-menu-item"
+                            type="button"
+                            role="menuitem"
+                            data-placeholder-message="Rename Legacy is coming soon"
+                        >
+                            Rename Legacy
+                        </button>
+
+                        <div
+                            class="legacy-menu-divider"
+                            role="separator"
+                        ></div>
+
+                        <button
+                            id="companionDeleteLegacy"
+                            class="legacy-menu-item legacy-menu-delete"
+                            type="button"
+                            role="menuitem"
+                        >
+                            Delete Legacy
+                        </button>
+                    </div>
+                </div>
+
+                <header class="companion-home-welcome">
+                    <div
+                        id="companionHomeAvatar"
+                        class="companion-home-avatar"
+                        aria-hidden="true"
+                    ></div>
+
+                    <div>
+                        <p
+                            id="companionHomeRelationship"
+                            class="eyebrow"
+                        ></p>
+
+                        <h1 id="companionHomeTitle"></h1>
+
+                        <p class="companion-home-question">
+                            Who's here today?
+                        </p>
+                    </div>
+                </header>
+
+                <div class="companion-feature-grid">
+                    <a
+                        id="chatFreelyAction"
+                        class="glass-card companion-feature-card"
+                        href="chat.html"
+                    >
+                        <span
+                            class="companion-feature-icon"
+                            aria-hidden="true"
+                        >
+                            💬
+                        </span>
+
+                        <span class="companion-feature-copy">
+                            <strong id="talkToCompanionTitle"></strong>
+                            <span>
+                                Spend time together through natural
+                                conversation.
+                            </span>
+                        </span>
+
+                        <span
+                            class="companion-feature-arrow"
+                            aria-hidden="true"
+                        >
+                            →
+                        </span>
+                    </a>
+
+                    <button
+                        class="glass-card companion-feature-card"
+                        type="button"
+                        data-guided-stories
+                    >
+                        <span
+                            class="companion-feature-icon"
+                            aria-hidden="true"
+                        >
+                            ♥
+                        </span>
+
+                        <span class="companion-feature-copy">
+                            <strong id="companionIsHereTitle"></strong>
+                            <span>
+                                Continue building
+                                <span data-legacy-name></span>'s legacy with
+                                Berry.
+                            </span>
+                        </span>
+
+                        <span
+                            class="companion-feature-arrow"
+                            aria-hidden="true"
+                        >
+                            →
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <dialog
+            id="companionPlaceholderDialog"
+            class="companion-placeholder-dialog"
+            aria-labelledby="companionPlaceholderTitle"
+        >
+            <form
+                class="glass-card companion-placeholder-card"
+                method="dialog"
+            >
+                <span
+                    class="companion-placeholder-icon"
+                    aria-hidden="true"
+                >
+                    ♥
+                </span>
+
+                <h2 id="companionPlaceholderTitle">
+                    Guided Stories arrive in Phase 6.2
+                </h2>
+
+                <button
+                    class="secondary-button"
+                    type="submit"
+                    value="back"
+                >
+                    Back
+                </button>
+            </form>
+        </dialog>
+    </main>
+
+    <script src="js/theme.js"></script>
+    <script src="js/back-navigation.js"></script>
+    <script src="js/legacy-state.js"></script>
+    <script src="js/legacy-delete-dialog.js"></script>
+    <script src="js/companion-home.js"></script>
+
+</body>
+
+</html>

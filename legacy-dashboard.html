@@ -190,64 +190,12 @@
             </div>
         </section>
 
-        <dialog
-            id="deleteLegacyDialog"
-            class="legacy-delete-dialog"
-            aria-labelledby="deleteLegacyTitle"
-            aria-describedby="deleteLegacyMessage deleteLegacyConsequences"
-        >
-            <form
-                class="glass-card legacy-delete-dialog-card"
-                method="dialog"
-            >
-                <span
-                    class="legacy-delete-dialog-icon"
-                    aria-hidden="true"
-                >
-                    !
-                </span>
-
-                <h2 id="deleteLegacyTitle">
-                    Delete Legacy?
-                </h2>
-
-                <p id="deleteLegacyMessage"></p>
-
-                <p id="deleteLegacyConsequences">
-                    Everything preserved for this companion will be
-                    permanently removed.
-                </p>
-
-                <p class="legacy-delete-warning">
-                    This action cannot be undone.
-                </p>
-
-                <div class="legacy-delete-dialog-actions">
-                    <button
-                        id="cancelLegacyDelete"
-                        class="secondary-button"
-                        type="submit"
-                        value="cancel"
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        id="confirmLegacyDelete"
-                        class="legacy-destructive-button"
-                        type="button"
-                    >
-                        Delete Legacy
-                    </button>
-                </div>
-            </form>
-        </dialog>
-
     </main>
 
     <script src="js/theme.js"></script>
     <script src="js/back-navigation.js"></script>
     <script src="js/legacy-state.js"></script>
+    <script src="js/legacy-delete-dialog.js"></script>
     <script src="js/legacy-dashboard.js"></script>
 
 </body>

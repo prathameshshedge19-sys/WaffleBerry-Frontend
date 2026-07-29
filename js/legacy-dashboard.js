@@ -10,22 +10,7 @@ const emptyState =
     );
 const legacyCount =
     document.getElementById("legacyCount");
-const deleteDialog =
-    document.getElementById(
-        "deleteLegacyDialog"
-    );
-const deleteMessage =
-    document.getElementById(
-        "deleteLegacyMessage"
-    );
-const confirmDeleteButton =
-    document.getElementById(
-        "confirmLegacyDelete"
-    );
-
 let openMenu = null;
-let pendingDeletion = null;
-let deleteTrigger = null;
 
 
 function formatCreatedAt(createdAt) {
@@ -89,17 +74,33 @@ function closeMenu({ restoreFocus = false } = {}) {
 
 
 function openDeleteDialog(legacy, trigger) {
-    pendingDeletion = legacy;
-    deleteTrigger = trigger;
+    window.WaffleBerryLegacyDelete
+        .confirm(legacy, trigger)
+        .then((confirmed) => {
+            if (!confirmed) {
+                return;
+            }
 
-    if (deleteMessage) {
-        deleteMessage.textContent =
-            `You are about to permanently remove "${
-                legacy.displayName
-            }'s" legacy.`;
-    }
+            const card =
+                legacyGrid?.querySelector(
+                    `[data-legacy-id="${
+                        CSS.escape(
+                            legacy.id
+                        )
+                    }"]`
+                );
 
-    deleteDialog?.showModal();
+            card?.classList.add(
+                "legacy-dashboard-card-removing"
+            );
+
+            window.setTimeout(() => {
+                window
+                    .WaffleBerryLegacyState
+                    .remove(legacy.id);
+                renderLegacies();
+            }, CARD_REMOVAL_DURATION);
+        });
 }
 
 
@@ -449,52 +450,6 @@ document.addEventListener(
                 restoreFocus: true
             });
         }
-    }
-);
-
-deleteDialog?.addEventListener(
-    "close",
-    () => {
-        if (
-            deleteDialog.returnValue !==
-                "deleted"
-        ) {
-            deleteTrigger?.focus();
-        }
-
-        pendingDeletion = null;
-        deleteTrigger = null;
-    }
-);
-
-confirmDeleteButton?.addEventListener(
-    "click",
-    () => {
-        if (!pendingDeletion) {
-            return;
-        }
-
-        const legacyId =
-            pendingDeletion.id;
-        const card =
-            legacyGrid?.querySelector(
-                `[data-legacy-id="${
-                    CSS.escape(legacyId)
-                }"]`
-            );
-
-        deleteDialog.returnValue =
-            "deleted";
-        deleteDialog.close();
-        card?.classList.add(
-            "legacy-dashboard-card-removing"
-        );
-
-        window.setTimeout(() => {
-            window.WaffleBerryLegacyState
-                .remove(legacyId);
-            renderLegacies();
-        }, CARD_REMOVAL_DURATION);
     }
 );
 
