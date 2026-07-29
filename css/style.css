@@ -980,6 +980,13 @@ button {
     animation: messageAppear 0.35s ease;
 }
 
+.berry-row .message {
+    max-width: min(
+        calc(75% - 48px),
+        620px
+    );
+}
+
 @keyframes messageAppear {
     from {
         opacity: 0;
@@ -1041,22 +1048,17 @@ button {
 }
 
 .typing-indicator {
-    display: none;
+    display: flex;
     align-items: center;
     gap: 5px;
 
     width: fit-content;
 
-    margin: 0 0 12px 72px;
     padding: 10px 14px;
 
     border-radius: 16px;
 
     background: rgba(255, 255, 255, 0.4);
-}
-
-.typing-indicator.visible {
-    display: flex;
 }
 
 .typing-indicator span {
@@ -1327,17 +1329,17 @@ button {
     }
 
     .message {
-        max-width: 84%;
+        max-width: 90%;
         font-size: 0.95rem;
+    }
+
+    .berry-row .message {
+        max-width: calc(90% - 42px);
     }
 
     .message-avatar {
         width: 32px;
         height: 32px;
-    }
-
-    .typing-indicator {
-        margin-left: 52px;
     }
 
     .chat-input-area {
@@ -2256,7 +2258,105 @@ button {
 
 .message {
     overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.user-message {
     white-space: pre-wrap;
+}
+
+.berry-message {
+    white-space: normal;
+}
+
+.streaming-message {
+    white-space: pre-wrap;
+}
+
+.berry-message > :first-child {
+    margin-top: 0;
+}
+
+.berry-message > :last-child {
+    margin-bottom: 0;
+}
+
+.berry-message p,
+.berry-message ul,
+.berry-message ol,
+.berry-message pre,
+.berry-message blockquote {
+    margin: 0 0 0.8em;
+}
+
+.berry-message ul,
+.berry-message ol {
+    padding-left: 1.35em;
+}
+
+.berry-message li + li {
+    margin-top: 0.3em;
+}
+
+.berry-message h1,
+.berry-message h2,
+.berry-message h3,
+.berry-message h4,
+.berry-message h5,
+.berry-message h6 {
+    margin: 0.9em 0 0.45em;
+    color: var(--primary-dark);
+    font-size: 1.08em;
+    line-height: 1.3;
+}
+
+.berry-message a {
+    color: var(--primary-dark);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.berry-message code {
+    padding: 0.14em 0.35em;
+    border-radius: 6px;
+    background: rgba(87, 51, 70, 0.1);
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    font-size: 0.9em;
+    overflow-wrap: anywhere;
+}
+
+.berry-message pre {
+    max-width: 100%;
+    padding: 12px 14px;
+    overflow-x: auto;
+    border: 1px solid rgba(87, 51, 70, 0.12);
+    border-radius: 11px;
+    background: rgba(45, 29, 38, 0.08);
+    white-space: pre;
+}
+
+.berry-message pre code {
+    padding: 0;
+    background: transparent;
+    overflow-wrap: normal;
+}
+
+.inline-error-message {
+    border: 1px solid rgba(162, 47, 91, 0.2);
+    color: #8d2b51;
+    background: rgba(255, 240, 246, 0.76);
+}
+
+.typing-row {
+    animation-duration: 0.2s;
+}
+
+.typing-row .typing-indicator {
+    min-height: 38px;
 }
 
 .chat-input-area textarea {
