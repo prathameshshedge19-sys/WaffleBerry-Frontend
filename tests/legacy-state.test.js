@@ -226,6 +226,44 @@ test("removes a legacy and clears it when active", () => {
     );
 });
 
+test("confirmed backend deletion clears a stale hidden-ID tombstone", () => {
+    storage.clear();
+    localStorageValues.clear();
+    storage.set(
+        "waffleBerrySessionLegacies",
+        JSON.stringify([
+            {
+                id: "persisted-42",
+                relationship: "Mother",
+                displayName: "Mum",
+                createdAt: new Date().toISOString(),
+                backendLegacyId: 42,
+                status: "active"
+            }
+        ])
+    );
+    localStorageValues.set(
+        "waffleBerryHiddenPersistedLegacies",
+        JSON.stringify(["42"])
+    );
+
+    assert.equal(
+        window.WaffleBerryLegacyState.remove(
+            "persisted-42",
+            { backendDeleted: true }
+        ),
+        true
+    );
+    assert.deepEqual(
+        JSON.parse(
+            localStorageValues.get(
+                "waffleBerryHiddenPersistedLegacies"
+            )
+        ),
+        []
+    );
+});
+
 test("hydration replaces stale correlation-matched identity", async () => {
     storage.clear();
     localStorageValues.clear();

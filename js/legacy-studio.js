@@ -20,6 +20,13 @@ if (!legacy) {
     return;
 }
 
+if (legacy.status === "archived") {
+    window.location.replace(
+        `legacy-details.html?id=${encodeURIComponent(legacy.id)}`
+    );
+    return;
+}
+
 const query =
     new URLSearchParams({
         legacyId: legacy.id

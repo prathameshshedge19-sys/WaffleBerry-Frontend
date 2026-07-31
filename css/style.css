@@ -4907,6 +4907,62 @@ body.dark-mode .legacy-activity-list li {
     font-size: 1.45rem;
 }
 
+.legacy-management-tabs {
+    display: inline-flex;
+    gap: 5px;
+    margin-bottom: 18px;
+    padding: 5px;
+    border: 1px solid rgba(200, 63, 116, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.38);
+}
+
+.legacy-management-tab {
+    padding: 9px 19px;
+    border: 0;
+    border-radius: 999px;
+    color: var(--text-soft);
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
+.legacy-management-tab[aria-selected="true"] {
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary), #dc7969);
+    box-shadow: 0 8px 20px rgba(200, 63, 116, 0.2);
+}
+
+.legacy-management-tab:focus-visible {
+    outline: 3px solid rgba(200, 63, 116, 0.28);
+    outline-offset: 2px;
+}
+
+.legacy-management-feedback {
+    min-height: 24px;
+    margin-bottom: 10px;
+    color: var(--text-soft);
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.legacy-management-feedback.is-error {
+    color: #9b3246;
+}
+
+.legacy-management-state {
+    padding: 25px;
+    border-radius: 20px;
+    color: var(--text-soft);
+    text-align: center;
+}
+
+.legacy-management-state[hidden] {
+    display: none;
+}
+
 .legacy-count {
     color: var(--text-soft);
 
@@ -5183,6 +5239,22 @@ body.dark-mode .legacy-menu-popover {
     font-weight: 650;
 }
 
+.legacy-lifecycle-badge {
+    display: inline-flex;
+    margin: 0 0 12px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    color: #31704c;
+    background: rgba(74, 158, 104, 0.13);
+    font-size: 0.74rem;
+    font-weight: 850;
+}
+
+.legacy-lifecycle-badge.is-archived {
+    color: #765d68;
+    background: rgba(118, 93, 104, 0.13);
+}
+
 .legacy-card-actions {
     width: 100%;
 
@@ -5361,6 +5433,37 @@ body.dark-mode .legacy-menu-popover {
     font-weight: 750;
 }
 
+.legacy-delete-confirmation-label {
+    width: 100%;
+    margin: 10px 0 7px;
+    color: var(--text-main);
+    font-size: 0.86rem;
+    font-weight: 800;
+    text-align: left;
+}
+
+.legacy-delete-confirmation-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(176, 51, 70, 0.25);
+    border-radius: 13px;
+    color: var(--text-main);
+    background: var(--input-background);
+    font: inherit;
+}
+
+.legacy-delete-confirmation-input:focus {
+    border-color: #b73e53;
+    outline: 3px solid rgba(183, 62, 83, 0.15);
+}
+
+.legacy-delete-dialog .legacy-delete-confirmation-hint {
+    width: 100%;
+    margin: 7px 0 22px;
+    font-size: 0.78rem;
+    text-align: left;
+}
+
 .legacy-delete-dialog-actions {
     width: 100%;
 
@@ -5410,6 +5513,38 @@ body.dark-mode .legacy-menu-popover {
     box-shadow:
         0 16px 30px rgba(143, 41, 60, 0.3);
     filter: saturate(1.06);
+}
+
+.legacy-destructive-button:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.35);
+    opacity: 0.48;
+    transform: none;
+    box-shadow: none;
+}
+
+.legacy-archived-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 14px 17px;
+    border: 1px solid rgba(126, 93, 107, 0.2);
+    border-radius: 16px;
+    color: var(--text-main);
+    background: rgba(126, 93, 107, 0.09);
+}
+
+.legacy-archived-banner[hidden] {
+    display: none;
+}
+
+.legacy-archived-banner span {
+    color: var(--text-soft);
+}
+
+body.dark-mode .legacy-management-tabs {
+    background: rgba(35, 24, 35, 0.58);
 }
 
 .legacy-destructive-button:focus-visible {
@@ -5535,6 +5670,11 @@ body.dark-mode .legacy-menu-popover {
 
     .legacy-delete-dialog-card {
         padding: 28px 20px;
+    }
+
+    .legacy-archived-banner {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 

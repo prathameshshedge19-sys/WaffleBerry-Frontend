@@ -27,6 +27,7 @@ const elements = {
     activity: document.getElementById("legacyActivitySummary"),
     memoryTypes: document.getElementById("legacyMemoryTypes"),
     settings: document.getElementById("legacySettingsLink"),
+    archivedBanner: document.getElementById("legacyArchivedBanner"),
 };
 
 
@@ -451,6 +452,10 @@ function renderDashboard(data) {
     }
     elements.relationship.textContent = relationship;
     elements.status.textContent = readableStatus(data?.status);
+    const isArchived = data?.status === "archived";
+    elements.archivedBanner.hidden = !isArchived;
+    elements.settings.hidden = isArchived;
+    elements.settings.setAttribute("aria-disabled", String(isArchived));
     const displayedDate =
         validDate(data?.updated_at, data?.created_at);
     elements.relativeDate.textContent =

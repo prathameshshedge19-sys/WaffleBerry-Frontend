@@ -18,7 +18,8 @@ const elements = {
     reload: document.getElementById("legacySettingsReload"),
     save: document.getElementById("legacySettingsSave"),
     cancel: document.getElementById("legacySettingsCancel"),
-    brandBack: document.getElementById("legacySettingsBrandBack")
+    brandBack: document.getElementById("legacySettingsBrandBack"),
+    archivedBanner: document.getElementById("legacySettingsArchivedBanner")
 };
 
 let localLegacy = null;
@@ -134,6 +135,11 @@ async function load() {
         }
         elements.name.value = backendLegacy.display_name;
         elements.relationship.value = backendLegacy.relationship;
+        const isArchived = backendLegacy.status === "archived";
+        elements.archivedBanner.hidden = !isArchived;
+        elements.name.disabled = isArchived;
+        elements.relationship.disabled = isArchived;
+        elements.save.disabled = isArchived;
         elements.loading.hidden = true;
         elements.content.hidden = false;
         elements.name.focus();
@@ -153,6 +159,9 @@ async function load() {
 async function submit(event) {
     event.preventDefault();
     if (saving || !backendLegacy) {
+        return;
+    }
+    if (backendLegacy.status === "archived") {
         return;
     }
     const values = validate();

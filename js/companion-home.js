@@ -19,6 +19,13 @@ if (!legacy) {
     return;
 }
 
+if (legacy.status === "archived") {
+    window.location.replace(
+        `legacy-details.html?id=${encodeURIComponent(legacy.id)}`
+    );
+    return;
+}
+
 const relationship =
     document.getElementById(
         "companionHomeRelationship"
@@ -252,26 +259,43 @@ document
 
 deleteAction?.addEventListener(
     "click",
-    () => {
+    async () => {
         closeSettings();
 
-        window.WaffleBerryLegacyDelete
-            .confirm(
-                legacy,
-                settingsTrigger
-            )
-            .then((confirmed) => {
-                if (!confirmed) {
-                    return;
-                }
-
-                window
-                    .WaffleBerryLegacyState
-                    .remove(legacy.id);
-                window.location.replace(
-                    "legacy-dashboard.html"
-                );
-            });
+        const confirmed = await window.WaffleBerryLegacyDelete.confirm(
+            legacy,
+            settingsTrigger
+        );
+        if (!confirmed) {
+            return;
+        }
+        try {
+            const persisted = await window.WaffleBerryLegacyState
+                .ensurePersisted(legacy.id);
+            if (!persisted?.backendLegacyId) {
+                throw new Error("Legacy persistence unavailable");
+            }
+            await window.WaffleBerryApi.deleteLegacy(
+                persisted.backendLegacyId,
+                legacy.displayName
+            );
+            window.WaffleBerryLegacyState.remove(
+                legacy.id,
+                { backendDeleted: true }
+            );
+            window.location.replace("legacy-dashboard.html");
+        } catch (error) {
+            if (error?.status === 401) {
+                window.WaffleBerryApi.clearStoredSession();
+                window.location.replace("login.html");
+                return;
+            }
+            showPlaceholder(
+                error?.status === 404
+                    ? "This Legacy was not found. Return to Your Legacies and refresh."
+                    : "Unable to delete this Legacy. Please try again."
+            );
+        }
     }
 );
 })();

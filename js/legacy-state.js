@@ -71,6 +71,9 @@ function normalizeLegacy(value) {
         Number(value?.backendLegacyId) > 0
             ? Number(value.backendLegacyId)
             : null;
+    const status = value?.status === "archived"
+        ? "archived"
+        : "active";
 
     if (
         !id ||
@@ -86,7 +89,8 @@ function normalizeLegacy(value) {
         relationship,
         displayName,
         createdAt,
-        backendLegacyId
+        backendLegacyId,
+        status
     };
 }
 
@@ -108,18 +112,26 @@ function list() {
         }
 
         const seenIds = new Set();
+        const seenBackendIds = new Set();
 
         return parsed
             .map(normalizeLegacy)
             .filter((legacy) => {
                 if (
                     !legacy ||
-                    seenIds.has(legacy.id)
+                    seenIds.has(legacy.id) ||
+                    (
+                        legacy.backendLegacyId &&
+                        seenBackendIds.has(legacy.backendLegacyId)
+                    )
                 ) {
                     return false;
                 }
 
                 seenIds.add(legacy.id);
+                if (legacy.backendLegacyId) {
+                    seenBackendIds.add(legacy.backendLegacyId);
+                }
                 return true;
             });
     } catch {
@@ -154,12 +166,26 @@ function hiddenPersistedIds() {
     }
 }
 
-async function hydratePersisted() {
+async function hydratePersisted(status = "active") {
+    const listPersisted =
+        window.WaffleBerryApi.listOwnedLegaciesByStatus
+        || window.WaffleBerryApi.listOwnedLegacies;
     const persisted =
-        await window.WaffleBerryApi
-            .listOwnedLegacies();
+        await listPersisted.call(
+            window.WaffleBerryApi,
+            status
+        );
     const hidden = hiddenPersistedIds();
-    const current = list();
+    const returnedIds = new Set(
+        persisted.map((item) => item.legacy_id)
+    );
+    const current = list().filter(
+        (item) => !(
+            item.backendLegacyId &&
+            item.status === status &&
+            !returnedIds.has(item.backendLegacyId)
+        )
+    );
     const byBackendId = new Map(
         current
             .filter((item) =>
@@ -185,6 +211,7 @@ async function hydratePersisted() {
                 item.display_name;
             existing.relationship =
                 item.relationship;
+            existing.status = item.status || status;
             return;
         }
         const correlation =
@@ -200,6 +227,7 @@ async function hydratePersisted() {
                 item.display_name;
             localMatch.relationship =
                 item.relationship;
+            localMatch.status = item.status || status;
             return;
         }
         current.push({
@@ -212,7 +240,8 @@ async function hydratePersisted() {
             createdAt:
                 item.created_at,
             backendLegacyId:
-                item.legacy_id
+                item.legacy_id,
+            status: item.status || status
         });
     });
     store(current);
@@ -275,7 +304,8 @@ function create(details) {
             existingIndex >= 0
                 ? legacies[existingIndex]
                     .createdAt
-                : new Date().toISOString()
+                : new Date().toISOString(),
+        status: "active"
     };
 
     if (existingIndex >= 0) {
@@ -316,7 +346,8 @@ async function ensurePersisted(id) {
     legacies[index] = {
         ...legacies[index],
         backendLegacyId:
-            persisted.legacy_id
+            persisted.legacy_id,
+        status: persisted.status || "active"
     };
     store(legacies);
     return legacies[index];
@@ -389,13 +420,18 @@ function updatePersisted(backendLegacyId, details) {
     legacies[index] = {
         ...legacies[index],
         displayName,
-        relationship
+        relationship,
+        status: details.status === "archived"
+            ? "archived"
+            : details.status === "active"
+                ? "active"
+                : legacies[index].status
     };
     store(legacies);
     return legacies[index];
 }
 
-function remove(id) {
+function remove(id, options = {}) {
     if (typeof id !== "string") {
         return false;
     }
@@ -418,9 +454,12 @@ function remove(id) {
     );
     if (removed?.backendLegacyId) {
         const hidden = hiddenPersistedIds();
-        hidden.add(
-            String(removed.backendLegacyId)
-        );
+        const backendId = String(removed.backendLegacyId);
+        if (options.backendDeleted === true) {
+            hidden.delete(backendId);
+        } else {
+            hidden.add(backendId);
+        }
         localStorage.setItem(
             storageKey(HIDDEN_LEGACIES_KEY),
             JSON.stringify([...hidden])

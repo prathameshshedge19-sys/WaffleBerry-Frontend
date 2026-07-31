@@ -89,6 +89,13 @@ if (!legacy) {
     return;
 }
 
+if (legacy.status === "archived") {
+    window.location.replace(
+        `legacy-details.html?id=${encodeURIComponent(legacy.id)}`
+    );
+    return;
+}
+
 if (message) {
     message.textContent =
         `Getting ${legacy.displayName} ready for your conversation...`;

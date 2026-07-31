@@ -4,6 +4,8 @@
 let dialog = null;
 let message = null;
 let confirmButton = null;
+let confirmationInput = null;
+let confirmationHint = null;
 let activeTrigger = null;
 let resolveConfirmation = null;
 
@@ -42,6 +44,23 @@ function createDialog() {
             <p class="legacy-delete-warning">
                 This action cannot be undone.
             </p>
+            <label
+                class="legacy-delete-confirmation-label"
+                for="sharedDeleteLegacyConfirmation"
+            >
+                Type the Legacy name to confirm
+            </label>
+            <input
+                id="sharedDeleteLegacyConfirmation"
+                class="legacy-delete-confirmation-input"
+                type="text"
+                autocomplete="off"
+                aria-describedby="sharedDeleteLegacyConfirmationHint"
+            >
+            <p
+                id="sharedDeleteLegacyConfirmationHint"
+                class="legacy-delete-confirmation-hint"
+            ></p>
             <div class="legacy-delete-dialog-actions">
                 <button
                     class="secondary-button"
@@ -54,6 +73,7 @@ function createDialog() {
                     class="legacy-destructive-button"
                     type="button"
                     data-confirm-legacy-delete
+                    disabled
                 >
                     Delete Legacy
                 </button>
@@ -69,6 +89,17 @@ function createDialog() {
         dialog.querySelector(
             "[data-confirm-legacy-delete]"
         );
+    confirmationInput = dialog.querySelector(
+        "#sharedDeleteLegacyConfirmation"
+    );
+    confirmationHint = dialog.querySelector(
+        "#sharedDeleteLegacyConfirmationHint"
+    );
+
+    confirmationInput.addEventListener("input", () => {
+        confirmButton.disabled =
+            confirmationInput.value !== dialog.dataset.legacyName;
+    });
 
     confirmButton.addEventListener(
         "click",
@@ -117,10 +148,15 @@ function confirm(legacy, trigger = null) {
         `You are about to permanently remove "${
             legacy.displayName
         }'s" legacy.`;
+    dialog.dataset.legacyName = legacy.displayName;
+    confirmationInput.value = "";
+    confirmationHint.textContent = `Enter “${legacy.displayName}” exactly.`;
+    confirmButton.disabled = true;
 
     return new Promise((resolve) => {
         resolveConfirmation = resolve;
         dialog.showModal();
+        confirmationInput.focus();
     });
 }
 

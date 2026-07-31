@@ -616,6 +616,82 @@ function listOwnedLegacies() {
     return apiRequest("/legacies");
 }
 
+function listOwnedLegaciesByStatus(status = "active") {
+    return apiRequest(
+        `/legacies?status=${encodeURIComponent(status)}`
+    );
+}
+
+function archiveLegacy(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/archive`,
+        { method: "POST" }
+    );
+}
+
+function restoreLegacy(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/restore`,
+        { method: "POST" }
+    );
+}
+
+function deleteLegacy(legacyId, confirmationText) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}`,
+        {
+            method: "DELETE",
+            body: {
+                confirmation_text: confirmationText
+            }
+        }
+    );
+}
+
+async function exportLegacy(legacyId) {
+    const accessToken = getStoredAccessToken();
+    if (!accessToken) {
+        throw new ApiError(
+            "Please sign in to continue.",
+            { status: 401, kind: "authentication" }
+        );
+    }
+    let response;
+    try {
+        response = await fetch(
+            `${API_BASE_URL}/legacies/${encodeURIComponent(legacyId)}/export`,
+            {
+                headers: {
+                    Accept: "application/json",
+                    Authorization: `Bearer ${accessToken}`
+                }
+            }
+        );
+    } catch {
+        throw new ApiError(
+            "Unable to reach the Waffle Berry server. Please try again.",
+            { kind: "network" }
+        );
+    }
+    if (!response.ok) {
+        const data = await parseResponse(response);
+        throw new ApiError(
+            getApiErrorMessage(response.status, data),
+            {
+                status: response.status,
+                kind: getErrorKind(response.status, data),
+                details: data
+            }
+        );
+    }
+    const disposition = response.headers.get("Content-Disposition") || "";
+    const filenameMatch = disposition.match(/filename="([^"\\/]+)"/i);
+    return {
+        blob: await response.blob(),
+        filename: filenameMatch?.[1] || "waffleberry-legacy-export.json"
+    };
+}
+
 function getOwnedLegacy(legacyId) {
     return apiRequest(
         `/legacies/${encodeURIComponent(legacyId)}`
@@ -701,6 +777,11 @@ window.WaffleBerryApi = Object.freeze({
     editMemoryReview,
     synchronizeLegacy,
     listOwnedLegacies,
+    listOwnedLegaciesByStatus,
+    archiveLegacy,
+    restoreLegacy,
+    deleteLegacy,
+    exportLegacy,
     getOwnedLegacy,
     updateLegacySettings,
     getLegacyDashboard,
