@@ -36,7 +36,12 @@ test("valid edits use the shared authenticated API request", () => {
 });
 
 test("successful saves synchronize local state without replacing IDs", () => {
-    assert.match(settings, /state\.updatePersisted\(updated\.legacy_id, updated\)/);
+    assert.match(
+        settings,
+        /state\.updatePersisted\(\s*updated\.legacy_id,\s*updated\s*\)/
+    );
+    assert.match(settings, /if \(!synchronized\)/);
+    assert.match(settings, /await state\.hydratePersisted\(\)/);
     assert.match(state, /function updatePersisted/);
     assert.match(state, /\.\.\.legacies\[index\]/);
     assert.doesNotMatch(state, /function updatePersisted[\s\S]*create\(/);
@@ -69,6 +74,9 @@ test("authentication, neutral not-found, conflict and retry errors are handled",
     assert.match(settings, /error\?\.status === 409/);
     assert.match(settings, /Unable to save these settings\. Please try again\./);
     assert.match(settings, /retry\.addEventListener\("click", load\)/);
+    assert.match(settings, /reload\.addEventListener\("click", load\)/);
+    assert.match(html, /id="legacySettingsReload"/);
+    assert.match(html, /Reload latest settings/);
 });
 
 test("user-provided values are rendered safely", () => {

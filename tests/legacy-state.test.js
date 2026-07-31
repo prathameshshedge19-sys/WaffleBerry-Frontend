@@ -7,6 +7,7 @@ const test = require("node:test");
 const vm = require("node:vm");
 
 const storage = new Map();
+const localStorageValues = new Map();
 
 global.sessionStorage = {
     getItem(key) {
@@ -17,6 +18,17 @@ global.sessionStorage = {
     },
     removeItem(key) {
         storage.delete(key);
+    }
+};
+global.localStorage = {
+    getItem(key) {
+        return localStorageValues.get(key) || null;
+    },
+    setItem(key, value) {
+        localStorageValues.set(key, value);
+    },
+    removeItem(key) {
+        localStorageValues.delete(key);
     }
 };
 global.window = {};
@@ -212,4 +224,39 @@ test("removes a legacy and clears it when active", () => {
         ),
         false
     );
+});
+
+test("hydration replaces stale correlation-matched identity", async () => {
+    storage.clear();
+    localStorageValues.clear();
+    storage.set(
+        "waffleBerrySessionLegacies",
+        JSON.stringify([
+            {
+                id: "browser-correlation",
+                relationship: "Old relationship",
+                displayName: "Old name",
+                createdAt: new Date().toISOString(),
+                backendLegacyId: null
+            }
+        ])
+    );
+    window.WaffleBerryApi = {
+        listOwnedLegacies: async () => [
+            {
+                legacy_id: 42,
+                client_correlation_id: "browser-correlation",
+                display_name: "Authoritative name",
+                relationship: "Mother",
+                created_at: new Date().toISOString()
+            }
+        ]
+    };
+
+    const hydrated = await window.WaffleBerryLegacyState.hydratePersisted();
+
+    assert.equal(hydrated.length, 1);
+    assert.equal(hydrated[0].backendLegacyId, 42);
+    assert.equal(hydrated[0].displayName, "Authoritative name");
+    assert.equal(hydrated[0].relationship, "Mother");
 });

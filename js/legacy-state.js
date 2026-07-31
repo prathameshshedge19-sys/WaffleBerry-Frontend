@@ -196,6 +196,10 @@ async function hydratePersisted() {
         if (localMatch) {
             localMatch.backendLegacyId =
                 item.legacy_id;
+            localMatch.displayName =
+                item.display_name;
+            localMatch.relationship =
+                item.relationship;
             return;
         }
         current.push({

@@ -15,6 +15,7 @@ const elements = {
     nameError: document.getElementById("legacySettingsNameError"),
     relationshipError: document.getElementById("legacySettingsRelationshipError"),
     feedback: document.getElementById("legacySettingsFeedback"),
+    reload: document.getElementById("legacySettingsReload"),
     save: document.getElementById("legacySettingsSave"),
     cancel: document.getElementById("legacySettingsCancel"),
     brandBack: document.getElementById("legacySettingsBrandBack")
@@ -110,6 +111,8 @@ async function load() {
     elements.loading.hidden = false;
     elements.loadError.hidden = true;
     elements.content.hidden = true;
+    elements.reload.hidden = true;
+    elements.feedback.textContent = "";
     localLegacy = selectLegacy();
     setNavigation();
     if (!localLegacy) {
@@ -175,9 +178,16 @@ async function submit(event) {
             throw new Error("Malformed Legacy response");
         }
         backendLegacy = updated;
-        state.updatePersisted(updated.legacy_id, updated);
+        const synchronized = state.updatePersisted(
+            updated.legacy_id,
+            updated
+        );
+        if (!synchronized) {
+            await state.hydratePersisted();
+        }
         elements.name.value = updated.display_name;
         elements.relationship.value = updated.relationship;
+        elements.reload.hidden = true;
         elements.feedback.textContent = "Legacy settings saved.";
     } catch (error) {
         if (error?.status === 401) {
@@ -186,7 +196,8 @@ async function submit(event) {
         }
         elements.feedback.textContent = safeError(error);
         if (error?.status === 409) {
-            elements.name.focus();
+            elements.reload.hidden = false;
+            elements.reload.focus();
         }
     } finally {
         setSaving(false);
@@ -195,5 +206,6 @@ async function submit(event) {
 
 elements.form.addEventListener("submit", submit);
 elements.retry.addEventListener("click", load);
+elements.reload.addEventListener("click", load);
 load();
 })();

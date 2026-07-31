@@ -6,7 +6,8 @@ relationship. Status is displayed elsewhere but is not editable because
 archive behavior belongs to Phase 6.8.
 
 Save sends the last `updated_at` value as `expected_updated_at`. A stale update
-receives a controlled conflict message rather than overwriting another edit.
+receives a controlled conflict message and a "Reload latest settings" action
+rather than overwriting another edit.
 Validation messages are associated with visible labels, the first invalid
 field receives focus, and loading, saving, success, and failure feedback use
 live regions. Authentication failures follow the existing sign-in flow;

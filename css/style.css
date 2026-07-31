@@ -2117,6 +2117,16 @@ body.dark-mode .legacy-settings-field-error {
     font-weight: 750;
 }
 
+.legacy-settings-reload {
+    min-height: 44px;
+
+    margin-top: 8px;
+}
+
+.legacy-settings-reload[hidden] {
+    display: none;
+}
+
 .legacy-settings-actions {
     display: flex;
     align-items: center;
