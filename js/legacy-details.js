@@ -26,6 +26,7 @@ const elements = {
     health: document.getElementById("legacyHealthSummary"),
     activity: document.getElementById("legacyActivitySummary"),
     memoryTypes: document.getElementById("legacyMemoryTypes"),
+    settings: document.getElementById("legacySettingsLink"),
 };
 
 
@@ -443,6 +444,11 @@ function renderDashboard(data) {
             : "Relationship unavailable";
 
     elements.title.textContent = title;
+    const selectedLegacy = selectLegacy();
+    if (selectedLegacy) {
+        elements.settings.href =
+            `legacy-settings.html?id=${encodeURIComponent(selectedLegacy.id)}`;
+    }
     elements.relationship.textContent = relationship;
     elements.status.textContent = readableStatus(data?.status);
     const displayedDate =

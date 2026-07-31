@@ -1982,6 +1982,176 @@ button {
     border-color: rgba(71, 113, 79, 0.18);
 }
 
+.legacy-overview-hero-actions {
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.legacy-settings-entry {
+    min-height: 42px;
+
+    padding: 10px 16px;
+
+    font-size: 0.82rem;
+}
+
+.legacy-settings-page {
+    min-height: 100vh;
+}
+
+.legacy-settings-section {
+    min-height: 100vh;
+
+    display: grid;
+    place-items: center;
+
+    padding: 118px 22px 48px;
+}
+
+.legacy-settings-shell {
+    width: min(100%, 680px);
+}
+
+.legacy-settings-heading {
+    margin-bottom: 22px;
+}
+
+.legacy-settings-heading h1 {
+    margin: 4px 0 8px;
+
+    color: var(--primary-dark);
+
+    font-size: clamp(2rem, 6vw, 3.25rem);
+    letter-spacing: -0.035em;
+}
+
+.legacy-settings-heading > p:last-child,
+.legacy-settings-help {
+    color: var(--text-soft);
+
+    line-height: 1.55;
+}
+
+.legacy-settings-form,
+.legacy-settings-state {
+    padding: clamp(24px, 5vw, 38px);
+
+    border-radius: 28px;
+}
+
+.legacy-settings-state {
+    text-align: center;
+}
+
+.legacy-settings-state p {
+    margin: 9px 0 20px;
+
+    color: var(--text-soft);
+}
+
+.legacy-settings-field + .legacy-settings-field {
+    margin-top: 22px;
+}
+
+.legacy-settings-field label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: var(--text-main);
+
+    font-weight: 800;
+}
+
+.legacy-settings-field input {
+    width: 100%;
+    min-height: 50px;
+
+    padding: 12px 14px;
+
+    border: 1px solid rgba(126, 50, 83, 0.2);
+    border-radius: 14px;
+    outline: none;
+
+    color: var(--text-main);
+    background: var(--input-background);
+}
+
+.legacy-settings-field input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(200, 63, 116, 0.14);
+}
+
+.legacy-settings-field input[aria-invalid="true"] {
+    border-color: #b3344c;
+}
+
+.legacy-settings-help,
+.legacy-settings-field-error {
+    margin-top: 7px;
+
+    font-size: 0.82rem;
+}
+
+.legacy-settings-field-error {
+    min-height: 1.25em;
+
+    color: #a72c43;
+
+    font-weight: 700;
+}
+
+body.dark-mode .legacy-settings-field-error {
+    color: #ff9caf;
+}
+
+.legacy-settings-feedback {
+    min-height: 1.5em;
+
+    margin-top: 20px;
+
+    color: var(--primary-dark);
+
+    font-weight: 750;
+}
+
+.legacy-settings-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin-top: 18px;
+}
+
+.legacy-settings-actions .primary-button,
+.legacy-settings-actions .secondary-button {
+    min-height: 48px;
+}
+
+@media (max-width: 600px) {
+    .legacy-overview-hero-actions {
+        align-items: flex-start;
+    }
+
+    .legacy-settings-section {
+        align-items: start;
+
+        padding: 104px 14px 34px;
+    }
+
+    .legacy-settings-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .legacy-settings-actions .primary-button,
+    .legacy-settings-actions .secondary-button {
+        width: 100%;
+    }
+}
+
 .legacy-overview-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

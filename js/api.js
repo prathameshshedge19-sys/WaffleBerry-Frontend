@@ -616,6 +616,19 @@ function listOwnedLegacies() {
     return apiRequest("/legacies");
 }
 
+function getOwnedLegacy(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}`
+    );
+}
+
+function updateLegacySettings(legacyId, changes) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}`,
+        { method: "PATCH", body: changes }
+    );
+}
+
 function getLegacyDashboard(legacyId) {
     return apiRequest(
         `/legacies/${encodeURIComponent(legacyId)}/dashboard`
@@ -688,6 +701,8 @@ window.WaffleBerryApi = Object.freeze({
     editMemoryReview,
     synchronizeLegacy,
     listOwnedLegacies,
+    getOwnedLegacy,
+    updateLegacySettings,
     getLegacyDashboard,
     createStorySession,
     streamPersistedStory,

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Update the identity details for your Waffle Berry Legacy.">
+    <title>Legacy Settings | Waffle Berry</title>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <main id="website" class="website-unlocked legacy-settings-page">
+        <nav data-back-navigation data-back-href="legacy-details.html"></nav>
+        <header class="navbar">
+            <a id="legacySettingsBrandBack" href="legacy-details.html" class="brand" aria-label="Back to My Legacy">
+                <span class="brand-icon">🧇</span>
+                <span class="brand-text">Waffle Berry</span>
+            </a>
+            <div class="navbar-actions">
+                <a class="logout-button" href="login.html" title="Sign out">Sign out</a>
+                <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="legacy-settings-section" aria-labelledby="legacySettingsTitle">
+            <div class="legacy-settings-shell">
+                <div id="legacySettingsLoading" class="glass-card legacy-settings-state" role="status" aria-live="polite">
+                    <h1>Loading Legacy settings…</h1>
+                </div>
+
+                <div id="legacySettingsLoadError" class="glass-card legacy-settings-state" role="alert" hidden>
+                    <h1>These settings are unavailable.</h1>
+                    <p id="legacySettingsLoadErrorMessage">Please try again.</p>
+                    <button id="legacySettingsRetry" class="primary-button" type="button">Try again</button>
+                </div>
+
+                <div id="legacySettingsContent" hidden>
+                    <header class="legacy-settings-heading">
+                        <p class="eyebrow">My Legacy</p>
+                        <h1 id="legacySettingsTitle">Legacy Settings</h1>
+                        <p>Update the name and relationship shown throughout this Legacy.</p>
+                    </header>
+
+                    <form id="legacySettingsForm" class="glass-card legacy-settings-form" novalidate>
+                        <div class="legacy-settings-field">
+                            <label for="legacySettingsName">Legacy name</label>
+                            <input id="legacySettingsName" name="display_name" type="text" maxlength="255" autocomplete="name" aria-describedby="legacySettingsNameHelp legacySettingsNameError" required>
+                            <p id="legacySettingsNameHelp" class="legacy-settings-help">The person whose stories and memories are being preserved.</p>
+                            <p id="legacySettingsNameError" class="legacy-settings-field-error" role="alert"></p>
+                        </div>
+
+                        <div class="legacy-settings-field">
+                            <label for="legacySettingsRelationship">Relationship</label>
+                            <input id="legacySettingsRelationship" name="relationship" type="text" maxlength="100" aria-describedby="legacySettingsRelationshipHelp legacySettingsRelationshipError" required>
+                            <p id="legacySettingsRelationshipHelp" class="legacy-settings-help">For example, Mother, Friend, or My own Legacy.</p>
+                            <p id="legacySettingsRelationshipError" class="legacy-settings-field-error" role="alert"></p>
+                        </div>
+
+                        <div id="legacySettingsFeedback" class="legacy-settings-feedback" role="status" aria-live="polite"></div>
+
+                        <div class="legacy-settings-actions">
+                            <button id="legacySettingsSave" class="primary-button" type="submit">Save changes</button>
+                            <a id="legacySettingsCancel" class="secondary-button" href="legacy-details.html">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/theme.js"></script>
+    <script src="js/back-navigation.js"></script>
+    <script src="js/legacy-state.js"></script>
+    <script src="js/legacy-settings.js"></script>
+</body>
+
+</html>

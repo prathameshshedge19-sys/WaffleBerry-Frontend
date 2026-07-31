@@ -357,6 +357,40 @@ function getActive() {
     return id ? get(id) : null;
 }
 
+function updatePersisted(backendLegacyId, details) {
+    const numericId = Number(backendLegacyId);
+    const displayName =
+        typeof details?.display_name === "string"
+            ? details.display_name.trim()
+            : "";
+    const relationship =
+        typeof details?.relationship === "string"
+            ? details.relationship.trim()
+            : "";
+    if (
+        !Number.isInteger(numericId) ||
+        numericId <= 0 ||
+        !displayName ||
+        !relationship
+    ) {
+        return null;
+    }
+    const legacies = list();
+    const index = legacies.findIndex(
+        (legacy) => legacy.backendLegacyId === numericId
+    );
+    if (index < 0) {
+        return null;
+    }
+    legacies[index] = {
+        ...legacies[index],
+        displayName,
+        relationship
+    };
+    store(legacies);
+    return legacies[index];
+}
+
 function remove(id) {
     if (typeof id !== "string") {
         return false;
@@ -418,6 +452,7 @@ window.WaffleBerryLegacyState =
         list,
         remove,
         select,
-        startDraft
+        startDraft,
+        updatePersisted
     });
 })();
