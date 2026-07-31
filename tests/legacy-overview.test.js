@@ -91,11 +91,12 @@ test("counts and dates are normalized before rendering", () => {
 });
 
 
-test("My Legacy is available from existing Legacy card navigation", () => {
+test("Legacy Dashboard is a separate saved Legacy card action", () => {
     assert.match(
         dashboard,
-        /"My Legacy",[\s\S]*?"legacy-details\.html"/
+        /"Legacy Dashboard",[\s\S]*?"legacy-details\.html"/
     );
+    assert.match(dashboard, /decisionUrl\(legacy\.id\)/);
 });
 
 

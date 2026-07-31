@@ -12,6 +12,7 @@ const {
 } = window.WaffleBerryApi;
 const companionIdentity =
     window.WaffleBerryCompanionIdentity;
+let selectedLegacy = companionIdentity.getLegacy();
 
 companionIdentity.applyToDocument();
 
@@ -1026,7 +1027,9 @@ async function createConversation() {
                         "/conversations",
                         {
                             method: "POST",
-                            body: {}
+                            body: selectedLegacy?.backendLegacyId
+                                ? { legacy_id: selectedLegacy.backendLegacyId }
+                                : {}
                         }
                     );
 
@@ -1100,10 +1103,15 @@ async function loadConversations() {
                 "/conversations"
             );
 
-        state.conversations =
-            sortConversations(
-                conversations
+        const scopedConversations = selectedLegacy?.backendLegacyId
+            ? conversations.filter(
+                (conversation) =>
+                    conversation.legacy_id === selectedLegacy.backendLegacyId
+            )
+            : conversations.filter(
+                (conversation) => conversation.legacy_id == null
             );
+        state.conversations = sortConversations(scopedConversations);
         renderConversationList();
 
         if (getNewChatRequest()) {
@@ -1724,6 +1732,43 @@ async function initializeChat() {
             .getStoredAccessToken()
     ) {
         return;
+    }
+
+    const requestedLegacyId = new URLSearchParams(
+        window.location.search
+    ).get("legacyId");
+    const hadSelectedLegacy = Boolean(selectedLegacy);
+    if (requestedLegacyId && !selectedLegacy) {
+        try {
+            await window.WaffleBerryLegacyState.hydratePersisted("active");
+            await window.WaffleBerryLegacyState.hydratePersisted("archived");
+            selectedLegacy = window.WaffleBerryLegacyState.select(requestedLegacyId);
+        } catch {
+            window.location.replace(
+                `companion-home.html?legacyId=${encodeURIComponent(requestedLegacyId)}`
+            );
+            return;
+        }
+    }
+    if (requestedLegacyId && !selectedLegacy) {
+        window.location.replace("legacy-dashboard.html");
+        return;
+    }
+    if (requestedLegacyId && !hadSelectedLegacy && selectedLegacy) {
+        window.location.replace(
+            `companion-home.html?legacyId=${encodeURIComponent(selectedLegacy.id)}`
+        );
+        return;
+    }
+    if (selectedLegacy) {
+        selectedLegacy = await window.WaffleBerryLegacyState
+            .ensurePersisted(selectedLegacy.id);
+        if (!selectedLegacy?.backendLegacyId || selectedLegacy.status === "archived") {
+            window.location.replace(
+                `companion-home.html?legacyId=${encodeURIComponent(requestedLegacyId || "")}`
+            );
+            return;
+        }
     }
 
     updateControls();

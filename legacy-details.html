@@ -133,7 +133,7 @@
                     </div>
                     <header class="legacy-overview-hero">
                         <div>
-                            <p class="eyebrow">My Legacy</p>
+                            <p class="eyebrow">Legacy Dashboard</p>
                             <h1 id="legacyOverviewTitle">Legacy</h1>
                             <div class="legacy-overview-meta">
                                 <span id="legacyOverviewRelationship"></span>
@@ -152,6 +152,16 @@
                                 id="legacyOverviewApprovedState"
                                 class="legacy-overview-approved"
                             ></div>
+                            <a
+                                id="legacyDashboardStudioLink"
+                                class="secondary-button"
+                                href="legacy-studio.html"
+                            >Add More to Legacy</a>
+                            <a
+                                id="legacyDashboardChatLink"
+                                class="secondary-button"
+                                href="chat.html"
+                            >Chat with Companion</a>
                             <a
                                 id="legacySettingsLink"
                                 class="secondary-button legacy-settings-entry"
@@ -192,6 +202,13 @@
                                     How this legacy is growing
                                 </h2>
                             </div>
+                            <button
+                                id="legacyDashboardHelpButton"
+                                class="legacy-dashboard-help-button"
+                                type="button"
+                                aria-label="Explain Legacy Dashboard terminology"
+                                aria-haspopup="dialog"
+                            >?</button>
                             <p>
                                 A factual view of preserved stories,
                                 reviewed memories, and completed processing.
@@ -293,6 +310,37 @@
                 </div>
             </div>
         </section>
+
+        <dialog
+            id="legacyDashboardHelpDialog"
+            class="legacy-dashboard-help-dialog"
+            aria-labelledby="legacyDashboardHelpTitle"
+        >
+            <article class="glass-card legacy-dashboard-help-card">
+                <header>
+                    <div>
+                        <p class="eyebrow">Dashboard guide</p>
+                        <h2 id="legacyDashboardHelpTitle">What these terms mean</h2>
+                    </div>
+                    <button
+                        id="legacyDashboardHelpClose"
+                        class="legacy-dashboard-help-close"
+                        type="button"
+                        aria-label="Close dashboard terminology help"
+                    >X</button>
+                </header>
+                <dl>
+                    <div><dt>Story Sessions</dt><dd>The number of guided Story conversations started for this Legacy.</dd></div>
+                    <div><dt>Distinct Chapters</dt><dd>The number of different life-story chapters with at least one Story Session.</dd></div>
+                    <div><dt>Story Contributions</dt><dd>The number of user-authored Story messages saved.</dd></div>
+                    <div><dt>Total Memories</dt><dd>All extracted memories, including those awaiting review or already reviewed.</dd></div>
+                    <div><dt>Approved Memories</dt><dd>Memories explicitly approved for use by the Legacy Persona.</dd></div>
+                    <div><dt>Linked Conversations</dt><dd>Companion conversations connected to this Legacy.</dd></div>
+                    <div><dt>Story Session Progress</dt><dd>Completion status only for Story Sessions that have already been started. It does not measure all possible future stories.</dd></div>
+                    <div><dt>Extraction</dt><dd>The process that converts Story contributions into reviewable memory candidates.</dd></div>
+                </dl>
+            </article>
+        </dialog>
     </main>
 
     <script src="js/theme.js"></script>

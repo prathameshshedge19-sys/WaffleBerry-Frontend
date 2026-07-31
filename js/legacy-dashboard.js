@@ -39,6 +39,10 @@ function legacyUrl(destination, legacyId) {
     return `${destination}?id=${encodeURIComponent(legacyId)}`;
 }
 
+function decisionUrl(legacyId) {
+    return `companion-home.html?legacyId=${encodeURIComponent(legacyId)}`;
+}
+
 function closeMenu({ restoreFocus = false } = {}) {
     if (!openMenu) return;
     const trigger = openMenu.querySelector(".legacy-menu-trigger");
@@ -144,7 +148,9 @@ async function exportLegacy(legacy, trigger) {
 function createLinkAction(label, legacy, destination) {
     const action = document.createElement("a");
     action.className = "legacy-menu-item";
-    action.href = legacyUrl(destination, legacy.id);
+    action.href = destination === "companion-home.html"
+        ? decisionUrl(legacy.id)
+        : legacyUrl(destination, legacy.id);
     action.role = "menuitem";
     action.textContent = label;
     action.addEventListener("click", () => closeMenu());
@@ -180,9 +186,10 @@ function createOverflowMenu(legacy) {
     popover.role = "menu";
     popover.hidden = true;
     popover.append(
-        createLinkAction("My Legacy", legacy, "legacy-details.html"),
+        createLinkAction("Who's There?", legacy, "companion-home.html"),
+        createLinkAction("Legacy Dashboard", legacy, "legacy-details.html"),
         ...(legacy.status === "active"
-            ? [createLinkAction("Legacy Settings", legacy, "legacy-settings.html")]
+            ? [createLinkAction("Edit", legacy, "legacy-settings.html")]
             : []),
         createButtonAction(
             legacy.status === "active" ? "Archive" : "Restore",
@@ -215,9 +222,6 @@ function createLegacyCard(legacy) {
     const card = document.createElement("article");
     card.className = "glass-card legacy-dashboard-card";
     card.dataset.legacyId = legacy.id;
-    card.tabIndex = 0;
-    card.role = "link";
-    card.setAttribute("aria-label", `View ${legacy.displayName}'s Legacy`);
     const initial = document.createElement("span");
     initial.className = "legacy-card-initial";
     initial.ariaHidden = "true";
@@ -235,24 +239,25 @@ function createLegacyCard(legacy) {
     date.dateTime = legacy.createdAt;
     date.textContent = formatCreatedAt(legacy.createdAt);
     copy.append(title, relationship, badge, date);
+    const primary = document.createElement("a");
+    primary.className = "legacy-card-primary";
+    primary.href = decisionUrl(legacy.id);
+    primary.setAttribute("aria-label", `Open ${legacy.displayName}'s choices`);
+    primary.append(initial, copy);
     const actions = document.createElement("div");
     actions.className = "legacy-card-actions";
-    const view = createLinkAction("My Legacy", legacy, "legacy-details.html");
+    const view = document.createElement("a");
     view.className = "primary-button legacy-card-continue";
-    actions.append(view);
-    const navigate = () => {
-        window.location.href = legacyUrl("legacy-details.html", legacy.id);
-    };
-    card.addEventListener("click", (event) => {
-        if (!event.target.closest("a, button, .legacy-card-menu")) navigate();
-    });
-    card.addEventListener("keydown", (event) => {
-        if (event.target === card && ["Enter", " "].includes(event.key)) {
-            event.preventDefault();
-            navigate();
-        }
-    });
-    card.append(createOverflowMenu(legacy), initial, copy, actions);
+    view.href = decisionUrl(legacy.id);
+    view.textContent = legacy.status === "archived" ? "View Legacy" : "Continue";
+    const dashboard = createLinkAction(
+        "Legacy Dashboard",
+        legacy,
+        "legacy-details.html"
+    );
+    dashboard.className = "secondary-button legacy-card-dashboard";
+    actions.append(view, dashboard);
+    card.append(createOverflowMenu(legacy), primary, actions);
     return card;
 }
 

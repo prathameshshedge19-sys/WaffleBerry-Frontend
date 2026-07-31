@@ -44,8 +44,7 @@ test("permanent deletion requires exact typed confirmation", () => {
     assert.match(api, /confirmation_text: confirmationText/);
     assert.match(dashboard, /await api\.deleteLegacy/);
     assert.match(dashboard, /backendDeleted: true/);
-    assert.match(companion, /WaffleBerryApi\.deleteLegacy/);
-    assert.match(companion, /backendDeleted: true/);
+    assert.doesNotMatch(companion, /WaffleBerryApi\.deleteLegacy/);
 });
 
 test("export uses authenticated blob download and server filename", () => {
@@ -63,7 +62,7 @@ test("archived Legacy pages are visibly read only", () => {
     assert.match(details, /elements\.settings\.hidden = isArchived/);
     assert.match(settings, /backendLegacy\.status === "archived"/);
     assert.match(transition, /legacy\.status === "archived"/);
-    assert.match(companion, /legacy\.status === "archived"/);
+    assert.match(companion, /persisted\.status === "archived"/);
 });
 
 test("management exposes retry, lifecycle errors, and accessible status", () => {

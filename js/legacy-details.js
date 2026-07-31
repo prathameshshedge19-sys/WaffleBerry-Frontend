@@ -27,6 +27,11 @@ const elements = {
     activity: document.getElementById("legacyActivitySummary"),
     memoryTypes: document.getElementById("legacyMemoryTypes"),
     settings: document.getElementById("legacySettingsLink"),
+    studio: document.getElementById("legacyDashboardStudioLink"),
+    chat: document.getElementById("legacyDashboardChatLink"),
+    helpButton: document.getElementById("legacyDashboardHelpButton"),
+    helpDialog: document.getElementById("legacyDashboardHelpDialog"),
+    helpClose: document.getElementById("legacyDashboardHelpClose"),
     archivedBanner: document.getElementById("legacyArchivedBanner"),
 };
 
@@ -449,12 +454,17 @@ function renderDashboard(data) {
     if (selectedLegacy) {
         elements.settings.href =
             `legacy-settings.html?id=${encodeURIComponent(selectedLegacy.id)}`;
+        const legacyQuery = new URLSearchParams({ legacyId: selectedLegacy.id });
+        elements.studio.href = `legacy-studio.html?${legacyQuery}`;
+        elements.chat.href = `chat.html?${legacyQuery}`;
     }
     elements.relationship.textContent = relationship;
     elements.status.textContent = readableStatus(data?.status);
     const isArchived = data?.status === "archived";
     elements.archivedBanner.hidden = !isArchived;
     elements.settings.hidden = isArchived;
+    elements.studio.hidden = isArchived;
+    elements.chat.hidden = isArchived;
     elements.settings.setAttribute("aria-disabled", String(isArchived));
     const displayedDate =
         validDate(data?.updated_at, data?.created_at);
@@ -576,15 +586,16 @@ function renderDashboard(data) {
 
 async function loadDashboard() {
     showLoading();
-    const legacy = selectLegacy();
-
-    if (!legacy) {
-        showError("not-found");
-        return;
-    }
 
     try {
         await window.authReady;
+        await window.WaffleBerryLegacyState.hydratePersisted("active");
+        await window.WaffleBerryLegacyState.hydratePersisted("archived");
+        const legacy = selectLegacy();
+        if (!legacy) {
+            showError("not-found");
+            return;
+        }
         const persisted =
             await window.WaffleBerryLegacyState
                 .ensurePersisted(legacy.id);
@@ -621,5 +632,20 @@ async function loadDashboard() {
 
 
 elements.retry?.addEventListener("click", loadDashboard);
+elements.helpButton?.addEventListener("click", () => {
+    elements.helpDialog?.showModal();
+    elements.helpClose?.focus();
+});
+elements.helpClose?.addEventListener("click", () => {
+    elements.helpDialog?.close();
+});
+elements.helpDialog?.addEventListener("click", (event) => {
+    if (event.target === elements.helpDialog) {
+        elements.helpDialog.close();
+    }
+});
+elements.helpDialog?.addEventListener("close", () => {
+    elements.helpButton?.focus();
+});
 loadDashboard();
 })();

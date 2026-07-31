@@ -19,6 +19,8 @@ const continueButton =
     document.getElementById(
         "legacyContinueButton"
     );
+const feedback =
+    document.getElementById("beginLegacyFeedback");
 
 let selectedRelationship = "";
 
@@ -101,7 +103,7 @@ displayNameInput?.addEventListener(
 
 legacyForm?.addEventListener(
     "submit",
-    (event) => {
+    async (event) => {
         event.preventDefault();
 
         const displayName =
@@ -125,9 +127,36 @@ legacyForm?.addEventListener(
         if (!legacy) {
             return;
         }
-
-        window.location.href =
-            "legacy-dashboard.html";
+        continueButton.disabled = true;
+        if (feedback) {
+            feedback.textContent = "Saving this Legacy...";
+        }
+        try {
+            await window.authReady;
+            const persisted =
+                await window.WaffleBerryLegacyState.ensurePersisted(legacy.id);
+            if (!persisted?.backendLegacyId) {
+                throw new Error("Legacy persistence unavailable");
+            }
+            window.WaffleBerryLegacyState.select(persisted.id);
+            window.location.href =
+                `companion-home.html?legacyId=${encodeURIComponent(persisted.id)}`;
+        } catch (error) {
+            window.WaffleBerryLegacyState.remove(
+                legacy.id,
+                { backendDeleted: true }
+            );
+            if (error?.status === 401) {
+                window.WaffleBerryApi.clearStoredSession();
+                window.location.replace("login.html");
+                return;
+            }
+            if (feedback) {
+                feedback.textContent =
+                    "This Legacy could not be saved. Check your connection and try again.";
+            }
+            updateContinueState();
+        }
     }
 );
 
