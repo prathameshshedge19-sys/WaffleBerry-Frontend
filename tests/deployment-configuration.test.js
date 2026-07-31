@@ -1,0 +1,54 @@
+"use strict";
+
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const test = require("node:test");
+const vm = require("node:vm");
+
+const root = path.join(__dirname, "..");
+
+test("runtime config preserves local backend development", () => {
+    const context = {
+        window: {
+            location: { hostname: "localhost" }
+        }
+    };
+    vm.runInNewContext(
+        fs.readFileSync(path.join(root, "js", "config.js"), "utf8"),
+        context
+    );
+
+    assert.equal(
+        context.window.WAFFLEBERRY_API_BASE_URL,
+        "http://127.0.0.1:8000/api/v1"
+    );
+});
+
+test("runtime config does not silently use localhost in production", () => {
+    const context = {
+        window: {
+            location: { hostname: "waffleberry.vercel.app" }
+        }
+    };
+    vm.runInNewContext(
+        fs.readFileSync(path.join(root, "js", "config.js"), "utf8"),
+        context
+    );
+
+    assert.equal(context.window.WAFFLEBERRY_API_BASE_URL, "");
+});
+
+test("every API-backed page loads runtime config before api.js", () => {
+    const htmlFiles = fs.readdirSync(root).filter((name) => name.endsWith(".html"));
+
+    for (const name of htmlFiles) {
+        const source = fs.readFileSync(path.join(root, name), "utf8");
+        const apiIndex = source.indexOf('src="js/api.js"');
+        if (apiIndex === -1) {
+            continue;
+        }
+        const configIndex = source.indexOf('src="js/config.js"');
+        assert.ok(configIndex !== -1 && configIndex < apiIndex, name);
+    }
+});

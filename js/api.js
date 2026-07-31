@@ -1,12 +1,21 @@
 "use strict";
 
 (function initializeWaffleBerryApi() {
-const DEFAULT_API_BASE_URL =
-    "http://127.0.0.1:8000/api/v1";
 const API_BASE_URL = (
     window.WAFFLEBERRY_API_BASE_URL ||
-    DEFAULT_API_BASE_URL
+    (!window.location ||
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+        ? "http://127.0.0.1:8000/api/v1"
+        : "")
 ).replace(/\/+$/, "");
+
+if (!API_BASE_URL) {
+    throw new Error(
+        "WaffleBerry API URL is not configured. Set " +
+        "window.WAFFLEBERRY_API_BASE_URL in js/config.js."
+    );
+}
 
 const STORAGE_KEYS = Object.freeze({
     ACCESS_TOKEN: "accessToken",
