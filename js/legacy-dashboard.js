@@ -205,7 +205,7 @@ function createOverflowMenu(legacy) {
             "legacy-transition.html"
         ),
         createMenuAction(
-            "View",
+            "My Legacy",
             legacy,
             "legacy-details.html"
         ),
@@ -334,7 +334,7 @@ function createLegacyCard(legacy) {
             "legacy-transition.html"
         ),
         createAction(
-            "View",
+            "My Legacy",
             legacy.id,
             "legacy-card-view",
             "legacy-details.html"

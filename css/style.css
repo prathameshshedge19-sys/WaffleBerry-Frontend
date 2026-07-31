@@ -1818,6 +1818,697 @@ button {
 }
 
 /* ------------------------------
+   My Legacy overview
+------------------------------ */
+
+.legacy-overview-page {
+    min-height: 100vh;
+}
+
+.legacy-overview-section {
+    position: relative;
+    z-index: 2;
+
+    min-height: 100vh;
+
+    padding: 126px 22px 56px;
+}
+
+.legacy-overview-shell {
+    width: min(100%, 1120px);
+
+    margin: 0 auto;
+
+    animation: sectionAppear 0.65s ease;
+}
+
+.legacy-overview-state {
+    min-height: 390px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 42px 24px;
+
+    border-radius: 30px;
+
+    text-align: center;
+}
+
+.legacy-overview-state[hidden],
+.legacy-overview-content[hidden],
+#legacyOverviewContent[hidden] {
+    display: none !important;
+}
+
+.legacy-overview-state h1 {
+    margin: 18px 0 10px;
+
+    color: var(--primary-dark);
+
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.legacy-overview-state p {
+    max-width: 520px;
+
+    color: var(--text-soft);
+
+    line-height: 1.6;
+}
+
+.legacy-overview-spinner {
+    width: 46px;
+    height: 46px;
+
+    border: 4px solid rgba(200, 63, 116, 0.14);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+
+    animation: legacyOverviewSpin 0.8s linear infinite;
+}
+
+.legacy-overview-state-icon {
+    width: 58px;
+    height: 58px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 19px;
+
+    color: var(--primary-dark);
+    background: rgba(200, 63, 116, 0.1);
+
+    font-size: 1.55rem;
+}
+
+.legacy-overview-state-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+
+    margin-top: 24px;
+}
+
+.legacy-overview-state-actions .secondary-button {
+    text-decoration: none;
+}
+
+.legacy-overview-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 28px;
+
+    margin-bottom: 28px;
+}
+
+.legacy-overview-hero h1 {
+    margin: 3px 0 15px;
+
+    color: var(--primary-dark);
+
+    font-size: clamp(2.8rem, 7vw, 5.4rem);
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+    overflow-wrap: anywhere;
+}
+
+.legacy-overview-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px 14px;
+
+    color: var(--text-soft);
+
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.legacy-overview-meta > * + *::before {
+    content: "•";
+
+    margin-right: 14px;
+
+    color: rgba(126, 50, 83, 0.42);
+}
+
+.legacy-overview-status {
+    color: var(--primary-dark);
+}
+
+.legacy-overview-approved {
+    flex: 0 0 auto;
+
+    padding: 11px 16px;
+
+    border: 1px solid rgba(126, 50, 83, 0.14);
+    border-radius: 999px;
+
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.4);
+
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.legacy-overview-approved.has-approved {
+    color: #47714f;
+    background: rgba(115, 173, 112, 0.14);
+    border-color: rgba(71, 113, 79, 0.18);
+}
+
+.legacy-overview-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+
+    margin-bottom: 22px;
+}
+
+.legacy-overview-stat {
+    min-height: 142px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    padding: 23px;
+
+    border-radius: 24px;
+}
+
+.legacy-overview-stat strong {
+    color: var(--primary-dark);
+
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1;
+}
+
+.legacy-overview-stat span {
+    color: var(--text-soft);
+
+    font-size: 0.88rem;
+    font-weight: 750;
+}
+
+.legacy-overview-empty-note {
+    margin-bottom: 22px;
+    padding: 18px 21px;
+
+    border-radius: 20px;
+
+    color: var(--text-soft);
+
+    line-height: 1.55;
+}
+
+.legacy-progress-section {
+    margin: 36px 0 22px;
+}
+
+.legacy-progress-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+
+    margin-bottom: 18px;
+}
+
+.legacy-progress-heading h2 {
+    color: var(--primary-dark);
+
+    font-size: clamp(1.7rem, 4vw, 2.35rem);
+    letter-spacing: -0.025em;
+}
+
+.legacy-progress-heading > p {
+    max-width: 480px;
+
+    color: var(--text-soft);
+
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.legacy-progress-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.legacy-progress-card {
+    min-width: 0;
+
+    padding: 23px;
+
+    border-radius: 26px;
+}
+
+.legacy-progress-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+
+    margin-bottom: 24px;
+}
+
+.legacy-progress-card-icon {
+    width: 45px;
+    height: 45px;
+
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 15px;
+
+    color: var(--primary-dark);
+    background: rgba(200, 63, 116, 0.1);
+
+    font-size: 1.1rem;
+}
+
+.legacy-progress-card-heading .eyebrow {
+    margin-bottom: 3px;
+
+    font-size: 0.65rem;
+}
+
+.legacy-progress-card h3 {
+    color: var(--text-main);
+
+    font-size: 1.08rem;
+}
+
+.legacy-progress-copy {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 12px;
+}
+
+.legacy-progress-copy strong {
+    color: var(--primary-dark);
+
+    font-size: clamp(2rem, 5vw, 2.7rem);
+    line-height: 1;
+}
+
+.legacy-progress-copy span {
+    max-width: 125px;
+
+    color: var(--text-soft);
+
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: right;
+}
+
+.legacy-progress-track {
+    height: 9px;
+
+    margin-bottom: 17px;
+
+    border-radius: 999px;
+
+    background: rgba(126, 50, 83, 0.1);
+    overflow: hidden;
+}
+
+.legacy-progress-track > span {
+    height: 100%;
+
+    display: block;
+
+    border-radius: inherit;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--primary),
+            #e98c72
+        );
+
+    transition: width 0.55s ease;
+}
+
+.legacy-progress-memory
+    .legacy-progress-track > span {
+    background:
+        linear-gradient(
+            90deg,
+            #c83f74,
+            #df819e
+        );
+}
+
+.legacy-progress-extraction
+    .legacy-progress-track > span {
+    background:
+        linear-gradient(
+            90deg,
+            #b46f43,
+            #e6a86f
+        );
+}
+
+.legacy-progress-state-list > div {
+    padding: 8px 1px;
+}
+
+.legacy-progress-state-list span {
+    font-size: 0.82rem;
+}
+
+.legacy-insights-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+
+    margin-bottom: 18px;
+}
+
+.legacy-health-panel,
+.legacy-activity-panel {
+    padding: 25px;
+
+    border-radius: 26px;
+}
+
+.legacy-health-list {
+    display: grid;
+    gap: 12px;
+}
+
+.legacy-health-list > div {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 15px;
+
+    padding: 11px 13px;
+
+    border-radius: 14px;
+
+    background: rgba(200, 63, 116, 0.07);
+}
+
+.legacy-health-list strong {
+    color: var(--primary-dark);
+
+    font-size: 0.86rem;
+}
+
+.legacy-health-list span {
+    color: var(--text-soft);
+
+    font-size: 0.86rem;
+    line-height: 1.4;
+}
+
+.legacy-activity-panel > p {
+    margin: -5px 0 14px;
+
+    color: var(--text-soft);
+
+    font-size: 0.9rem;
+}
+
+.legacy-activity-list {
+    display: grid;
+    gap: 10px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+.legacy-activity-list li {
+    padding: 12px 14px;
+
+    border: 1px solid rgba(126, 50, 83, 0.1);
+    border-radius: 14px;
+
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.2);
+
+    font-size: 0.9rem;
+}
+
+.legacy-activity-list strong {
+    color: var(--primary-dark);
+
+    font-size: 1.05rem;
+}
+
+.legacy-overview-dates {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legacy-overview-dates time {
+    color: var(--text-soft);
+
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+.legacy-overview-dates time::before {
+    content: "·";
+
+    margin-right: 8px;
+}
+
+.legacy-overview-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.legacy-overview-panel {
+    padding: 25px;
+
+    border-radius: 26px;
+}
+
+.legacy-overview-detail-grid
+    .legacy-overview-panel:only-child {
+    grid-column: 1 / -1;
+}
+
+.legacy-overview-panel-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    margin-bottom: 20px;
+}
+
+.legacy-overview-panel-heading > span {
+    width: 45px;
+    height: 45px;
+
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 15px;
+
+    color: var(--primary-dark);
+    background: rgba(200, 63, 116, 0.1);
+
+    font-size: 1.1rem;
+}
+
+.legacy-overview-panel-heading .eyebrow {
+    margin-bottom: 3px;
+
+    font-size: 0.68rem;
+}
+
+.legacy-overview-panel h2 {
+    color: var(--text-main);
+
+    font-size: 1.25rem;
+}
+
+.legacy-state-list {
+    display: grid;
+    gap: 3px;
+}
+
+.legacy-state-list > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+
+    padding: 11px 2px;
+
+    border-bottom: 1px solid rgba(126, 50, 83, 0.1);
+}
+
+.legacy-state-list > div:last-child {
+    border-bottom: 0;
+}
+
+.legacy-state-list span {
+    color: var(--text-soft);
+
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.legacy-state-list strong {
+    min-width: 34px;
+
+    color: var(--primary-dark);
+
+    font-size: 1rem;
+    text-align: right;
+}
+
+body.dark-mode .legacy-overview-approved {
+    background: rgba(35, 24, 35, 0.58);
+}
+
+body.dark-mode .legacy-overview-approved.has-approved {
+    color: #a8d5aa;
+    background: rgba(83, 139, 88, 0.16);
+}
+
+body.dark-mode .legacy-health-list > div,
+body.dark-mode .legacy-activity-list li {
+    background: rgba(35, 24, 35, 0.42);
+}
+
+@keyframes legacyOverviewSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 760px) {
+    .legacy-overview-section {
+        padding: 112px 14px 34px;
+    }
+
+    .legacy-overview-hero {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .legacy-overview-approved {
+        align-self: flex-start;
+    }
+
+    .legacy-overview-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .legacy-overview-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .legacy-progress-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 9px;
+    }
+
+    .legacy-progress-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .legacy-progress-extraction {
+        grid-column: 1 / -1;
+    }
+
+    .legacy-insights-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 430px) {
+    .legacy-overview-meta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .legacy-overview-dates {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .legacy-overview-dates time::before {
+        display: none;
+    }
+
+    .legacy-overview-meta > * + *::before {
+        display: none;
+    }
+
+    .legacy-overview-stats {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .legacy-overview-stat {
+        min-height: 112px;
+    }
+
+    .legacy-overview-state-actions {
+        width: 100%;
+
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .legacy-overview-state-actions > * {
+        width: 100%;
+    }
+
+    .legacy-progress-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .legacy-progress-extraction {
+        grid-column: auto;
+    }
+
+    .legacy-health-list > div {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .legacy-overview-shell,
+    .legacy-overview-spinner {
+        animation: none;
+    }
+
+    .legacy-progress-track > span {
+        transition: none;
+    }
+}
+
+/* ------------------------------
    Begin a Legacy
 ------------------------------ */
 

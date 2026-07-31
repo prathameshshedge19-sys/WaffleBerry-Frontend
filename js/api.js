@@ -616,6 +616,12 @@ function listOwnedLegacies() {
     return apiRequest("/legacies");
 }
 
+function getLegacyDashboard(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/dashboard`
+    );
+}
+
 function createStorySession(legacyId, chapter) {
     return apiRequest(
         `/legacies/${encodeURIComponent(legacyId)}/story-sessions`,
@@ -682,6 +688,7 @@ window.WaffleBerryApi = Object.freeze({
     editMemoryReview,
     synchronizeLegacy,
     listOwnedLegacies,
+    getLegacyDashboard,
     createStorySession,
     streamPersistedStory,
     completeStorySession,
