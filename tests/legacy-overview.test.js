@@ -197,3 +197,55 @@ test("progress rendering reuses the single dashboard response", () => {
     );
     assert.doesNotMatch(overview, /setInterval|setTimeout/);
 });
+
+
+test("story session groups render from the existing dashboard response", () => {
+    assert.match(html, /id="legacyStorySessionCategoriesGrid"/);
+    assert.match(overview, /function renderStorySessionCategories/);
+    assert.match(overview, /data\?\.story_session_categories/);
+    assert.doesNotMatch(overview, /getStoryCategories|fetchStoryCategories/);
+});
+
+
+test("story session cards show percentage and session counts", () => {
+    assert.match(overview, /function createStorySessionCategoryCard/);
+    assert.match(overview, /category\?\.session_completion_percentage/);
+    assert.match(overview, /category\?\.completed_sessions/);
+    assert.match(overview, /category\?\.total_sessions/);
+    assert.match(overview, /value\.textContent = `\$\{completion\}%`/);
+});
+
+
+test("story session cards reuse canonical Guided Story chapter titles", () => {
+    assert.match(html, /js\/guided-stories-content\.js/);
+    assert.match(overview, /window\.WaffleBerryStoryChapters/);
+    assert.match(overview, /chapter\.id === categoryId/);
+    assert.match(overview, /canonicalChapter\?\.title/);
+});
+
+
+test("story session percentages remain safe and accessible", () => {
+    assert.match(overview, /function safePercentage/);
+    assert.match(overview, /Math\.min\(100, Math\.max\(0/);
+    assert.match(overview, /legacy-story-category-track/);
+    assert.match(overview, /aria-valuenow/);
+    assert.match(overview, /aria-valuetext/);
+});
+
+
+test("story session empty state is explicit", () => {
+    assert.match(html, /id="legacyStorySessionCategoriesEmpty"/);
+    assert.match(html, /No story sessions available\./);
+    assert.match(
+        overview,
+        /storySessionCategoriesEmpty\.hidden = available\.length > 0/
+    );
+});
+
+
+test("session progress wording does not claim planned-story completion", () => {
+    assert.match(html, /Story Session Progress/);
+    assert.match(html, /Completion of sessions already started/);
+    assert.match(overview, /sessions completed/);
+    assert.doesNotMatch(html, /Category Completion|Stories Completed/);
+});

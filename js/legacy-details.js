@@ -17,6 +17,12 @@ const elements = {
     stats: document.getElementById("legacyOverviewStats"),
     emptyNote: document.getElementById("legacyOverviewEmptyNote"),
     progressGrid: document.getElementById("legacyProgressGrid"),
+    storySessionCategories: document.getElementById(
+        "legacyStorySessionCategoriesGrid"
+    ),
+    storySessionCategoriesEmpty: document.getElementById(
+        "legacyStorySessionCategoriesEmpty"
+    ),
     health: document.getElementById("legacyHealthSummary"),
     activity: document.getElementById("legacyActivitySummary"),
     memoryTypes: document.getElementById("legacyMemoryTypes"),
@@ -131,6 +137,14 @@ function percentage(part, total) {
         100,
         Math.round((safePart / safeTotal) * 100)
     );
+}
+
+
+function safePercentage(value) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric)
+        ? Math.min(100, Math.max(0, Math.round(numeric)))
+        : 0;
 }
 
 
@@ -269,6 +283,78 @@ function createProgressCard({
         stateList
     );
     return card;
+}
+
+
+function createStorySessionCategoryCard(category) {
+    const card = document.createElement("article");
+    card.className = "glass-card legacy-story-category-card";
+    const categoryId =
+        typeof category?.id === "string"
+            ? category.id.trim()
+            : "";
+    const canonicalChapter = Array.isArray(
+        window.WaffleBerryStoryChapters
+    )
+        ? window.WaffleBerryStoryChapters.find(
+            (chapter) => chapter.id === categoryId
+        )
+        : null;
+    const title =
+        canonicalChapter?.title || (
+        typeof category?.title === "string" &&
+        category.title.trim()
+            ? category.title.trim()
+            : readableStatus(categoryId || "Story category")
+        );
+    const completed = safeCount(category?.completed_sessions);
+    const total = safeCount(category?.total_sessions);
+    const completion = safePercentage(
+        category?.session_completion_percentage
+    );
+
+    const heading = document.createElement("div");
+    heading.className = "legacy-story-category-heading";
+    const name = document.createElement("h4");
+    name.textContent = title;
+    const value = document.createElement("strong");
+    value.textContent = `${completion}%`;
+    heading.append(name, value);
+
+    const track = document.createElement("div");
+    track.className =
+        "legacy-progress-track legacy-story-category-track";
+    const valueText =
+        `${completed} of ${total} sessions completed`;
+    track.setAttribute("role", "progressbar");
+    track.setAttribute("aria-label", `${title}: ${valueText}`);
+    track.setAttribute("aria-valuemin", "0");
+    track.setAttribute("aria-valuemax", "100");
+    track.setAttribute("aria-valuenow", String(completion));
+    track.setAttribute("aria-valuetext", valueText);
+    const fill = document.createElement("span");
+    fill.style.width = `${completion}%`;
+    track.append(fill);
+
+    const detail = document.createElement("p");
+    detail.textContent = `${completed} / ${total} ${
+        total === 1 ? "session" : "sessions"
+    } completed`;
+
+    card.append(heading, track, detail);
+    return card;
+}
+
+
+function renderStorySessionCategories(categories) {
+    const available = Array.isArray(categories)
+        ? categories
+        : [];
+    elements.storySessionCategories.replaceChildren(
+        ...available.map(createStorySessionCategoryCard)
+    );
+    elements.storySessionCategories.hidden = available.length === 0;
+    elements.storySessionCategoriesEmpty.hidden = available.length > 0;
 }
 
 
@@ -434,6 +520,7 @@ function renderDashboard(data) {
             ]
         })
     );
+    renderStorySessionCategories(data?.story_session_categories);
 
     elements.health.replaceChildren(
         createHealthRow("Stories", storyHealth(stories)),
