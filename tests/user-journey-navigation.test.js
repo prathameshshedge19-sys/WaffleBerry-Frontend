@@ -156,3 +156,17 @@ test("responsive, dark-mode and native interactive controls remain present", () 
     assert.match(dashboardHtml, /<button[\s\S]*id="legacyDashboardHelpButton"/);
     assert.doesNotMatch(decisionHtml, /onclick=/);
 });
+
+test("every authenticated page exposes safe sign out", () => {
+    const auth = read("js/auth.js");
+    assert.match(auth, /function logout\(\)[\s\S]*clearStoredSession\(\)[\s\S]*redirectToLogin\(\)/);
+    assert.doesNotMatch(auth, /deleteLegacy|archiveLegacy|removeItem\([^)]*(?:legacy|chapter|memory)/i);
+
+    for (const name of fs.readdirSync(path.join(__dirname, ".."))) {
+        if (!name.endsWith(".html")) continue;
+        const html = read(name);
+        if (html.includes('src="js/auth.js"')) {
+            assert.match(html, /class="logout-button"/, name);
+        }
+    }
+});

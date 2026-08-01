@@ -139,6 +139,43 @@ function store(legacyId, state) {
 }
 
 
+function replaceFromPersisted(legacyId, sessions) {
+    const state = {};
+    (Array.isArray(sessions) ? sessions : [])
+        .forEach((session) => {
+            if (!session?.chapter_key) {
+                return;
+            }
+            const messages = Array.isArray(session.messages)
+                ? session.messages
+                    .filter((message) =>
+                        ["user", "assistant"].includes(message?.role) &&
+                        typeof message.content === "string" &&
+                        message.content.trim()
+                    )
+                    .map((message) => ({
+                        role: message.role,
+                        content: message.content.trim()
+                    }))
+                : [];
+            const replies = messages
+                .filter((message) => message.role === "user")
+                .map((message) => message.content);
+            state[session.chapter_key] = {
+                status: session.status === "completed"
+                    ? "completed"
+                    : "in-progress",
+                text: replies.at(-1) || "",
+                replies,
+                messages,
+                backendStorySessionId: Number(session.story_session_id)
+            };
+        });
+    store(legacyId, state);
+    return state;
+}
+
+
 function markInProgress(
     legacyId,
     chapterId
@@ -312,6 +349,7 @@ window.WaffleBerryGuidedStoriesState =
         setBackendStorySession,
         addReply,
         appendMessage,
+        replaceFromPersisted,
         save
     });
 })();

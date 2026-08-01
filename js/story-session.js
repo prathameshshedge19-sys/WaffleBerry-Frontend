@@ -108,12 +108,6 @@ async function ensurePersistedStory() {
     );
 }
 
-storyState.markInProgress(
-    legacy.id,
-    chapter.id
-);
-
-
 function appendMessage(
     role,
     content = ""
@@ -317,43 +311,38 @@ function chaptersUrl(paused = false) {
 }
 
 
-title.textContent = chapter.title;
-document.title =
-    `${chapter.title} | Waffle Berry`;
-appendMessage(
-    "assistant",
-    chapter.introduction
-);
-currentMessages().forEach(
-    (message) =>
-        appendMessage(
-            message.role,
-            message.content
-        )
-);
-updateProgress();
-updateComposer();
-
-if (!currentMessages().length) {
-    ensurePersistedStory()
-        .then(() =>
-            requestBerryResponse()
-        )
-        .catch((error) =>
-            appendMessage(
-                "assistant",
-                error.status === 401
-                    ? "Please sign in again to continue your story."
-                    : "Your story could not be connected to secure storage. Please try again."
-            )
-        );
-} else {
-    ensurePersistedStory().catch(() => {
-        completionStatus.hidden = false;
-        completionMessage.textContent =
-            "Your local story is safe, but secure synchronization could not finish.";
-    });
+async function initializePersistedChapter() {
+    title.textContent = chapter.title;
+    document.title = `${chapter.title} | Waffle Berry`;
+    await window.authReady;
+    persistedLegacy = await window.WaffleBerryLegacyState
+        .ensurePersisted(legacy.id);
+    const sessions = await api.listStorySessions(
+        persistedLegacy.backendLegacyId
+    );
+    storyState.replaceFromPersisted(legacy.id, sessions);
+    storyState.markInProgress(legacy.id, chapter.id);
+    appendMessage("assistant", chapter.introduction);
+    currentMessages().forEach((message) =>
+        appendMessage(message.role, message.content)
+    );
+    updateProgress();
+    updateComposer();
+    await ensurePersistedStory();
+    if (!currentMessages().length) {
+        await requestBerryResponse();
+    }
 }
+
+initializePersistedChapter().catch((error) => {
+    appendMessage(
+        "assistant",
+        error.status === 401
+            ? "Please sign in again to continue your story."
+            : "Your story could not be connected to secure storage. Please try again."
+    );
+    updateComposer();
+});
 
 reply?.addEventListener(
     "input",

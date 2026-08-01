@@ -727,6 +727,12 @@ function createStorySession(legacyId, chapter) {
     );
 }
 
+function listStorySessions(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions`
+    );
+}
+
 function streamPersistedStory(
     legacyId,
     storySessionId,
@@ -795,6 +801,7 @@ window.WaffleBerryApi = Object.freeze({
     updateLegacySettings,
     getLegacyDashboard,
     createStorySession,
+    listStorySessions,
     streamPersistedStory,
     completeStorySession,
     getStoryExtractionRun,

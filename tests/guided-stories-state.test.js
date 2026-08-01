@@ -192,3 +192,31 @@ test("rejects malformed temporary progress", () => {
         {}
     );
 });
+
+test("rehydrates persisted chapters and does not retain empty stale state", () => {
+    storage.clear();
+    const stories = window.WaffleBerryGuidedStoriesState;
+    stories.markInProgress("legacy-one", "career");
+
+    const state = stories.replaceFromPersisted("legacy-one", [{
+        story_session_id: 73,
+        chapter_key: "childhood",
+        status: "completed",
+        messages: [
+            { role: "user", content: "  We lived near the hills.  " },
+            { role: "assistant", content: "What happened next?" }
+        ]
+    }]);
+
+    assert.equal(state.career, undefined);
+    assert.deepEqual(state.childhood, {
+        status: "completed",
+        text: "We lived near the hills.",
+        replies: ["We lived near the hills."],
+        messages: [
+            { role: "user", content: "We lived near the hills." },
+            { role: "assistant", content: "What happened next?" }
+        ],
+        backendStorySessionId: 73
+    });
+});

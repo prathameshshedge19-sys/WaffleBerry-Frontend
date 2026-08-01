@@ -145,6 +145,25 @@ function renderChapters() {
     }
 }
 
+async function hydrateChapters() {
+    const persisted = await window.WaffleBerryLegacyState
+        .ensurePersisted(legacy.id);
+    if (!persisted?.backendLegacyId) {
+        return;
+    }
+    const sessions = await window.WaffleBerryApi
+        .listStorySessions(persisted.backendLegacyId);
+    state.replaceFromPersisted(legacy.id, sessions);
+    if (beginButton) {
+        beginButton.textContent = state.hasProgress(legacy.id)
+            ? "Continue Story"
+            : "Begin Story";
+    }
+    if (parameters.get("view") === "chapters") {
+        renderChapters();
+    }
+}
+
 
 document
     .querySelectorAll(
@@ -192,4 +211,8 @@ if (
         "Your story will be waiting whenever you're ready.";
     chaptersScreen?.prepend(note);
 }
+
+window.authReady.then(() => hydrateChapters()).catch(() => {
+    // Retain the current view; persisted state is never overwritten on failure.
+});
 })();
