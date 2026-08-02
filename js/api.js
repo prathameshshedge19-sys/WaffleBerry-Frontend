@@ -558,62 +558,6 @@ function streamStoryGuide(
     );
 }
 
-function listMemoryReview(legacyId, filters = {}) {
-    const query = new URLSearchParams();
-    Object.entries(filters).forEach(
-        ([key, value]) => {
-            if (
-                value !== undefined &&
-                value !== null &&
-                value !== ""
-            ) {
-                query.set(key, value);
-            }
-        }
-    );
-    const suffix = query.toString()
-        ? `?${query}`
-        : "";
-    return apiRequest(
-        `/legacies/${encodeURIComponent(legacyId)}/memories/review${suffix}`
-    );
-}
-
-function getMemoryReview(legacyId, memoryId) {
-    return apiRequest(
-        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}`
-    );
-}
-
-function reviewMemoryAction(
-    legacyId,
-    memoryId,
-    action,
-    expectedUpdatedAt
-) {
-    return apiRequest(
-        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}/${action}`,
-        {
-            method: "POST",
-            body: {
-                expected_updated_at:
-                    expectedUpdatedAt
-            }
-        }
-    );
-}
-
-function editMemoryReview(
-    legacyId,
-    memoryId,
-    body
-) {
-    return apiRequest(
-        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}`,
-        { method: "PATCH", body }
-    );
-}
-
 function synchronizeLegacy(legacy) {
     return apiRequest(
         "/legacies",
@@ -786,10 +730,6 @@ window.WaffleBerryApi = Object.freeze({
     getFriendlyChatError,
     streamChatMessage,
     streamStoryGuide,
-    listMemoryReview,
-    getMemoryReview,
-    reviewMemoryAction,
-    editMemoryReview,
     synchronizeLegacy,
     listOwnedLegacies,
     listOwnedLegaciesByStatus,

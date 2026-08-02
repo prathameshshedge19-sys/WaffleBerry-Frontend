@@ -41,12 +41,14 @@ test("streaming event behavior remains present", () => {
 });
 test("explicit Finish Story action exists", () =>
     assert.match(html, /id="finishStoryButton"/));
-test("completion copy preserves human review", () =>
-    assert.match(story, /review them shortly/));
+test("completion copy confirms the story was saved", () =>
+    assert.match(story, /story was saved successfully/));
 test("navigation is not blocked by extraction", () =>
     assert.match(story, /window\.setTimeout/));
-test("completed extraction links to Memory Review", () =>
-    assert.match(story, /memory-review\.html/));
+test("completed extraction does not expose Memory Review", () => {
+    assert.doesNotMatch(story, /memory-review\.html/);
+    assert.doesNotMatch(html, /Review Memories/);
+});
 test("failed extraction exposes a safe retry", () => {
     assert.match(html, /retryExtractionButton/);
     assert.match(story, /retryStoryExtraction/);

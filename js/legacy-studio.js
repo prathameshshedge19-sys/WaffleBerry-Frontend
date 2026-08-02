@@ -43,14 +43,6 @@ const voiceAction =
     document.getElementById(
         "studioVoiceAction"
     );
-const memoryReviewAction =
-    document.getElementById(
-        "studioMemoryReviewAction"
-    );
-const memoryReviewCount =
-    document.getElementById(
-        "studioMemoryReviewCount"
-    );
 const dialog =
     document.getElementById(
         "legacyStudioDialog"
@@ -62,38 +54,8 @@ storyAction.href =
     `guided-stories.html?${query}`;
 voiceAction.href =
     `voice-presence.html?${query}`;
-memoryReviewAction.href =
-    `memory-review.html?${query}`;
 document.title =
     `${legacy.displayName}'s Legacy Studio | Waffle Berry`;
-
-window.WaffleBerryLegacyState
-    .ensurePersisted(legacy.id)
-    .then((persistedLegacy) =>
-        persistedLegacy?.backendLegacyId
-            ? window.WaffleBerryApi
-                .listMemoryReview(
-                    persistedLegacy.backendLegacyId,
-                    { limit: 1 }
-                )
-            : null
-    )
-    .then((result) => {
-        if (!result) {
-            return;
-        }
-        if (
-            result.total > 0 &&
-            memoryReviewCount
-        ) {
-            memoryReviewCount.textContent =
-                `${result.total} to review`;
-            memoryReviewCount.hidden = false;
-        }
-    })
-    .catch(() => {
-        // Story and review pages expose safe synchronization recovery.
-    });
 
 document
     .querySelectorAll(

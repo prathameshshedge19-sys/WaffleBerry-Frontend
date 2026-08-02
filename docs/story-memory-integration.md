@@ -34,16 +34,13 @@ and provider payloads never enter browser story state.
 
 Story Session now offers **Finish Story**. Completion immediately saves the
 session and schedules memory preparation without blocking navigation. Copy
-states clearly that memories still require review:
+confirms that Berry is finishing the story:
 
-> Berry is preparing memories from this story. You can review them shortly.
+> Berry is finishing your story.
 
 The page performs one lightweight delayed status refresh while it remains
-open. Completed runs distinguish new candidates from zero new candidates.
-Failed runs show a safe retry button. No continuous polling is used.
-
-When ready, **Review Memories** returns through the existing local Legacy
-correlation while the review API uses the stored backend Legacy ID.
+open. Completed runs confirm that the story was saved. Failed runs show a safe
+retry button. No continuous polling is used.
 
 ## Authentication, security, and accessibility
 

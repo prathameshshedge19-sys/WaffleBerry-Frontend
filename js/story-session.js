@@ -62,8 +62,6 @@ const completionMessage =
     document.getElementById("storyCompletionMessage");
 const retryExtractionButton =
     document.getElementById("retryExtractionButton");
-const reviewMemoriesLink =
-    document.getElementById("reviewStoryMemories");
 
 let isStreaming = false;
 let requestController = null;
@@ -398,10 +396,7 @@ async function refreshExtractionStatus() {
     extractionRun = run;
     if (run.status === "completed") {
         completionMessage.textContent =
-            run.memories_created > 0
-                ? "Memories are ready to review."
-                : "This story was saved. Berry did not find any new memories requiring review.";
-        reviewMemoriesLink.hidden = false;
+            "This story was saved successfully.";
         retryExtractionButton.hidden = true;
     } else if (run.status === "failed") {
         completionMessage.textContent =
@@ -434,13 +429,7 @@ finishButton?.addEventListener("click", async () => {
             chapter.id
         );
         completionMessage.textContent =
-            "Berry is preparing memories from this story. You can review them shortly.";
-        reviewMemoriesLink.href =
-            `memory-review.html?${
-                new URLSearchParams({
-                    legacyId: legacy.id
-                })
-            }`;
+            "Berry is finishing your story.";
         window.setTimeout(
             () => refreshExtractionStatus()
                 .catch(() => {}),
