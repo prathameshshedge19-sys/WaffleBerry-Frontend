@@ -18,6 +18,13 @@ companionIdentity.applyToDocument();
 
 const STREAM_INACTIVITY_TIMEOUT_MS = 45000;
 const NON_STREAMING_TIMEOUT_MS = 60000;
+const MAX_VOICE_RECORDING_SECONDS = 60;
+const PREFERRED_AUDIO_MIME_TYPES = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/ogg;codecs=opus"
+];
 
 const chatForm =
     document.getElementById("chatForm");
@@ -83,6 +90,54 @@ const chatStatus =
     document.getElementById("chatStatus");
 const sendButton =
     document.getElementById("sendButton");
+const voiceRecordButton =
+    document.getElementById(
+        "voiceRecordButton"
+    );
+const voiceRecorderPanel =
+    document.getElementById(
+        "voiceRecorderPanel"
+    );
+const voiceRecordingActive =
+    document.getElementById(
+        "voiceRecordingActive"
+    );
+const voiceRecordingStatus =
+    document.getElementById(
+        "voiceRecordingStatus"
+    );
+const voiceRecordingTimer =
+    document.getElementById(
+        "voiceRecordingTimer"
+    );
+const voiceStopButton =
+    document.getElementById(
+        "voiceStopButton"
+    );
+const voiceCancelButton =
+    document.getElementById(
+        "voiceCancelButton"
+    );
+const voiceRecordingPreview =
+    document.getElementById(
+        "voiceRecordingPreview"
+    );
+const voicePreviewAudio =
+    document.getElementById(
+        "voicePreviewAudio"
+    );
+const voicePreviewDuration =
+    document.getElementById(
+        "voicePreviewDuration"
+    );
+const voiceDeleteButton =
+    document.getElementById(
+        "voiceDeleteButton"
+    );
+const voiceRecordingError =
+    document.getElementById(
+        "voiceRecordingError"
+    );
 
 const state = {
     conversations: [],
@@ -104,6 +159,549 @@ const mobileChatMedia =
         "(max-width: 768px)"
     );
 let drawerReturnFocus = null;
+
+/* Phase 9.1: local browser-only voice recording. */
+const voiceRecorderState = {
+    phase: "idle",
+    recorder: null,
+    stream: null,
+    chunks: [],
+    timerId: null,
+    startedAt: 0,
+    durationSeconds: 0,
+    objectUrl: null,
+    blob: null,
+    contextId: null,
+    permissionRequestId: 0,
+    stopResult: "save",
+    stopErrorMessage: ""
+};
+
+
+function formatVoiceDuration(seconds) {
+    const safeSeconds = Math.min(
+        MAX_VOICE_RECORDING_SECONDS,
+        Math.max(0, Math.floor(seconds))
+    );
+    const minutes = String(
+        Math.floor(safeSeconds / 60)
+    ).padStart(2, "0");
+    const remainder = String(
+        safeSeconds % 60
+    ).padStart(2, "0");
+    return `${minutes}:${remainder}`;
+}
+
+
+function currentVoiceDuration() {
+    if (!voiceRecorderState.startedAt) {
+        return voiceRecorderState.durationSeconds;
+    }
+
+    return Math.min(
+        MAX_VOICE_RECORDING_SECONDS,
+        Math.floor(
+            (Date.now() -
+                voiceRecorderState.startedAt) /
+                1000
+        )
+    );
+}
+
+
+function stopVoiceTimer() {
+    window.clearInterval(
+        voiceRecorderState.timerId
+    );
+    voiceRecorderState.timerId = null;
+}
+
+
+function stopEveryVoiceTrack(stream) {
+    stream?.getTracks().forEach(
+        (track) => track.stop()
+    );
+}
+
+
+function releaseVoiceMicrophone() {
+    stopEveryVoiceTrack(
+        voiceRecorderState.stream
+    );
+    voiceRecorderState.stream = null;
+}
+
+
+function revokeVoiceObjectUrl() {
+    if (voiceRecorderState.objectUrl) {
+        URL.revokeObjectURL(
+            voiceRecorderState.objectUrl
+        );
+        voiceRecorderState.objectUrl = null;
+    }
+
+    if (voicePreviewAudio) {
+        voicePreviewAudio.pause();
+        voicePreviewAudio.removeAttribute("src");
+        voicePreviewAudio.load();
+    }
+}
+
+
+function voiceErrorMessage(error) {
+    switch (error?.name) {
+        case "NotAllowedError":
+            return "Microphone access was denied. Allow microphone access in your browser settings and try again.";
+        case "NotFoundError":
+            return "No microphone was found on this device.";
+        case "NotReadableError":
+            return "The microphone is currently unavailable or being used by another application.";
+        case "AbortError":
+            return "Microphone access was interrupted. Please try again.";
+        default:
+            return "Voice recording could not start. Please try again.";
+    }
+}
+
+
+function updateVoiceRecorderUi() {
+    const phase = voiceRecorderState.phase;
+    const isActive = [
+        "requesting",
+        "recording",
+        "stopping"
+    ].includes(phase);
+
+    if (voiceRecorderPanel) {
+        voiceRecorderPanel.hidden =
+            phase === "idle";
+    }
+
+    if (voiceRecordingActive) {
+        voiceRecordingActive.hidden =
+            !isActive;
+    }
+
+    if (voiceRecordingPreview) {
+        voiceRecordingPreview.hidden =
+            phase !== "ready";
+    }
+
+    if (voiceRecordingError) {
+        voiceRecordingError.hidden =
+            phase !== "error";
+    }
+
+    if (voiceRecordButton) {
+        voiceRecordButton.hidden =
+            phase === "ready";
+        voiceRecordButton.disabled =
+            isActive;
+        voiceRecordButton.classList.toggle(
+            "is-recording",
+            phase === "recording"
+        );
+        voiceRecordButton.setAttribute(
+            "aria-label",
+            phase === "requesting"
+                ? "Requesting microphone permission"
+                : phase === "recording"
+                    ? "Voice recording in progress"
+                    : "Record voice message"
+        );
+    }
+
+    if (voiceRecordingStatus) {
+        voiceRecordingStatus.textContent =
+            phase === "requesting"
+                ? "Requesting microphone access..."
+                : phase === "stopping"
+                    ? "Finishing recording..."
+                    : "Recording · 60 second limit";
+    }
+
+    if (voiceRecordingTimer) {
+        voiceRecordingTimer.textContent =
+            `${formatVoiceDuration(
+                currentVoiceDuration()
+            )} / 01:00`;
+    }
+
+    if (voiceStopButton) {
+        voiceStopButton.disabled =
+            phase !== "recording";
+    }
+
+    if (voiceCancelButton) {
+        voiceCancelButton.disabled =
+            phase === "stopping";
+    }
+}
+
+
+function showVoiceRecordingError(message) {
+    stopVoiceTimer();
+    releaseVoiceMicrophone();
+    voiceRecorderState.phase = "error";
+    voiceRecorderState.recorder = null;
+    voiceRecorderState.chunks = [];
+    voiceRecorderState.startedAt = 0;
+    voiceRecorderState.contextId = null;
+
+    if (voiceRecordingError) {
+        voiceRecordingError.textContent =
+            message;
+    }
+
+    updateVoiceRecorderUi();
+}
+
+
+function detachVoiceRecorderCallbacks(recorder) {
+    if (!recorder) {
+        return;
+    }
+
+    recorder.ondataavailable = null;
+    recorder.onstop = null;
+    recorder.onerror = null;
+}
+
+
+function finishStoppedVoiceRecording() {
+    const recorder =
+        voiceRecorderState.recorder;
+    const stopResult =
+        voiceRecorderState.stopResult;
+    const errorMessage =
+        voiceRecorderState.stopErrorMessage;
+    const chunks = [
+        ...voiceRecorderState.chunks
+    ];
+
+    stopVoiceTimer();
+    releaseVoiceMicrophone();
+    detachVoiceRecorderCallbacks(recorder);
+    voiceRecorderState.recorder = null;
+    voiceRecorderState.chunks = [];
+    voiceRecorderState.startedAt = 0;
+
+    if (stopResult === "discard") {
+        voiceRecorderState.phase = "idle";
+        voiceRecorderState.durationSeconds = 0;
+        voiceRecorderState.contextId = null;
+        updateVoiceRecorderUi();
+        return;
+    }
+
+    if (stopResult === "error") {
+        showVoiceRecordingError(
+            errorMessage ||
+            "Voice recording was interrupted. Please try again."
+        );
+        return;
+    }
+
+    const usableChunks = chunks.filter(
+        (chunk) => chunk?.size > 0
+    );
+
+    if (!usableChunks.length) {
+        showVoiceRecordingError(
+            "The recording did not contain usable audio. Please try again."
+        );
+        return;
+    }
+
+    revokeVoiceObjectUrl();
+    const recordedType =
+        recorder?.mimeType ||
+        usableChunks.find(
+            (chunk) => chunk.type
+        )?.type ||
+        "";
+    const blob = new Blob(
+        usableChunks,
+        recordedType
+            ? { type: recordedType }
+            : undefined
+    );
+
+    if (!blob.size) {
+        showVoiceRecordingError(
+            "The recording did not contain usable audio. Please try again."
+        );
+        return;
+    }
+
+    voiceRecorderState.blob = blob;
+    voiceRecorderState.objectUrl =
+        URL.createObjectURL(blob);
+    voiceRecorderState.phase = "ready";
+
+    if (voicePreviewAudio) {
+        voicePreviewAudio.src =
+            voiceRecorderState.objectUrl;
+    }
+
+    if (voicePreviewDuration) {
+        voicePreviewDuration.textContent =
+            `Recording ready · ${formatVoiceDuration(
+                voiceRecorderState.durationSeconds
+            )}`;
+    }
+
+    updateVoiceRecorderUi();
+}
+
+
+function stopVoiceRecording({
+    discard = false,
+    errorMessage = ""
+} = {}) {
+    const phase = voiceRecorderState.phase;
+
+    if (phase === "requesting") {
+        voiceRecorderState.permissionRequestId += 1;
+        voiceRecorderState.phase = discard
+            ? "idle"
+            : "error";
+        voiceRecorderState.contextId = null;
+
+        if (!discard && voiceRecordingError) {
+            voiceRecordingError.textContent =
+                errorMessage ||
+                "Microphone access was interrupted. Please try again.";
+        }
+
+        updateVoiceRecorderUi();
+        return;
+    }
+
+    if (phase === "stopping") {
+        if (discard) {
+            voiceRecorderState.stopResult =
+                "discard";
+        }
+        return;
+    }
+
+    if (phase !== "recording") {
+        return;
+    }
+
+    voiceRecorderState.durationSeconds =
+        Math.min(
+            MAX_VOICE_RECORDING_SECONDS,
+            Math.max(
+                1,
+                Math.ceil(
+                    (Date.now() -
+                        voiceRecorderState.startedAt) /
+                        1000
+                )
+            )
+        );
+    voiceRecorderState.stopResult = discard
+        ? "discard"
+        : errorMessage
+            ? "error"
+            : "save";
+    voiceRecorderState.stopErrorMessage =
+        errorMessage;
+    voiceRecorderState.phase = "stopping";
+    stopVoiceTimer();
+    updateVoiceRecorderUi();
+
+    const recorder =
+        voiceRecorderState.recorder;
+
+    try {
+        if (recorder?.state !== "inactive") {
+            recorder.stop();
+        } else {
+            finishStoppedVoiceRecording();
+        }
+    } catch {
+        voiceRecorderState.stopResult =
+            discard ? "discard" : "error";
+        voiceRecorderState.stopErrorMessage =
+            "Voice recording was interrupted. Please try again.";
+        finishStoppedVoiceRecording();
+    } finally {
+        releaseVoiceMicrophone();
+    }
+}
+
+
+function deleteVoiceRecording() {
+    revokeVoiceObjectUrl();
+    voiceRecorderState.blob = null;
+    voiceRecorderState.durationSeconds = 0;
+    voiceRecorderState.contextId = null;
+    voiceRecorderState.phase = "idle";
+    updateVoiceRecorderUi();
+    voiceRecordButton?.focus();
+}
+
+
+function discardVoiceRecording() {
+    voiceRecorderState.permissionRequestId += 1;
+
+    if ([
+        "requesting",
+        "recording",
+        "stopping"
+    ].includes(voiceRecorderState.phase)) {
+        stopVoiceRecording({ discard: true });
+        return;
+    }
+
+    revokeVoiceObjectUrl();
+    voiceRecorderState.blob = null;
+    voiceRecorderState.chunks = [];
+    voiceRecorderState.durationSeconds = 0;
+    voiceRecorderState.contextId = null;
+    voiceRecorderState.phase = "idle";
+    updateVoiceRecorderUi();
+}
+
+
+function preferredVoiceMimeType() {
+    if (
+        typeof window.MediaRecorder
+            ?.isTypeSupported !== "function"
+    ) {
+        return "";
+    }
+
+    return PREFERRED_AUDIO_MIME_TYPES.find(
+        (type) =>
+            window.MediaRecorder
+                .isTypeSupported(type)
+    ) || "";
+}
+
+
+async function startVoiceRecording() {
+    if ([
+        "requesting",
+        "recording",
+        "stopping",
+        "ready"
+    ].includes(voiceRecorderState.phase)) {
+        return;
+    }
+
+    if (
+        !navigator.mediaDevices
+            ?.getUserMedia ||
+        typeof window.MediaRecorder !==
+            "function"
+    ) {
+        showVoiceRecordingError(
+            "Voice recording is not supported by this browser."
+        );
+        return;
+    }
+
+    voiceRecorderState.phase = "requesting";
+    voiceRecorderState.contextId =
+        state.activeConversationId;
+    voiceRecorderState.chunks = [];
+    voiceRecorderState.durationSeconds = 0;
+    const requestId =
+        ++voiceRecorderState.permissionRequestId;
+    updateVoiceRecorderUi();
+
+    try {
+        const stream =
+            await navigator.mediaDevices
+                .getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+
+        if (
+            requestId !==
+                voiceRecorderState
+                    .permissionRequestId ||
+            voiceRecorderState.phase !==
+                "requesting"
+        ) {
+            stopEveryVoiceTrack(stream);
+            return;
+        }
+
+        const mimeType =
+            preferredVoiceMimeType();
+        voiceRecorderState.stream = stream;
+        const recorder = mimeType
+            ? new window.MediaRecorder(
+                stream,
+                { mimeType }
+            )
+            : new window.MediaRecorder(
+                stream
+            );
+
+        voiceRecorderState.recorder = recorder;
+        voiceRecorderState.stopResult = "save";
+        voiceRecorderState.stopErrorMessage = "";
+
+        recorder.ondataavailable =
+            (event) => {
+                if (event.data?.size > 0) {
+                    voiceRecorderState
+                        .chunks.push(
+                            event.data
+                        );
+                }
+            };
+        recorder.onstop =
+            finishStoppedVoiceRecording;
+        recorder.onerror = () => {
+            stopVoiceRecording({
+                errorMessage:
+                    "Voice recording was interrupted. Please try again."
+            });
+        };
+
+        recorder.start();
+        voiceRecorderState.phase = "recording";
+        voiceRecorderState.startedAt =
+            Date.now();
+        updateVoiceRecorderUi();
+        voiceRecorderState.timerId =
+            window.setInterval(() => {
+                const duration =
+                    currentVoiceDuration();
+                voiceRecorderState
+                    .durationSeconds =
+                        duration;
+                updateVoiceRecorderUi();
+
+                if (
+                    duration >=
+                    MAX_VOICE_RECORDING_SECONDS
+                ) {
+                    stopVoiceRecording();
+                }
+            }, 250);
+    } catch (error) {
+        detachVoiceRecorderCallbacks(
+            voiceRecorderState.recorder
+        );
+        releaseVoiceMicrophone();
+        showVoiceRecordingError(
+            voiceErrorMessage(error)
+        );
+    }
+}
+/* End Phase 9.1 local voice recording. */
 
 
 function isMobileChat() {
@@ -1099,6 +1697,24 @@ function selectConversation(
     if (
         state.activeConversationId !==
             conversationId &&
+        !["idle", "error"].includes(
+            voiceRecorderState.phase
+        )
+    ) {
+        if (
+            state.activeConversationId === null &&
+            voiceRecorderState.contextId === null
+        ) {
+            voiceRecorderState.contextId =
+                conversationId;
+        } else {
+            discardVoiceRecording();
+        }
+    }
+
+    if (
+        state.activeConversationId !==
+            conversationId &&
         state.isSending
     ) {
         cancelActiveMessageRequest();
@@ -1279,6 +1895,12 @@ async function createConversation() {
 
     updateControls();
     return state.createConversationPromise;
+}
+
+
+function createNewConversationFromControl() {
+    discardVoiceRecording();
+    return createConversation();
 }
 
 
@@ -1802,6 +2424,7 @@ async function deleteActiveConversation() {
         return;
     }
 
+    discardVoiceRecording();
     cancelActiveMessageRequest();
 
     const conversationId =
@@ -1902,12 +2525,63 @@ chatInput?.addEventListener(
 
 newChatButton?.addEventListener(
     "click",
-    createConversation
+    createNewConversationFromControl
 );
 
 mobileNewChatButton?.addEventListener(
     "click",
-    createConversation
+    createNewConversationFromControl
+);
+
+voiceRecordButton?.addEventListener(
+    "click",
+    startVoiceRecording
+);
+
+voiceStopButton?.addEventListener(
+    "click",
+    () => stopVoiceRecording()
+);
+
+voiceCancelButton?.addEventListener(
+    "click",
+    () => stopVoiceRecording({
+        discard: true
+    })
+);
+
+voiceDeleteButton?.addEventListener(
+    "click",
+    deleteVoiceRecording
+);
+
+voicePreviewAudio?.addEventListener(
+    "loadedmetadata",
+    () => {
+        if (
+            Number.isFinite(
+                voicePreviewAudio.duration
+            )
+        ) {
+            voiceRecorderState
+                .durationSeconds =
+                Math.min(
+                    MAX_VOICE_RECORDING_SECONDS,
+                    Math.max(
+                        1,
+                        Math.round(
+                            voicePreviewAudio
+                                .duration
+                        )
+                    )
+                );
+            voicePreviewDuration.textContent =
+                `Recording ready · ${formatVoiceDuration(
+                    voiceRecorderState
+                        .durationSeconds
+                )}`;
+        }
+    }
 );
 
 mobileDrawerOpenButton?.addEventListener(
@@ -1963,9 +2637,24 @@ clearChatButton?.addEventListener(
     deleteActiveConversation
 );
 
+document.addEventListener(
+    "click",
+    (event) => {
+        if (
+            event.target.closest(
+                ".logout-button"
+            )
+        ) {
+            discardVoiceRecording();
+        }
+    },
+    true
+);
+
 window.addEventListener(
     "pagehide",
     () => {
+        discardVoiceRecording();
         state.messageRequestController?.abort();
         hideTypingIndicator();
     }
@@ -2020,6 +2709,7 @@ async function initializeChat() {
     }
 
     updateControls();
+    updateVoiceRecorderUi();
     await loadConversations();
 }
 

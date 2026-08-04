@@ -285,11 +285,113 @@
                         class="chat-input-area"
                     >
 
+                        <div
+                            id="voiceRecorderPanel"
+                            class="voice-recorder-panel"
+                            aria-live="polite"
+                            hidden
+                        >
+                            <div
+                                id="voiceRecordingActive"
+                                class="voice-recording-active"
+                                hidden
+                            >
+                                <span
+                                    class="voice-recording-pulse"
+                                    aria-hidden="true"
+                                ></span>
+
+                                <span id="voiceRecordingStatus">
+                                    Preparing microphone...
+                                </span>
+
+                                <span
+                                    id="voiceRecordingTimer"
+                                    class="voice-recording-timer"
+                                    role="timer"
+                                >
+                                    00:00 / 01:00
+                                </span>
+
+                                <div class="voice-recording-actions">
+                                    <button
+                                        id="voiceStopButton"
+                                        type="button"
+                                        aria-label="Stop voice recording"
+                                    >
+                                        Stop
+                                    </button>
+
+                                    <button
+                                        id="voiceCancelButton"
+                                        type="button"
+                                        aria-label="Cancel voice recording"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div
+                                id="voiceRecordingPreview"
+                                class="voice-recording-preview"
+                                hidden
+                            >
+                                <audio
+                                    id="voicePreviewAudio"
+                                    controls
+                                    preload="metadata"
+                                    aria-label="Play voice message preview"
+                                ></audio>
+
+                                <div class="voice-preview-details">
+                                    <span id="voicePreviewDuration">
+                                        Recording ready · 00:00
+                                    </span>
+
+                                    <button
+                                        id="voiceDeleteButton"
+                                        type="button"
+                                        aria-label="Delete voice recording"
+                                    >
+                                        Delete recording
+                                    </button>
+                                </div>
+
+                                <p class="voice-recording-privacy">
+                                    Audio stays on this device during this recording step and is not uploaded yet.
+                                </p>
+                            </div>
+
+                            <p
+                                id="voiceRecordingError"
+                                class="voice-recording-error"
+                                role="alert"
+                                hidden
+                            ></p>
+                        </div>
+
                         <button
                             class="input-icon-button"
                             type="button"
+                            aria-label="Attach file"
                         >
                             ＋
+                        </button>
+
+                        <button
+                            id="voiceRecordButton"
+                            class="voice-record-button"
+                            type="button"
+                            aria-label="Record voice message"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                focusable="false"
+                            >
+                                <path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Zm-5.5-4a1 1 0 0 1 2 0V12a3.5 3.5 0 0 0 7 0v-.5a1 1 0 1 1 2 0V12a5.5 5.5 0 0 1-4.5 5.41V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.59A5.5 5.5 0 0 1 6.5 12v-.5Z"/>
+                            </svg>
                         </button>
 
                         <textarea

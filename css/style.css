@@ -6021,6 +6021,263 @@ body.dark-mode .legacy-management-tabs {
     }
 }
 
+/* Phase 9.1: authenticated chat voice recording */
+.chat-page .chat-input-area {
+    grid-template-columns:
+        44px
+        44px
+        minmax(0, 1fr)
+        48px;
+}
+
+.chat-page .voice-recorder-panel {
+    min-width: 0;
+    grid-column: 1 / -1;
+    padding: 10px 12px;
+    border: 1px solid rgba(200, 63, 116, 0.2);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.chat-page .voice-recorder-panel[hidden],
+.chat-page .voice-recorder-panel [hidden] {
+    display: none;
+}
+
+.chat-page .voice-record-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--glass-border);
+    border-radius: 50%;
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.2);
+    transition:
+        color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.chat-page .voice-record-button svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.chat-page .voice-record-button:hover:not(:disabled) {
+    color: #fff;
+    background: var(--primary);
+    transform: translateY(-1px);
+}
+
+.chat-page .voice-record-button.is-recording {
+    color: #fff;
+    background:
+        linear-gradient(
+            135deg,
+            #ff5b9c,
+            #8d3dc5
+        );
+    box-shadow:
+        0 0 0 5px rgba(255, 91, 156, 0.14),
+        0 8px 22px rgba(200, 63, 116, 0.24);
+}
+
+.chat-page .voice-recording-active {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--text-main);
+    font-size: 0.84rem;
+    font-weight: 720;
+}
+
+.chat-page .voice-recording-pulse {
+    width: 10px;
+    height: 10px;
+    flex: 0 0 10px;
+    border-radius: 50%;
+    background: #ff5b9c;
+    box-shadow: 0 0 0 0 rgba(255, 91, 156, 0.45);
+    animation: voiceRecordingPulse 1.25s ease-out infinite;
+}
+
+@keyframes voiceRecordingPulse {
+    70% {
+        box-shadow: 0 0 0 8px rgba(255, 91, 156, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 91, 156, 0);
+    }
+}
+
+.chat-page .voice-recording-timer {
+    margin-left: auto;
+    color: var(--primary-dark);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.chat-page .voice-recording-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.chat-page .voice-recording-actions button,
+.chat-page .voice-preview-details button {
+    min-height: 38px;
+    padding: 7px 11px;
+    border: 1px solid rgba(200, 63, 116, 0.24);
+    border-radius: 11px;
+    color: var(--primary-dark);
+    background: rgba(255, 255, 255, 0.18);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 780;
+}
+
+.chat-page .voice-recording-preview {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 12px;
+}
+
+.chat-page .voice-recording-preview audio {
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+}
+
+.chat-page .voice-preview-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-soft);
+    font-size: 0.78rem;
+}
+
+.chat-page .voice-recording-privacy {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+.chat-page .voice-recording-error {
+    margin: 0;
+    color: #a22f5b;
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+.chat-page .voice-record-button:focus-visible,
+.chat-page .voice-recording-actions button:focus-visible,
+.chat-page .voice-preview-details button:focus-visible,
+.chat-page .voice-recording-preview audio:focus-visible {
+    outline: 3px solid rgba(200, 63, 116, 0.34);
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+    .chat-page .chat-input-area {
+        grid-template-columns:
+            44px
+            44px
+            minmax(0, 1fr)
+            44px;
+    }
+
+    .chat-page .voice-recorder-panel {
+        padding: 9px;
+        border-color: rgba(255, 255, 255, 0.11);
+        color: #fff8fc;
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .chat-page .voice-record-button {
+        align-self: end;
+        color: #fff8fc;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .chat-page .voice-recording-active {
+        flex-wrap: wrap;
+        color: #fff8fc;
+    }
+
+    .chat-page .voice-recording-timer {
+        color: #ff9fc5;
+    }
+
+    .chat-page .voice-recording-actions {
+        width: 100%;
+    }
+
+    .chat-page .voice-recording-actions button {
+        min-height: 44px;
+        flex: 1 1 0;
+        color: #fff8fc;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .chat-page .voice-recording-preview {
+        grid-template-columns: 1fr;
+    }
+
+    .chat-page .voice-preview-details {
+        justify-content: space-between;
+        color: rgba(255, 248, 252, 0.78);
+    }
+
+    .chat-page .voice-preview-details button {
+        min-height: 44px;
+        color: #fff8fc;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .chat-page .voice-recording-privacy {
+        color: rgba(255, 248, 252, 0.58);
+    }
+
+    .chat-page .voice-recording-error {
+        color: #ffb3d1;
+    }
+}
+
+@media (max-width: 360px) {
+    .chat-page .chat-input-area {
+        width: calc(100% - 10px);
+        grid-template-columns:
+            44px
+            44px
+            minmax(0, 1fr)
+            44px;
+        gap: 4px;
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+
+    .chat-page .voice-preview-details {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chat-page .voice-recording-pulse {
+        animation: none;
+    }
+}
+
 @media (max-width: 600px) {
     .logout-success-toast {
         top: auto;
@@ -7905,5 +8162,22 @@ textarea:disabled {
 
     .legacy-progress-heading {
         align-items: flex-start;
+    }
+}
+
+/* Keep all four chat composer controls aligned after later mobile rules. */
+@media (max-width: 768px) {
+    .chat-page .chat-input-area {
+        grid-template-columns:
+            44px
+            44px
+            minmax(0, 1fr)
+            44px;
+    }
+}
+
+@media (max-width: 360px) {
+    .chat-page .chat-input-area {
+        gap: 4px;
     }
 }
