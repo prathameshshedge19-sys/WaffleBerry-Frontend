@@ -317,6 +317,124 @@ async function apiRequest(path, options = {}) {
 }
 
 
+function audioFilename(blob) {
+    const contentType = String(
+        blob?.type || ""
+    ).split(";", 1)[0].toLowerCase();
+    const extensions = {
+        "audio/webm": "webm",
+        "audio/mp4": "mp4",
+        "audio/ogg": "ogg",
+        "audio/wav": "wav",
+        "audio/mpeg": "mp3",
+        "audio/mp3": "mp3",
+        "audio/x-m4a": "m4a",
+        "audio/m4a": "m4a",
+        "audio/flac": "flac"
+    };
+    return `voice-message.${
+        extensions[contentType] || "audio"
+    }`;
+}
+
+
+async function transcribeAudio(
+    blob,
+    filename = audioFilename(blob),
+    { signal } = {}
+) {
+    if (
+        !(blob instanceof Blob) ||
+        blob.size === 0
+    ) {
+        throw new ApiError(
+            "The recording is empty.",
+            {
+                status: 422,
+                kind: "audio_empty"
+            }
+        );
+    }
+
+    const accessToken =
+        getStoredAccessToken();
+
+    if (!accessToken) {
+        throw new ApiError(
+            "Your session has expired. Please sign in again.",
+            {
+                status: 401,
+                kind: "authentication"
+            }
+        );
+    }
+
+    const formData = new FormData();
+    formData.append(
+        "file",
+        blob,
+        filename
+    );
+
+    let response;
+    try {
+        response = await fetch(
+            `${API_BASE_URL}/audio/transcribe`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization:
+                        `Bearer ${accessToken}`
+                },
+                body: formData,
+                signal
+            }
+        );
+    } catch (error) {
+        if (error?.name === "AbortError") {
+            throw new ApiError(
+                "Transcription was cancelled.",
+                { kind: "aborted" }
+            );
+        }
+        throw new ApiError(
+            "Unable to reach the Waffle Berry server. Please try again.",
+            { kind: "network" }
+        );
+    }
+
+    const data = await parseResponse(response);
+    if (!response.ok) {
+        throw new ApiError(
+            getApiErrorMessage(
+                response.status,
+                data
+            ),
+            {
+                status: response.status,
+                kind: getErrorKind(
+                    response.status,
+                    data
+                ),
+                details: data
+            }
+        );
+    }
+
+    if (
+        typeof data?.text !== "string" ||
+        !data.text.trim()
+    ) {
+        throw new ApiError(
+            "The recording could not be transcribed. Please try again.",
+            { kind: "transcription_failed" }
+        );
+    }
+
+    return { text: data.text.trim() };
+}
+
+
 function supportsResponseStreaming() {
     return (
         typeof window.ReadableStream ===
@@ -746,6 +864,7 @@ window.WaffleBerryApi = Object.freeze({
     completeStorySession,
     getStoryExtractionRun,
     retryStoryExtraction,
+    transcribeAudio,
     supportsResponseStreaming,
     clearStoredSession,
     getStoredAccessToken,

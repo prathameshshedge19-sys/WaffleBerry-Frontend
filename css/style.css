@@ -6179,6 +6179,15 @@ body.dark-mode .legacy-management-tabs {
     line-height: 1.45;
 }
 
+.chat-page .voice-transcription-status {
+    grid-column: 1 / -1;
+    min-height: 1.15em;
+    margin: 0;
+    color: var(--primary-dark);
+    font-size: 0.76rem;
+    line-height: 1.45;
+}
+
 .chat-page .voice-record-button:focus-visible,
 .chat-page .voice-recording-actions button:focus-visible,
 .chat-page .voice-preview-details button:focus-visible,
@@ -6249,6 +6258,10 @@ body.dark-mode .legacy-management-tabs {
     }
 
     .chat-page .voice-recording-error {
+        color: #ffb3d1;
+    }
+
+    .chat-page .voice-transcription-status {
         color: #ffb3d1;
     }
 }

@@ -94,19 +94,20 @@ test("conversation changes discard context-bound recordings", () => {
     assert.match(script, /function createNewConversationFromControl\(\)[\s\S]*discardVoiceRecording\(\)/);
 });
 
-test("recording actions never clear typed composer content", () => {
-    assert.doesNotMatch(voiceBlock, /chatInput\.(?:value|textContent)/);
+test("recording controls do not clear typed composer content", () => {
+    assert.doesNotMatch(voiceBlock, /chatInput\.(?:value|textContent)\s*=\s*["']{2}/);
     assert.match(script, /const content =\s*chatInput\?\.value\.trim\(\)/);
 });
 
-test("local voice code contains no upload path", () => {
+test("voice upload remains isolated from JSON and chat streaming paths", () => {
     assert.doesNotMatch(voiceBlock, /apiRequest|streamChatMessage|fetch\(|FormData|XMLHttpRequest/);
     assert.match(html, /is not uploaded yet/);
 });
 
-test("no transcription behavior or endpoint is introduced", () => {
-    assert.doesNotMatch(voiceBlock, /transcrib|speech[-_ ]?to[-_ ]?text|whisper/i);
-    assert.doesNotMatch(html, /transcrib|speech[-_ ]?to[-_ ]?text/i);
+test("transcription is explicit and never automatically sends", () => {
+    assert.match(html, /id="voiceTranscribeButton"/);
+    assert.match(voiceBlock, /async function transcribeReadyVoiceRecording/);
+    assert.doesNotMatch(voiceBlock, /transcribeReadyVoiceRecording[\s\S]*sendMessage\(/);
 });
 
 test("permission and recorder errors have safe user-facing copy", () => {

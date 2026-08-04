@@ -350,6 +350,14 @@
                                     </span>
 
                                     <button
+                                        id="voiceTranscribeButton"
+                                        type="button"
+                                        aria-label="Transcribe voice recording"
+                                    >
+                                        Transcribe
+                                    </button>
+
+                                    <button
                                         id="voiceDeleteButton"
                                         type="button"
                                         aria-label="Delete voice recording"
@@ -361,6 +369,13 @@
                                 <p class="voice-recording-privacy">
                                     Audio stays on this device during this recording step and is not uploaded yet.
                                 </p>
+
+                                <p
+                                    id="voiceTranscriptionStatus"
+                                    class="voice-transcription-status"
+                                    role="status"
+                                    aria-live="polite"
+                                ></p>
                             </div>
 
                             <p

@@ -7,6 +7,7 @@ const {
     apiRequest,
     clearStoredSession,
     getFriendlyChatError,
+    transcribeAudio,
     streamChatMessage,
     supportsResponseStreaming
 } = window.WaffleBerryApi;
@@ -134,6 +135,14 @@ const voiceDeleteButton =
     document.getElementById(
         "voiceDeleteButton"
     );
+const voiceTranscribeButton =
+    document.getElementById(
+        "voiceTranscribeButton"
+    );
+const voiceTranscriptionStatus =
+    document.getElementById(
+        "voiceTranscriptionStatus"
+    );
 const voiceRecordingError =
     document.getElementById(
         "voiceRecordingError"
@@ -174,7 +183,10 @@ const voiceRecorderState = {
     contextId: null,
     permissionRequestId: 0,
     stopResult: "save",
-    stopErrorMessage: ""
+    stopErrorMessage: "",
+    transcriptionPhase: "idle",
+    transcriptionRequestId: 0,
+    transcriptionController: null
 };
 
 
@@ -244,6 +256,82 @@ function revokeVoiceObjectUrl() {
         voicePreviewAudio.pause();
         voicePreviewAudio.removeAttribute("src");
         voicePreviewAudio.load();
+    }
+}
+
+
+function cancelVoiceTranscription() {
+    voiceRecorderState.transcriptionRequestId += 1;
+    voiceRecorderState
+        .transcriptionController
+        ?.abort();
+    voiceRecorderState.transcriptionController =
+        null;
+    voiceRecorderState.transcriptionPhase =
+        "idle";
+}
+
+
+function resetVoiceTranscription() {
+    cancelVoiceTranscription();
+    if (voiceTranscriptionStatus) {
+        voiceTranscriptionStatus.textContent = "";
+    }
+}
+
+
+function voiceTranscriptionErrorMessage(error) {
+    if (error?.status === 401) {
+        return "Your session has expired. Please sign in again.";
+    }
+    if (error?.kind === "audio_format_unsupported") {
+        return "This recording format is not supported.";
+    }
+    if (error?.kind === "audio_too_large") {
+        return "The recording is too large.";
+    }
+    if ([
+        "transcription_rate_limited",
+        "transcription_timeout",
+        "transcription_provider_unavailable",
+        "network",
+        "connection_error"
+    ].includes(error?.kind)) {
+        return "Transcription is temporarily unavailable.";
+    }
+    return "The recording could not be transcribed. Please try again.";
+}
+
+
+function updateVoiceTranscriptionUi() {
+    const phase =
+        voiceRecorderState.transcriptionPhase;
+
+    if (voiceTranscribeButton) {
+        voiceTranscribeButton.disabled =
+            voiceRecorderState.phase !== "ready" ||
+            !voiceRecorderState.blob ||
+            ["processing", "completed"].includes(
+                phase
+            );
+        voiceTranscribeButton.textContent =
+            phase === "processing"
+                ? "Transcribing..."
+                : phase === "completed"
+                    ? "Transcribed"
+                    : phase === "error"
+                        ? "Retry transcription"
+                        : "Transcribe";
+    }
+
+    if (voiceTranscriptionStatus) {
+        voiceTranscriptionStatus.textContent =
+            phase === "processing"
+                ? "Transcribing..."
+                : phase === "completed"
+                    ? "Transcript added to the message. Review and send it when ready."
+                    : voiceTranscriptionStatus
+                        .textContent;
     }
 }
 
@@ -336,10 +424,13 @@ function updateVoiceRecorderUi() {
         voiceCancelButton.disabled =
             phase === "stopping";
     }
+
+    updateVoiceTranscriptionUi();
 }
 
 
 function showVoiceRecordingError(message) {
+    resetVoiceTranscription();
     stopVoiceTimer();
     releaseVoiceMicrophone();
     voiceRecorderState.phase = "error";
@@ -387,6 +478,7 @@ function finishStoppedVoiceRecording() {
     voiceRecorderState.startedAt = 0;
 
     if (stopResult === "discard") {
+        resetVoiceTranscription();
         voiceRecorderState.phase = "idle";
         voiceRecorderState.durationSeconds = 0;
         voiceRecorderState.contextId = null;
@@ -413,6 +505,7 @@ function finishStoppedVoiceRecording() {
         return;
     }
 
+    resetVoiceTranscription();
     revokeVoiceObjectUrl();
     const recordedType =
         recorder?.mimeType ||
@@ -535,6 +628,7 @@ function stopVoiceRecording({
 
 
 function deleteVoiceRecording() {
+    resetVoiceTranscription();
     revokeVoiceObjectUrl();
     voiceRecorderState.blob = null;
     voiceRecorderState.durationSeconds = 0;
@@ -546,6 +640,7 @@ function deleteVoiceRecording() {
 
 
 function discardVoiceRecording() {
+    resetVoiceTranscription();
     voiceRecorderState.permissionRequestId += 1;
 
     if ([
@@ -699,6 +794,106 @@ async function startVoiceRecording() {
         showVoiceRecordingError(
             voiceErrorMessage(error)
         );
+    }
+}
+
+
+async function transcribeReadyVoiceRecording() {
+    if (
+        voiceRecorderState.phase !== "ready" ||
+        !voiceRecorderState.blob ||
+        ["processing", "completed"].includes(
+            voiceRecorderState.transcriptionPhase
+        )
+    ) {
+        return;
+    }
+
+    const blob = voiceRecorderState.blob;
+    const requestId =
+        ++voiceRecorderState.transcriptionRequestId;
+    const controller = new AbortController();
+    voiceRecorderState.transcriptionController =
+        controller;
+    voiceRecorderState.transcriptionPhase =
+        "processing";
+    if (voiceTranscriptionStatus) {
+        voiceTranscriptionStatus.textContent =
+            "Transcribing...";
+    }
+    updateVoiceTranscriptionUi();
+
+    try {
+        const response = await transcribeAudio(
+            blob,
+            undefined,
+            { signal: controller.signal }
+        );
+
+        if (
+            requestId !==
+                voiceRecorderState
+                    .transcriptionRequestId ||
+            blob !== voiceRecorderState.blob ||
+            voiceRecorderState.phase !== "ready" ||
+            voiceRecorderState.contextId !==
+                state.activeConversationId
+        ) {
+            return;
+        }
+
+        const transcript =
+            response.text.trim();
+        const existingText =
+            chatInput?.value.trimEnd() || "";
+
+        if (chatInput) {
+            chatInput.value = existingText
+                ? `${existingText}\n\n${transcript}`
+                : transcript;
+            chatInput.style.height = "auto";
+            chatInput.style.height =
+                `${Math.min(
+                    chatInput.scrollHeight,
+                    120
+                )}px`;
+            chatInput.focus();
+        }
+
+        voiceRecorderState.transcriptionPhase =
+            "completed";
+    } catch (error) {
+        if (
+            requestId !==
+                voiceRecorderState
+                    .transcriptionRequestId ||
+            error?.kind === "aborted"
+        ) {
+            return;
+        }
+
+        voiceRecorderState.transcriptionPhase =
+            "error";
+        if (voiceTranscriptionStatus) {
+            voiceTranscriptionStatus.textContent =
+                voiceTranscriptionErrorMessage(
+                    error
+                );
+        }
+        if (error?.status === 401) {
+            handleAuthenticationError(error);
+        }
+    } finally {
+        if (
+            requestId ===
+            voiceRecorderState
+                .transcriptionRequestId
+        ) {
+            voiceRecorderState
+                .transcriptionController =
+                    null;
+            updateVoiceTranscriptionUi();
+        }
     }
 }
 /* End Phase 9.1 local voice recording. */
@@ -2553,6 +2748,11 @@ voiceCancelButton?.addEventListener(
 voiceDeleteButton?.addEventListener(
     "click",
     deleteVoiceRecording
+);
+
+voiceTranscribeButton?.addEventListener(
+    "click",
+    transcribeReadyVoiceRecording
 );
 
 voicePreviewAudio?.addEventListener(
