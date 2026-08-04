@@ -37,6 +37,38 @@ const conversationList =
     document.getElementById(
         "conversationList"
     );
+const conversationDrawer =
+    document.getElementById(
+        "conversationDrawer"
+    );
+const conversationDrawerBackdrop =
+    document.getElementById(
+        "conversationDrawerBackdrop"
+    );
+const mobileDrawerOpenButton =
+    document.getElementById(
+        "mobileDrawerOpenButton"
+    );
+const mobileDrawerCloseButton =
+    document.getElementById(
+        "mobileDrawerCloseButton"
+    );
+const mobileConversationTitle =
+    document.getElementById(
+        "mobileConversationTitle"
+    );
+const mobileNewChatButton =
+    document.getElementById(
+        "mobileNewChatButton"
+    );
+const mobileDeleteChatButton =
+    document.getElementById(
+        "mobileDeleteChatButton"
+    );
+const mobileThemeButton =
+    document.getElementById(
+        "mobileThemeButton"
+    );
 const conversationTitle =
     document.getElementById(
         "conversationTitle"
@@ -61,6 +93,111 @@ const state = {
     isDeleting: false,
     isComposing: false
 };
+const mobileChatMedia =
+    window.matchMedia?.(
+        "(max-width: 768px)"
+    );
+let drawerReturnFocus = null;
+
+
+function isMobileChat() {
+    return Boolean(mobileChatMedia?.matches);
+}
+
+
+function closeConversationDrawer(
+    restoreFocus = true
+) {
+    conversationDrawer?.classList.remove(
+        "is-open"
+    );
+    conversationDrawer?.setAttribute(
+        "aria-hidden",
+        isMobileChat() ? "true" : "false"
+    );
+    conversationDrawerBackdrop?.setAttribute(
+        "hidden",
+        ""
+    );
+    mobileDrawerOpenButton?.setAttribute(
+        "aria-expanded",
+        "false"
+    );
+    document.body.classList.remove(
+        "conversation-drawer-open"
+    );
+
+    if (restoreFocus && isMobileChat()) {
+        drawerReturnFocus?.focus();
+    }
+}
+
+
+function openConversationDrawer() {
+    if (!isMobileChat()) {
+        return;
+    }
+
+    drawerReturnFocus =
+        document.activeElement;
+    conversationDrawer?.classList.add(
+        "is-open"
+    );
+    conversationDrawer?.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+    conversationDrawerBackdrop?.removeAttribute(
+        "hidden"
+    );
+    mobileDrawerOpenButton?.setAttribute(
+        "aria-expanded",
+        "true"
+    );
+    document.body.classList.add(
+        "conversation-drawer-open"
+    );
+    mobileDrawerCloseButton?.focus();
+}
+
+
+function synchronizeDrawerMode() {
+    if (isMobileChat()) {
+        conversationDrawer?.setAttribute(
+            "role",
+            "dialog"
+        );
+        conversationDrawer?.setAttribute(
+            "aria-modal",
+            "true"
+        );
+        closeConversationDrawer(false);
+        return;
+    }
+
+    conversationDrawer?.removeAttribute(
+        "role"
+    );
+    conversationDrawer?.removeAttribute(
+        "aria-modal"
+    );
+    conversationDrawer?.removeAttribute(
+        "aria-hidden"
+    );
+    conversationDrawer?.classList.remove(
+        "is-open"
+    );
+    conversationDrawerBackdrop?.setAttribute(
+        "hidden",
+        ""
+    );
+    document.body.classList.remove(
+        "conversation-drawer-open"
+    );
+}
+
+
+synchronizeDrawerMode();
 
 
 function handleAuthenticationError(error) {
@@ -110,6 +247,11 @@ function updateControls() {
             isCreating;
     }
 
+    if (mobileNewChatButton) {
+        mobileNewChatButton.disabled =
+            isCreating;
+    }
+
     if (sendButton) {
         sendButton.disabled =
             state.isSending ||
@@ -124,6 +266,12 @@ function updateControls() {
 
     if (clearChatButton) {
         clearChatButton.disabled =
+            !state.activeConversationId ||
+            state.isDeleting;
+    }
+
+    if (mobileDeleteChatButton) {
+        mobileDeleteChatButton.disabled =
             !state.activeConversationId ||
             state.isDeleting;
     }
@@ -304,11 +452,35 @@ function showCompanionWelcome() {
 
     hideTypingIndicator();
     state.renderedMessageIds.clear();
-    chatMessages.replaceChildren(
+    const desktopWelcome =
         createBerryMessage(
             companionIdentity
                 .welcomeMessage()
-        )
+        );
+    const mobileWelcome =
+        document.createElement("div");
+    const mobileWelcomeMascot =
+        document.createElement("img");
+    const mobileWelcomeText =
+        document.createElement("p");
+
+    desktopWelcome.classList.add(
+        "desktop-chat-welcome"
+    );
+    mobileWelcome.className =
+        "mobile-chat-empty-state";
+    mobileWelcomeMascot.src =
+        "assets/waffle-berry-mascot.png";
+    mobileWelcomeMascot.alt = "";
+    mobileWelcomeText.textContent =
+        "What would you like to remember today?";
+    mobileWelcome.append(
+        mobileWelcomeMascot,
+        mobileWelcomeText
+    );
+    chatMessages.replaceChildren(
+        desktopWelcome,
+        mobileWelcome
     );
     scrollChatToBottom("smooth");
 }
@@ -696,15 +868,20 @@ function getActiveConversation() {
 
 
 function updateConversationHeader() {
-    if (!conversationTitle) {
-        return;
-    }
-
-    conversationTitle.textContent =
+    const title =
         getActiveConversation()?.title ||
         companionIdentity.text(
             "Conversation with {name}"
         );
+
+    if (conversationTitle) {
+        conversationTitle.textContent = title;
+    }
+
+    if (mobileConversationTitle) {
+        mobileConversationTitle.textContent =
+            title;
+    }
 }
 
 
@@ -919,6 +1096,8 @@ function selectConversation(
     );
     renderConversationList();
     updateConversationHeader();
+
+    closeConversationDrawer(false);
     updateControls();
 
     if (options.loadHistory !== false) {
@@ -1708,6 +1887,59 @@ chatInput?.addEventListener(
 newChatButton?.addEventListener(
     "click",
     createConversation
+);
+
+mobileNewChatButton?.addEventListener(
+    "click",
+    createConversation
+);
+
+mobileDrawerOpenButton?.addEventListener(
+    "click",
+    openConversationDrawer
+);
+
+mobileDrawerCloseButton?.addEventListener(
+    "click",
+    () => closeConversationDrawer()
+);
+
+conversationDrawerBackdrop?.addEventListener(
+    "click",
+    () => closeConversationDrawer()
+);
+
+mobileDeleteChatButton?.addEventListener(
+    "click",
+    deleteActiveConversation
+);
+
+mobileThemeButton?.addEventListener(
+    "click",
+    () => {
+        document
+            .getElementById("themeToggle")
+            ?.click();
+    }
+);
+
+document.addEventListener(
+    "keydown",
+    (event) => {
+        if (
+            event.key === "Escape" &&
+            conversationDrawer?.classList.contains(
+                "is-open"
+            )
+        ) {
+            closeConversationDrawer();
+        }
+    }
+);
+
+mobileChatMedia?.addEventListener(
+    "change",
+    synchronizeDrawerMode
 );
 
 clearChatButton?.addEventListener(

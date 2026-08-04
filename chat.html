@@ -29,7 +29,7 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body class="chat-page">
 
     <main id="website" class="website-unlocked">
 
@@ -110,6 +110,38 @@
 
         </header>
 
+        <header class="mobile-chat-topbar">
+            <button
+                id="mobileDrawerOpenButton"
+                class="mobile-topbar-button"
+                type="button"
+                aria-label="Open conversations"
+                aria-expanded="false"
+                aria-controls="conversationDrawer"
+            >
+                <span aria-hidden="true">☰</span>
+            </button>
+
+            <h1 id="mobileConversationTitle">
+                Your conversation
+            </h1>
+
+            <button
+                id="mobileNewChatButton"
+                class="mobile-new-chat-button"
+                type="button"
+                aria-label="Start a new chat"
+            >
+                New
+            </button>
+        </header>
+
+        <div
+            id="conversationDrawerBackdrop"
+            class="conversation-drawer-backdrop"
+            hidden
+        ></div>
+
         <!-- Chat section -->
         <section
             id="chatSection"
@@ -118,7 +150,33 @@
 
             <div class="chat-layout">
 
-                <aside class="assistant-panel glass-panel">
+                <aside
+                    id="conversationDrawer"
+                    class="assistant-panel glass-panel conversation-drawer"
+                    aria-label="Conversation navigation"
+                >
+
+                    <div class="conversation-drawer-header">
+                        <a
+                            class="conversation-drawer-brand"
+                            href="home.html"
+                        >
+                            <img
+                                src="assets/waffle-berry-mascot.png"
+                                alt=""
+                            >
+                            <span>WaffleBerry</span>
+                        </a>
+
+                        <button
+                            id="mobileDrawerCloseButton"
+                            class="conversation-drawer-close"
+                            type="button"
+                            aria-label="Close conversations"
+                        >
+                            <span aria-hidden="true">×</span>
+                        </button>
+                    </div>
 
                     <img
                         src="assets/waffle-berry-mascot.png"
@@ -156,6 +214,27 @@
                             aria-live="polite"
                         ></div>
                     </div>
+
+                    <nav
+                        class="conversation-drawer-navigation"
+                        aria-label="WaffleBerry navigation"
+                    >
+                        <a href="home.html">Home</a>
+                        <a href="mission.html">Mission</a>
+                        <button
+                            id="mobileThemeButton"
+                            type="button"
+                        >
+                            Theme
+                        </button>
+                        <button
+                            id="mobileDeleteChatButton"
+                            type="button"
+                        >
+                            Delete conversation
+                        </button>
+                        <a href="login.html">Sign out</a>
+                    </nav>
 
                 </aside>
 
