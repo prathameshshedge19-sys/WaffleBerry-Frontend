@@ -7,6 +7,7 @@ const {
     apiRequest,
     clearStoredSession,
     getFriendlyChatError,
+    getMessageSpeech,
     transcribeAudio,
     streamChatMessage,
     supportsResponseStreaming
@@ -147,6 +148,10 @@ const voiceRecordingError =
     document.getElementById(
         "voiceRecordingError"
     );
+const messageSpeechStatus =
+    document.getElementById(
+        "messageSpeechStatus"
+    );
 
 const state = {
     conversations: [],
@@ -188,6 +193,16 @@ const voiceRecorderState = {
     transcriptionRequestId: 0,
     transcriptionController: null
 };
+
+const messageSpeechState = {
+    phase: "idle",
+    activeMessageId: null,
+    audio: null,
+    requestController: null,
+    requestId: 0,
+    cache: new Map()
+};
+const MAX_MESSAGE_SPEECH_CACHE = 6;
 
 
 function formatVoiceDuration(seconds) {
@@ -898,6 +913,414 @@ async function transcribeReadyVoiceRecording() {
 }
 /* End Phase 9.1 local voice recording. */
 
+/* Phase 9.5: persisted assistant message playback. */
+function messageSpeechButtonLabel(phase) {
+    return phase === "loading"
+        ? "Generating voice"
+        : phase === "playing"
+            ? "Pause voice"
+            : phase === "paused"
+                ? "Resume voice"
+                : phase === "error"
+                    ? "Retry voice"
+                    : "Play voice";
+}
+
+
+function updateMessageSpeechControls() {
+    document
+        .querySelectorAll(
+            ".message-speech-button"
+        )
+        .forEach((button) => {
+            const messageId = Number(
+                button.dataset.messageId
+            );
+            const isActive =
+                messageId ===
+                messageSpeechState
+                    .activeMessageId;
+            const phase = isActive
+                ? messageSpeechState.phase
+                : "idle";
+            const label =
+                messageSpeechButtonLabel(
+                    phase
+                );
+            button.dataset.speechState = phase;
+            button.disabled =
+                phase === "loading";
+            button.setAttribute(
+                "aria-label",
+                `${label} for Berry message`
+            );
+            button.setAttribute(
+                "aria-pressed",
+                phase === "playing"
+                    ? "true"
+                    : "false"
+            );
+            const text = button.querySelector(
+                ".message-speech-button-label"
+            );
+            if (text) {
+                text.textContent = label;
+            }
+        });
+}
+
+
+function setMessageSpeechStatus(message = "") {
+    if (messageSpeechStatus) {
+        messageSpeechStatus.textContent = message;
+    }
+}
+
+
+function disposeActiveMessageAudio() {
+    if (!messageSpeechState.audio) {
+        return;
+    }
+    messageSpeechState.audio.pause();
+    messageSpeechState.audio.removeAttribute?.(
+        "src"
+    );
+    messageSpeechState.audio.load?.();
+    messageSpeechState.audio = null;
+}
+
+
+function stopMessageSpeech({ clearCache = false } = {}) {
+    messageSpeechState.requestId += 1;
+    messageSpeechState.requestController?.abort();
+    messageSpeechState.requestController = null;
+    disposeActiveMessageAudio();
+    messageSpeechState.phase = "idle";
+    messageSpeechState.activeMessageId = null;
+
+    if (clearCache) {
+        messageSpeechState.cache.forEach(
+            ({ objectUrl }) => {
+                URL.revokeObjectURL(objectUrl);
+            }
+        );
+        messageSpeechState.cache.clear();
+    }
+    setMessageSpeechStatus("");
+    updateMessageSpeechControls();
+}
+
+
+function cacheMessageSpeech(messageId, blob) {
+    const previous =
+        messageSpeechState.cache.get(
+            messageId
+        );
+    if (previous) {
+        URL.revokeObjectURL(
+            previous.objectUrl
+        );
+    }
+    const entry = {
+        blob,
+        objectUrl: URL.createObjectURL(blob)
+    };
+    messageSpeechState.cache.set(
+        messageId,
+        entry
+    );
+
+    while (
+        messageSpeechState.cache.size >
+        MAX_MESSAGE_SPEECH_CACHE
+    ) {
+        const oldestMessageId =
+            messageSpeechState.cache
+                .keys()
+                .next().value;
+        if (
+            oldestMessageId ===
+            messageSpeechState.activeMessageId
+        ) {
+            break;
+        }
+        const oldest =
+            messageSpeechState.cache.get(
+                oldestMessageId
+            );
+        URL.revokeObjectURL(
+            oldest.objectUrl
+        );
+        messageSpeechState.cache.delete(
+            oldestMessageId
+        );
+    }
+    return entry;
+}
+
+
+function messageSpeechErrorMessage(error) {
+    if (error?.status === 401) {
+        return "Your session has expired. Please sign in again.";
+    }
+    if (error?.kind === "message_not_found") {
+        return "This Berry message is no longer available.";
+    }
+    if ([
+        "speech_rate_limited",
+        "speech_timeout",
+        "speech_provider_unavailable",
+        "network"
+    ].includes(error?.kind)) {
+        return "Berry's voice is temporarily unavailable.";
+    }
+    return "Berry's voice could not be played. Please try again.";
+}
+
+
+async function playCachedMessageSpeech(
+    messageId,
+    entry,
+    requestId
+) {
+    const audio = new window.Audio(
+        entry.objectUrl
+    );
+    messageSpeechState.audio = audio;
+    messageSpeechState.phase = "playing";
+    updateMessageSpeechControls();
+    setMessageSpeechStatus(
+        "Playing Berry's voice."
+    );
+
+    audio.addEventListener(
+        "ended",
+        () => {
+            if (
+                requestId !==
+                    messageSpeechState
+                        .requestId ||
+                messageId !==
+                    messageSpeechState
+                        .activeMessageId
+            ) {
+                return;
+            }
+            audio.currentTime = 0;
+            messageSpeechState.phase = "idle";
+            setMessageSpeechStatus(
+                "Playback finished."
+            );
+            updateMessageSpeechControls();
+        }
+    );
+    audio.addEventListener(
+        "error",
+        () => {
+            if (
+                requestId ===
+                messageSpeechState.requestId
+            ) {
+                messageSpeechState.phase = "error";
+                setMessageSpeechStatus(
+                    "Berry's voice could not be played. Please try again."
+                );
+                updateMessageSpeechControls();
+            }
+        }
+    );
+    await audio.play();
+}
+
+
+async function toggleMessageSpeech(button) {
+    const messageId = Number(
+        button?.dataset.messageId
+    );
+    const conversationId =
+        normalizeConversationId(
+            state.activeConversationId
+        );
+    if (
+        !Number.isInteger(messageId) ||
+        !conversationId
+    ) {
+        return;
+    }
+
+    if (
+        messageId ===
+            messageSpeechState.activeMessageId &&
+        messageSpeechState.phase === "playing"
+    ) {
+        messageSpeechState.audio?.pause();
+        messageSpeechState.phase = "paused";
+        setMessageSpeechStatus("Playback paused.");
+        updateMessageSpeechControls();
+        return;
+    }
+    if (
+        messageId ===
+            messageSpeechState.activeMessageId &&
+        messageSpeechState.phase === "paused"
+    ) {
+        try {
+            await messageSpeechState.audio?.play();
+            messageSpeechState.phase = "playing";
+            setMessageSpeechStatus(
+                "Playing Berry's voice."
+            );
+        } catch {
+            messageSpeechState.phase = "error";
+            setMessageSpeechStatus(
+                "Berry's voice could not be played. Please try again."
+            );
+        }
+        updateMessageSpeechControls();
+        return;
+    }
+    if (
+        messageId ===
+            messageSpeechState.activeMessageId &&
+        messageSpeechState.phase === "loading"
+    ) {
+        return;
+    }
+
+    stopMessageSpeech();
+    const requestId =
+        ++messageSpeechState.requestId;
+    messageSpeechState.activeMessageId =
+        messageId;
+    const cached =
+        messageSpeechState.cache.get(
+            messageId
+        );
+
+    try {
+        let entry = cached;
+        if (!entry) {
+            const controller =
+                new AbortController();
+            messageSpeechState.requestController =
+                controller;
+            messageSpeechState.phase = "loading";
+            setMessageSpeechStatus(
+                "Generating Berry's AI voice..."
+            );
+            updateMessageSpeechControls();
+            const blob = await getMessageSpeech(
+                conversationId,
+                messageId,
+                {
+                    responseFormat: "mp3",
+                    signal: controller.signal
+                }
+            );
+            if (
+                requestId !==
+                    messageSpeechState
+                        .requestId ||
+                conversationId !==
+                    normalizeConversationId(
+                        state.activeConversationId
+                    )
+            ) {
+                return;
+            }
+            entry = cacheMessageSpeech(
+                messageId,
+                blob
+            );
+        }
+        messageSpeechState.requestController =
+            null;
+        await playCachedMessageSpeech(
+            messageId,
+            entry,
+            requestId
+        );
+    } catch (error) {
+        if (
+            requestId !==
+                messageSpeechState.requestId ||
+            error?.kind === "aborted"
+        ) {
+            return;
+        }
+        messageSpeechState.requestController =
+            null;
+        messageSpeechState.phase = "error";
+        setMessageSpeechStatus(
+            messageSpeechErrorMessage(error)
+        );
+        updateMessageSpeechControls();
+        if (error?.status === 401) {
+            stopMessageSpeech({
+                clearCache: true
+            });
+            discardVoiceRecording();
+            handleAuthenticationError(error);
+        }
+    }
+}
+
+
+function createMessageSpeechButton(messageId) {
+    const button =
+        document.createElement("button");
+    button.type = "button";
+    button.className =
+        "message-speech-button";
+    button.dataset.messageId =
+        String(messageId);
+    button.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M4 9v6h4l5 4V5L8 9H4Zm11.5 0.5a1 1 0 0 1 1.41 0 3.54 3.54 0 0 1 0 5 1 1 0 1 1-1.41-1.41 1.54 1.54 0 0 0 0-2.18 1 1 0 0 1 0-1.41Zm2.83-2.83a1 1 0 0 1 1.42 0 7.54 7.54 0 0 1 0 10.66 1 1 0 1 1-1.42-1.41 5.54 5.54 0 0 0 0-7.84 1 1 0 0 1 0-1.41Z"/>
+        </svg>
+        <span class="message-speech-button-label">Play voice</span>
+    `;
+    button.setAttribute(
+        "aria-label",
+        "Play voice for Berry message"
+    );
+    button.setAttribute(
+        "aria-pressed",
+        "false"
+    );
+    return button;
+}
+
+
+function attachMessageSpeechControl(
+    row,
+    messageId
+) {
+    const normalizedId = Number(messageId);
+    if (
+        !row ||
+        !Number.isInteger(normalizedId) ||
+        row.querySelector(
+            ".message-speech-button"
+        )
+    ) {
+        return;
+    }
+    const actions =
+        document.createElement("div");
+    actions.className =
+        "message-speech-actions";
+    row.classList.add("has-speech-control");
+    actions.appendChild(
+        createMessageSpeechButton(
+            normalizedId
+        )
+    );
+    row.appendChild(actions);
+    updateMessageSpeechControls();
+}
+/* End Phase 9.5 persisted assistant message playback. */
+
 
 function isMobileChat() {
     return Boolean(mobileChatMedia?.matches);
@@ -1486,6 +1909,10 @@ function finalizeStreamingMessage(
         state.renderedMessageIds.add(
             Number(message.message_id)
         );
+        attachMessageSpeechControl(
+            row,
+            message.message_id
+        );
     }
 }
 
@@ -1501,6 +1928,12 @@ function createMessageElement(message) {
         element = createBerryMessage(
             message.content
         );
+        if (message?.message_id) {
+            attachMessageSpeechControl(
+                element,
+                message.message_id
+            );
+        }
     }
 
     if (element && message?.message_id) {
@@ -1604,6 +2037,7 @@ function renderMessages(messages) {
         return;
     }
 
+    stopMessageSpeech({ clearCache: true });
     chatMessages.replaceChildren();
     state.renderedMessageIds.clear();
 
@@ -1891,6 +2325,15 @@ function selectConversation(
 
     if (
         state.activeConversationId !==
+        conversationId
+    ) {
+        stopMessageSpeech({
+            clearCache: true
+        });
+    }
+
+    if (
+        state.activeConversationId !==
             conversationId &&
         !["idle", "error"].includes(
             voiceRecorderState.phase
@@ -2095,6 +2538,7 @@ async function createConversation() {
 
 function createNewConversationFromControl() {
     discardVoiceRecording();
+    stopMessageSpeech({ clearCache: true });
     return createConversation();
 }
 
@@ -2620,6 +3064,7 @@ async function deleteActiveConversation() {
     }
 
     discardVoiceRecording();
+    stopMessageSpeech({ clearCache: true });
     cancelActiveMessageRequest();
 
     const conversationId =
@@ -2721,6 +3166,18 @@ chatInput?.addEventListener(
 newChatButton?.addEventListener(
     "click",
     createNewConversationFromControl
+);
+
+chatMessages?.addEventListener(
+    "click",
+    (event) => {
+        const button = event.target.closest(
+            ".message-speech-button"
+        );
+        if (button) {
+            toggleMessageSpeech(button);
+        }
+    }
 );
 
 mobileNewChatButton?.addEventListener(
@@ -2846,6 +3303,9 @@ document.addEventListener(
             )
         ) {
             discardVoiceRecording();
+            stopMessageSpeech({
+                clearCache: true
+            });
         }
     },
     true
@@ -2855,6 +3315,7 @@ window.addEventListener(
     "pagehide",
     () => {
         discardVoiceRecording();
+        stopMessageSpeech({ clearCache: true });
         state.messageRequestController?.abort();
         hideTypingIndicator();
     }

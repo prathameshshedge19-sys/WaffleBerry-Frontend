@@ -435,6 +435,89 @@ async function transcribeAudio(
 }
 
 
+async function getMessageSpeech(
+    conversationId,
+    messageId,
+    {
+        voice = null,
+        responseFormat = "mp3",
+        signal
+    } = {}
+) {
+    const normalizedConversationId =
+        Number(conversationId);
+    const normalizedMessageId = Number(messageId);
+    if (
+        !Number.isInteger(normalizedConversationId) ||
+        !Number.isInteger(normalizedMessageId)
+    ) {
+        throw new ApiError(
+            "This message is not available for speech.",
+            { kind: "message_not_found" }
+        );
+    }
+
+    const accessToken = getStoredAccessToken();
+    if (!accessToken) {
+        throw new ApiError(
+            "Your session has expired. Please sign in again.",
+            { status: 401, kind: "authentication" }
+        );
+    }
+
+    let response;
+    try {
+        response = await fetch(
+            `${API_BASE_URL}/conversations/${normalizedConversationId}/messages/${normalizedMessageId}/speech`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    voice,
+                    response_format: responseFormat
+                }),
+                signal
+            }
+        );
+    } catch (error) {
+        if (error?.name === "AbortError") {
+            throw new ApiError(
+                "Speech generation was cancelled.",
+                { kind: "aborted" }
+            );
+        }
+        throw new ApiError(
+            "Unable to reach the Waffle Berry server. Please try again.",
+            { kind: "network" }
+        );
+    }
+
+    if (!response.ok) {
+        const data = await parseResponse(response);
+        throw new ApiError(
+            getApiErrorMessage(response.status, data),
+            {
+                status: response.status,
+                kind: getErrorKind(response.status, data),
+                details: data
+            }
+        );
+    }
+
+    const blob = await response.blob();
+    if (!(blob instanceof Blob) || blob.size === 0) {
+        throw new ApiError(
+            "Berry's voice could not be generated. Please try again.",
+            { kind: "speech_generation_failed" }
+        );
+    }
+    return blob;
+}
+
+
 function supportsResponseStreaming() {
     return (
         typeof window.ReadableStream ===
@@ -865,6 +948,7 @@ window.WaffleBerryApi = Object.freeze({
     getStoryExtractionRun,
     retryStoryExtraction,
     transcribeAudio,
+    getMessageSpeech,
     supportsResponseStreaming,
     clearStoredSession,
     getStoredAccessToken,

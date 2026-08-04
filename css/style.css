@@ -8194,3 +8194,145 @@ textarea:disabled {
         gap: 4px;
     }
 }
+
+/* Phase 9.5: persisted Berry message playback. */
+.message-speech-status {
+    display: block;
+    min-height: 24px;
+    margin: 0;
+    padding: 0 24px 4px;
+    color: var(--text-soft);
+    font-size: 0.75rem;
+    line-height: 1.35;
+    text-align: right;
+}
+
+.message-row.has-speech-control .message {
+    max-width: min(calc(75% - 52px), 568px);
+}
+
+.message-speech-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    align-self: flex-end;
+}
+
+.message-speech-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 1px solid rgba(200, 63, 116, 0.2);
+    border-radius: 999px;
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.48);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 750;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        color 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.message-speech-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(200, 63, 116, 0.42);
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.message-speech-button:focus-visible {
+    outline: 3px solid rgba(255, 91, 156, 0.42);
+    outline-offset: 2px;
+}
+
+.message-speech-button:disabled {
+    cursor: wait;
+    opacity: 0.72;
+}
+
+.message-speech-button svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    fill: currentColor;
+}
+
+.message-speech-button[data-speech-state="playing"],
+.message-speech-button[data-speech-state="paused"] {
+    border-color: transparent;
+    color: #fff;
+    background: var(--primary);
+}
+
+.message-speech-button[data-speech-state="error"] {
+    color: #a62555;
+    border-color: rgba(166, 37, 85, 0.35);
+}
+
+.message-speech-button[data-speech-state="loading"] svg {
+    animation: messageSpeechPulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes messageSpeechPulse {
+    to {
+        transform: scale(1.14);
+        opacity: 0.55;
+    }
+}
+
+@media (max-width: 768px) {
+    .chat-page .message-speech-status {
+        flex: 0 0 auto;
+        min-height: 20px;
+        padding: 1px 12px 4px;
+        color: rgba(255, 248, 252, 0.68);
+        font-size: 0.68rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .chat-page .message-row.has-speech-control .message,
+    .chat-page .berry-row.has-speech-control .message {
+        max-width: calc(86% - 51px);
+    }
+
+    .chat-page .message-speech-button {
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+        min-height: 44px;
+        padding: 0;
+        border-color: rgba(255, 255, 255, 0.16);
+        color: #ffd3e5;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .chat-page .message-speech-button-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .message-speech-button,
+    .message-speech-button[data-speech-state="loading"] svg {
+        animation: none;
+        transition: none;
+    }
+}
+/* End Phase 9.5 persisted Berry message playback. */
