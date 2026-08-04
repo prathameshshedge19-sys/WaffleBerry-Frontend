@@ -28,6 +28,32 @@ test("public product calls to action require login", () => {
     }
 });
 
+test("public navigation links to home, mission, contact and sign in", () => {
+    const navigation = index.match(
+        /<nav class="public-nav-links"[\s\S]*?<\/nav>/
+    )?.[0] || "";
+
+    assert.match(navigation, /href="#home">Home<\/a>/);
+    assert.match(navigation, /href="#mission">Mission<\/a>/);
+    assert.match(navigation, /href="#contact">Contact<\/a>/);
+    assert.match(navigation, /href="login\.html">Sign In<\/a>/);
+    assert.doesNotMatch(navigation, />Products<\/a>/);
+    assert.match(index, /class="public-section public-contact" id="contact"/);
+});
+
+test("landing navigation preserves smooth scrolling and mobile menu behavior", () => {
+    const styles = read("css/landing.css");
+    const script = read("js/landing.js");
+
+    assert.equal(
+        (styles.match(/scroll-behavior\s*:\s*smooth/g) || []).length,
+        1
+    );
+    assert.match(styles, /html\s*\{\s*scroll-behavior\s*:\s*smooth/);
+    assert.match(index, /aria-controls="public-navigation"/);
+    assert.match(script, /navigation\.classList\.remove\("is-open"\)/);
+});
+
 test("public homepage does not load authentication code", () => {
     assert.doesNotMatch(index, /(?:auth|api|config)\.js/);
     assert.match(index, /src="js\/landing\.js"/);
