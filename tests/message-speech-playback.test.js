@@ -70,10 +70,10 @@ test("message speech posts only IDs and synthesis preferences", async () => {
     assert.equal(captured.options.headers.Authorization, "Bearer test-token");
     assert.equal(captured.options.headers["Content-Type"], "application/json");
     assert.deepEqual(JSON.parse(captured.options.body), {
-        voice: null,
         response_format: "mp3"
     });
     assert.equal("text" in JSON.parse(captured.options.body), false);
+    assert.equal("voice" in JSON.parse(captured.options.body), false);
 });
 
 test("speaker controls are restricted to persisted Berry messages", () => {
@@ -115,4 +115,12 @@ test("mobile playback control keeps a touch-sized target without changing stream
     assert.match(css, /@media \(max-width: 768px\)[\s\S]*\.chat-page \.message-speech-button[\s\S]*width: 44px;[\s\S]*height: 44px;/);
     assert.match(chatSource, /await streamChatMessage\(/);
     assert.match(chatSource, /transcribeReadyVoiceRecording/);
+});
+
+test("frontend contains no voice selection or Legacy relationship inference", () => {
+    assert.doesNotMatch(apiSource, /standard_male|standard_female|cedar|marin/);
+    assert.doesNotMatch(chatSource, /standard_male|standard_female|cedar|marin/);
+    assert.doesNotMatch(chatSource, /relationship.*voice|voice.*relationship/i);
+    assert.doesNotMatch(html, /voice-selector|cedar|marin/i);
+    assert.doesNotMatch(html, /<(select|input)[^>]*(name|id)="[^"]*voice/i);
 });

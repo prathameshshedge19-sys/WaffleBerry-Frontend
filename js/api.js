@@ -439,7 +439,6 @@ async function getMessageSpeech(
     conversationId,
     messageId,
     {
-        voice = null,
         responseFormat = "mp3",
         signal
     } = {}
@@ -476,7 +475,6 @@ async function getMessageSpeech(
                     Authorization: `Bearer ${accessToken}`
                 },
                 body: JSON.stringify({
-                    voice,
                     response_format: responseFormat
                 }),
                 signal
