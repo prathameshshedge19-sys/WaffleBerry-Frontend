@@ -31,6 +31,21 @@ test("the single conversation list is reused inside the drawer", () => {
     assert.match(styles, /\.conversation-drawer\s*\{[\s\S]*translateX\(-105%\)/);
 });
 
+test("mobile drawer stays sharp above its blurred backdrop", () => {
+    assert.match(
+        styles,
+        /\.chat-page \.conversation-drawer-backdrop\s*\{[\s\S]*z-index:\s*1000;[\s\S]*backdrop-filter:\s*blur\(6px\)/
+    );
+    assert.match(
+        styles,
+        /\.chat-page \.conversation-drawer\s*\{[\s\S]*z-index:\s*1001;[\s\S]*filter:\s*none;[\s\S]*backdrop-filter:\s*none;/
+    );
+    assert.match(
+        chatScript,
+        /chatWebsite\?\.appendChild\(\s*conversationDrawer\s*\)/
+    );
+});
+
 test("drawer controls expose accessible state and labels", () => {
     assert.match(chat, /aria-expanded="false"/);
     assert.match(chat, /aria-controls="conversationDrawer"/);

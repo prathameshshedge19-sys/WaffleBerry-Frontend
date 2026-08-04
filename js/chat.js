@@ -45,6 +45,12 @@ const conversationDrawerBackdrop =
     document.getElementById(
         "conversationDrawerBackdrop"
     );
+const chatLayout =
+    document.querySelector(".chat-layout");
+const chatWindow =
+    document.querySelector(".chat-window");
+const chatWebsite =
+    document.getElementById("website");
 const mobileDrawerOpenButton =
     document.getElementById(
         "mobileDrawerOpenButton"
@@ -163,6 +169,9 @@ function openConversationDrawer() {
 
 function synchronizeDrawerMode() {
     if (isMobileChat()) {
+        chatWebsite?.appendChild(
+            conversationDrawer
+        );
         conversationDrawer?.setAttribute(
             "role",
             "dialog"
@@ -173,6 +182,13 @@ function synchronizeDrawerMode() {
         );
         closeConversationDrawer(false);
         return;
+    }
+
+    if (chatLayout && chatWindow) {
+        chatLayout.insertBefore(
+            conversationDrawer,
+            chatWindow
+        );
     }
 
     conversationDrawer?.removeAttribute(

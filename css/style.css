@@ -7525,13 +7525,13 @@ textarea:disabled {
     .chat-page .conversation-drawer-backdrop {
         position: fixed;
         inset: 0;
-        z-index: 1100;
+        z-index: 1000;
         display: block;
         border: 0;
         background: rgba(12, 7, 15, 0.62);
         opacity: 1;
-        backdrop-filter: blur(2px);
-        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
     }
 
     .chat-page .conversation-drawer-backdrop[hidden] {
@@ -7545,7 +7545,7 @@ textarea:disabled {
             auto
             0
             0;
-        z-index: 1150;
+        z-index: 1001;
         width: min(86vw, 330px);
         height: 100vh;
         height: 100dvh;
@@ -7564,6 +7564,11 @@ textarea:disabled {
         color: #fff8fc;
         background: rgba(38, 23, 43, 0.98);
         box-shadow: 22px 0 54px rgba(8, 4, 10, 0.36);
+        opacity: 1;
+        filter: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        isolation: isolate;
         text-align: left;
         transform: translateX(-105%);
         visibility: hidden;
