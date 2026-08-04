@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://waffleberry.app/sitemap.xml
+Sitemap: https://www.waffleberry.app/sitemap.xml

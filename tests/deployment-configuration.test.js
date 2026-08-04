@@ -25,19 +25,24 @@ test("runtime config preserves local backend development", () => {
     );
 });
 
-test("runtime config does not silently use localhost in production", () => {
-    const context = {
-        window: {
-            location: { hostname: "waffleberry.vercel.app" }
-        }
-    };
-    vm.runInNewContext(
-        fs.readFileSync(path.join(root, "js", "config.js"), "utf8"),
-        context
-    );
+for (const hostname of ["waffleberry.app", "www.waffleberry.app"]) {
+    test(`runtime config uses the production backend on ${hostname}`, () => {
+        const context = {
+            window: {
+                location: { hostname }
+            }
+        };
+        vm.runInNewContext(
+            fs.readFileSync(path.join(root, "js", "config.js"), "utf8"),
+            context
+        );
 
-    assert.equal(context.window.WAFFLEBERRY_API_BASE_URL, "");
-});
+        assert.equal(
+            context.window.WAFFLEBERRY_API_BASE_URL,
+            "https://89-167-14-211.sslip.io/api/v1"
+        );
+    });
+}
 
 test("every API-backed page loads runtime config before api.js", () => {
     const htmlFiles = fs.readdirSync(root).filter((name) => name.endsWith(".html"));
