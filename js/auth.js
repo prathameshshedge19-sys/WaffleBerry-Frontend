@@ -16,6 +16,11 @@ function redirectToLogin() {
 }
 
 
+function redirectToLandingPage() {
+    window.location.replace("/");
+}
+
+
 function clearInvalidSession() {
     clearStoredSession();
     redirectToLogin();
@@ -86,7 +91,24 @@ window.currentUserPromise =
 
 function logout() {
     clearStoredSession();
-    redirectToLogin();
+
+    const toast =
+        document.createElement("div");
+    toast.className =
+        "logout-success-toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute(
+        "aria-live",
+        "polite"
+    );
+    toast.textContent =
+        "Signed out successfully.";
+    document.body.appendChild(toast);
+
+    window.setTimeout(
+        redirectToLandingPage,
+        1000
+    );
 }
 
 

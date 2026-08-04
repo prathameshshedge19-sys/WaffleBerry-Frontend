@@ -159,7 +159,7 @@ test("responsive, dark-mode and native interactive controls remain present", () 
 
 test("every authenticated page exposes safe sign out", () => {
     const auth = read("js/auth.js");
-    assert.match(auth, /function logout\(\)[\s\S]*clearStoredSession\(\)[\s\S]*redirectToLogin\(\)/);
+    assert.match(auth, /function logout\(\)[\s\S]*clearStoredSession\(\)[\s\S]*redirectToLandingPage/);
     assert.doesNotMatch(auth, /deleteLegacy|archiveLegacy|removeItem\([^)]*(?:legacy|chapter|memory)/i);
 
     for (const name of fs.readdirSync(path.join(__dirname, ".."))) {

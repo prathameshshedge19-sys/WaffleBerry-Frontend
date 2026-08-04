@@ -5965,6 +5965,73 @@ body.dark-mode .legacy-management-tabs {
     animation: authCardEntrance 0.9s ease;
 }
 
+.auth-home-link {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    color: #95677b;
+    font-size: 0.8rem;
+    font-weight: 720;
+    text-decoration: none;
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.auth-home-link:hover {
+    color: #c83f74;
+    transform: translateX(-2px);
+}
+
+.auth-home-link:focus-visible {
+    outline: 3px solid rgba(200, 63, 116, 0.28);
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+.logout-success-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 12000;
+    max-width: calc(100% - 40px);
+    padding: 11px 15px;
+    border: 1px solid rgba(255, 91, 156, 0.3);
+    border-radius: 13px;
+    color: #fff8fc;
+    background: rgba(55, 33, 61, 0.96);
+    box-shadow: 0 14px 36px rgba(25, 11, 28, 0.28);
+    pointer-events: none;
+    font-size: 0.88rem;
+    font-weight: 750;
+    animation: logoutToastEntrance 0.2s ease both;
+}
+
+@keyframes logoutToastEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 600px) {
+    .logout-success-toast {
+        top: auto;
+        right: 12px;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        left: 12px;
+        max-width: none;
+        text-align: center;
+    }
+}
+
 @keyframes authCardEntrance {
     from {
         opacity: 0;
