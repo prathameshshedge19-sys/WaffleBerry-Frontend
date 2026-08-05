@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Verify your Waffle Berry email address."
+    >
+
+    <title>Verify your Email | Waffle Berry</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <section id="authScreen">
+
+        <video
+            id="authBackgroundVideo"
+            autoplay
+            muted
+            playsinline
+            loop
+        >
+            <source
+                src="assets/waffle-berry-intro.mp4"
+                type="video/mp4"
+            >
+        </video>
+
+        <video
+            id="authMainVideo"
+            autoplay
+            muted
+            playsinline
+            loop
+        >
+            <source
+                src="assets/waffle-berry-intro.mp4"
+                type="video/mp4"
+            >
+        </video>
+
+        <div class="auth-overlay"></div>
+
+        <div class="auth-card">
+
+            <div class="auth-brand">
+                <span class="auth-brand-icon">&#129479;</span>
+
+                <div>
+                    <h1>Waffle Berry</h1>
+                    <p>We make people live forever.</p>
+                </div>
+            </div>
+
+            <div class="auth-heading">
+                <h2>Verify your Email</h2>
+
+                <p id="verificationDescription">
+                    We sent a 6-digit OTP to your email address.
+                </p>
+            </div>
+
+            <form id="verificationForm">
+                <div class="form-group">
+                    <label for="otpInput">Verification code</label>
+
+                    <input
+                        id="otpInput"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        placeholder="Enter 6-digit OTP"
+                        required
+                    >
+                </div>
+
+                <button
+                    id="verifyButton"
+                    class="login-button"
+                    type="submit"
+                >
+                    <span>Verify</span>
+                    <span class="login-arrow">&rarr;</span>
+                </button>
+            </form>
+
+            <p class="signup-message">
+                Didn't receive the code?
+
+                <button
+                    id="resendOtpButton"
+                    type="button"
+                >
+                    Resend OTP
+                </button>
+            </p>
+
+            <p
+                id="verificationMessage"
+                class="login-message"
+                aria-live="polite"
+            ></p>
+        </div>
+
+    </section>
+    <script src="js/api.js?v=otp-auth-2"></script>
+    <script src="js/verify-email.js"></script>
+</body>
+
+</html>

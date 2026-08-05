@@ -4,8 +4,10 @@
 const {
     ApiError,
     apiRequest,
+    authenticateUser,
     clearStoredSession,
-    storeSession
+    getPendingVerificationCredentials,
+    storePendingVerificationCredentials
 } = window.WaffleBerryApi;
 
 const loginForm =
@@ -23,6 +25,12 @@ const emailInput =
 const passwordInput =
     document.getElementById("passwordInput");
 
+const confirmPasswordGroup =
+    document.getElementById("confirmPasswordGroup");
+
+const confirmPasswordInput =
+    document.getElementById("confirmPasswordInput");
+
 const togglePassword =
     document.getElementById("togglePassword");
 
@@ -30,6 +38,9 @@ const createAccountButton =
     document.getElementById(
         "createAccountButton"
     );
+
+const forgotPasswordButton =
+    document.getElementById("forgotPasswordButton");
 
 const authTitle =
     document.getElementById("authTitle");
@@ -87,6 +98,21 @@ function setAuthMode(mode) {
 
     if (fullNameInput) {
         fullNameInput.required =
+            isRegisterMode;
+    }
+
+    if (confirmPasswordGroup) {
+        confirmPasswordGroup.hidden =
+            !isRegisterMode;
+    }
+
+    if (confirmPasswordInput) {
+        confirmPasswordInput.required =
+            isRegisterMode;
+    }
+
+    if (forgotPasswordButton) {
+        forgotPasswordButton.hidden =
             isRegisterMode;
     }
 
@@ -151,37 +177,6 @@ function setSubmitting(submitting) {
 }
 
 
-async function login(email, password) {
-    const response = await apiRequest(
-        "/login",
-        {
-            method: "POST",
-            authenticated: false,
-            body: {
-                email,
-                password
-            }
-        }
-    );
-
-    if (
-        !response?.access_token ||
-        response.token_type !== "bearer" ||
-        !response.user
-    ) {
-        throw new ApiError(
-            "The server returned an invalid login response.",
-            { kind: "server" }
-        );
-    }
-
-    storeSession(
-        response.access_token,
-        response.user
-    );
-}
-
-
 function getLoginErrorMessage(error) {
     if (!(error instanceof ApiError)) {
         return "Unable to sign in. Please try again.";
@@ -205,6 +200,8 @@ if (
         async (event) => {
             event.preventDefault();
 
+            console.info("[signup] Form submitted.");
+
             if (isSubmitting) {
                 return;
             }
@@ -213,6 +210,10 @@ if (
                 emailInput.value.trim();
             const password =
                 passwordInput.value;
+            const confirmPassword =
+                confirmPasswordInput
+                    ? confirmPasswordInput.value
+                    : "";
             const isRegisterMode =
                 authMode === "register";
             const fullName =
@@ -223,12 +224,24 @@ if (
             if (
                 !email ||
                 !password ||
-                (isRegisterMode && !fullName)
+                (isRegisterMode &&
+                    (!fullName || !confirmPassword))
             ) {
                 setLoginMessage(
                     isRegisterMode
-                        ? "Please enter your full name, email and password."
+                        ? "Please enter your full name, email, password and password confirmation."
                         : "Please enter your email and password.",
+                    "error"
+                );
+                return;
+            }
+
+            if (
+                isRegisterMode &&
+                password !== confirmPassword
+            ) {
+                setLoginMessage(
+                    "Passwords do not match.",
                     "error"
                 );
                 return;
@@ -243,7 +256,10 @@ if (
 
             try {
                 if (isRegisterMode) {
-                    await apiRequest(
+                    console.info(
+                        "[signup] Sending POST /api/v1/users."
+                    );
+                    const signupResponse = await apiRequest(
                         "/users",
                         {
                             method: "POST",
@@ -256,9 +272,41 @@ if (
                             }
                         }
                     );
+
+                    console.info(
+                        "[signup] Account creation response received."
+                    );
+
+                    const pendingCredentials =
+                        getPendingVerificationCredentials();
+
+                    if (
+                        !signupResponse?.verification_resent ||
+                        !pendingCredentials ||
+                        pendingCredentials.email !== email
+                    ) {
+                        storePendingVerificationCredentials(
+                            email,
+                            password
+                        );
+                    }
+
+                    const verificationParameters =
+                        new URLSearchParams({ email });
+
+                    if (signupResponse?.verification_resent) {
+                        verificationParameters.set(
+                            "resent",
+                            "true"
+                        );
+                    }
+
+                    window.location.href =
+                        `verify-email.html?${verificationParameters}`;
+                    return;
                 }
 
-                await login(email, password);
+                await authenticateUser(email, password);
 
                 setLoginMessage(
                     "Signing you in..."
@@ -267,6 +315,10 @@ if (
                 window.location.href =
                     "experience.html";
             } catch (error) {
+                console.error(
+                    "[signup] Account creation request failed.",
+                    error
+                );
                 clearStoredSession();
                 setLoginMessage(
                     getLoginErrorMessage(error),

@@ -76,6 +76,39 @@ function clearStoredSession() {
 }
 
 
+function storePendingVerificationCredentials(
+    email,
+    password
+) {
+    sessionStorage.setItem(
+        "pendingVerificationCredentials",
+        JSON.stringify({ email, password })
+    );
+}
+
+
+function getPendingVerificationCredentials() {
+    try {
+        const credentials = sessionStorage.getItem(
+            "pendingVerificationCredentials"
+        );
+
+        return credentials
+            ? JSON.parse(credentials)
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+
+function clearPendingVerificationCredentials() {
+    sessionStorage.removeItem(
+        "pendingVerificationCredentials"
+    );
+}
+
+
 function getValidationMessage(details) {
     if (!Array.isArray(details)) {
         return "Please check the information you entered.";
@@ -308,6 +341,34 @@ async function apiRequest(path, options = {}) {
 }
 
 
+async function authenticateUser(email, password) {
+    const response = await apiRequest(
+        "/login",
+        {
+            method: "POST",
+            authenticated: false,
+            body: { email, password }
+        }
+    );
+
+    if (
+        !response?.access_token ||
+        response.token_type !== "bearer" ||
+        !response.user
+    ) {
+        throw new ApiError(
+            "The server returned an invalid login response.",
+            { kind: "server" }
+        );
+    }
+
+    storeSession(
+        response.access_token,
+        response.user
+    );
+}
+
+
 function supportsResponseStreaming() {
     return (
         typeof window.ReadableStream ===
@@ -533,10 +594,14 @@ window.WaffleBerryApi = Object.freeze({
     STORAGE_KEYS,
     ApiError,
     apiRequest,
+    authenticateUser,
     getFriendlyChatError,
     streamChatMessage,
     supportsResponseStreaming,
     clearStoredSession,
+    storePendingVerificationCredentials,
+    getPendingVerificationCredentials,
+    clearPendingVerificationCredentials,
     getStoredAccessToken,
     getStoredUser,
     storeSession

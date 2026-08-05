@@ -184,6 +184,7 @@
                         </label>
 
                         <button
+                            id="forgotPasswordButton"
                             class="forgot-password"
                             type="button"
                         >
@@ -210,6 +211,23 @@
                         </button>
                     </div>
 
+                </div>
+
+                <div
+                    id="confirmPasswordGroup"
+                    class="form-group"
+                    hidden
+                >
+                    <label for="confirmPasswordInput">
+                        Confirm Password
+                    </label>
+
+                    <input
+                        id="confirmPasswordInput"
+                        type="password"
+                        placeholder="Confirm your password"
+                        autocomplete="new-password"
+                    >
                 </div>
 
                 <label class="remember-row">
@@ -254,7 +272,7 @@
         </div>
 
     </section>
-    <script src="js/api.js"></script>
+    <script src="js/api.js?v=otp-auth-2"></script>
     <script src="js/login.js"></script>
 </body>
 
