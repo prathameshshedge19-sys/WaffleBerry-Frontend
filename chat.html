@@ -282,7 +282,7 @@
 
                     <p
                         id="messageSpeechStatus"
-                        class="message-speech-status"
+                        class="message-speech-status sr-only"
                         role="status"
                         aria-live="polite"
                     ></p>
@@ -295,7 +295,6 @@
                         <div
                             id="voiceRecorderPanel"
                             class="voice-recorder-panel"
-                            aria-live="polite"
                             hidden
                         >
                             <div
@@ -308,8 +307,19 @@
                                     aria-hidden="true"
                                 ></span>
 
-                                <span id="voiceRecordingStatus">
+                                <span
+                                    id="voiceRecordingStatus"
+                                    role="status"
+                                    aria-live="polite"
+                                >
                                     Preparing microphone...
+                                </span>
+
+                                <span
+                                    class="voice-recording-bars"
+                                    aria-hidden="true"
+                                >
+                                    <i></i><i></i><i></i><i></i>
                                 </span>
 
                                 <span
@@ -323,18 +333,26 @@
                                 <div class="voice-recording-actions">
                                     <button
                                         id="voiceStopButton"
+                                        class="voice-stop-button"
                                         type="button"
                                         aria-label="Stop voice recording"
                                     >
-                                        Stop
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <rect x="7" y="7" width="10" height="10" rx="2"/>
+                                        </svg>
+                                        <span>Stop</span>
                                     </button>
 
                                     <button
                                         id="voiceCancelButton"
+                                        class="voice-cancel-button"
                                         type="button"
                                         aria-label="Cancel voice recording"
                                     >
-                                        Cancel
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="m7.05 5.64 4.95 4.95 4.95-4.95 1.41 1.41L13.41 12l4.95 4.95-1.41 1.41L12 13.41l-4.95 4.95-1.41-1.41L10.59 12 5.64 7.05l1.41-1.41Z"/>
+                                        </svg>
+                                        <span>Cancel</span>
                                     </button>
                                 </div>
                             </div>
@@ -393,6 +411,13 @@
                             ></p>
                         </div>
 
+                        <span
+                            id="voiceLiveStatus"
+                            class="sr-only"
+                            role="status"
+                            aria-live="polite"
+                        ></span>
+
                         <button
                             class="input-icon-button"
                             type="button"
@@ -405,7 +430,9 @@
                             id="voiceRecordButton"
                             class="voice-record-button"
                             type="button"
-                            aria-label="Record voice message"
+                            aria-label="Start voice recording"
+                            aria-pressed="false"
+                            title="Start voice recording"
                         >
                             <svg
                                 viewBox="0 0 24 24"

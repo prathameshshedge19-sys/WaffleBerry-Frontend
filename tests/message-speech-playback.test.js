@@ -93,8 +93,9 @@ test("playback has accessible state and non-blocking status", () => {
     assert.match(html, /id="messageSpeechStatus"[\s\S]{0,160}aria-live="polite"/);
     assert.match(chatSource, /aria-label/);
     assert.match(chatSource, /aria-pressed/);
-    assert.match(chatSource, /"Pause voice"/);
-    assert.match(chatSource, /"Resume voice"/);
+    assert.match(chatSource, /"Pause Berry voice"/);
+    assert.match(chatSource, /"Resume Berry voice"/);
+    assert.match(chatSource, /"Replay Berry voice"/);
     assert.match(css, /\.message-speech-button:focus-visible/);
     assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*message-speech-button/);
 });
@@ -123,4 +124,34 @@ test("frontend contains no voice selection or Legacy relationship inference", ()
     assert.doesNotMatch(chatSource, /relationship.*voice|voice.*relationship/i);
     assert.doesNotMatch(html, /voice-selector|cedar|marin/i);
     assert.doesNotMatch(html, /<(select|input)[^>]*(name|id)="[^"]*voice/i);
+});
+
+test("active playback exposes read-only progress and stable premium states", () => {
+    assert.match(chatSource, /progress\.className = "message-speech-progress"/);
+    assert.match(chatSource, /<progress value="0" max="1" aria-label="Berry voice playback progress">/);
+    assert.match(chatSource, /"loadedmetadata"/);
+    assert.match(chatSource, /"durationchange"/);
+    assert.match(chatSource, /"timeupdate"/);
+    assert.match(chatSource, /formatPlaybackTime/);
+    assert.match(chatSource, /phase = "finished"/);
+    assert.match(css, /\.message-row\.is-speech-active/);
+});
+
+test("voice player stays inside its Berry message without visible action text", () => {
+    const attachment = chatSource.match(
+        /function attachMessageSpeechControl[\s\S]*?updateMessageSpeechControls\(\);\n}/
+    )?.[0] || "";
+    assert.match(attachment, /row\.querySelector\(\s*"\.berry-message"/);
+    assert.match(attachment, /bubble\.appendChild\(actions\)/);
+    assert.doesNotMatch(attachment, /row\.appendChild\(actions\)/);
+    assert.match(css, /\.message-speech-button-label\s*\{[\s\S]*position:\s*absolute;[\s\S]*clip:/);
+    assert.doesNotMatch(css, /has-speech-control \.message\s*\{/);
+    assert.match(css, /\.message-speech-actions\s*\{[\s\S]*width:\s*min\(100%, 240px\)/);
+});
+
+test("audio event listeners are explicitly removed during cleanup", () => {
+    assert.match(chatSource, /audioCleanup/);
+    for (const event of ["loadedmetadata", "durationchange", "timeupdate", "ended", "error"]) {
+        assert.match(chatSource, new RegExp(`removeEventListener\\("${event}"`));
+    }
 });

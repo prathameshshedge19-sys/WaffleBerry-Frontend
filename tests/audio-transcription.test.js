@@ -114,7 +114,8 @@ test("failed requests retain preview and expose retry", () => {
     const handler = chatSource.match(/async function transcribeReadyVoiceRecording\(\)[\s\S]*?\/\* End Phase 9\.1/)?.[0] || "";
     assert.match(handler, /transcriptionPhase =\s*"error"/);
     assert.match(chatSource, /phase === "error"[\s\S]*"Retry transcription"/);
-    assert.doesNotMatch(handler, /revokeVoiceObjectUrl|deleteVoiceRecording/);
+    const failureBranch = handler.match(/\} catch \(error\) \{[\s\S]*?\} finally \{/)?.[0] || "";
+    assert.doesNotMatch(failureBranch, /revokeVoiceObjectUrl|deleteVoiceRecording/);
 });
 
 test("duplicate and stale transcription results are guarded and cancelled", () => {

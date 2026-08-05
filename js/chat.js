@@ -148,6 +148,10 @@ const voiceRecordingError =
     document.getElementById(
         "voiceRecordingError"
     );
+const voiceLiveStatus =
+    document.getElementById(
+        "voiceLiveStatus"
+    );
 const messageSpeechStatus =
     document.getElementById(
         "messageSpeechStatus"
@@ -191,7 +195,9 @@ const voiceRecorderState = {
     stopErrorMessage: "",
     transcriptionPhase: "idle",
     transcriptionRequestId: 0,
-    transcriptionController: null
+    transcriptionController: null,
+    successTimerId: null,
+    maximumReached: false
 };
 
 const messageSpeechState = {
@@ -200,9 +206,27 @@ const messageSpeechState = {
     audio: null,
     requestController: null,
     requestId: 0,
+    currentTime: 0,
+    duration: Number.NaN,
+    audioCleanup: null,
     cache: new Map()
 };
 const MAX_MESSAGE_SPEECH_CACHE = 6;
+
+const VOICE_BUTTON_ICONS = Object.freeze({
+    microphone: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Zm-5.5-4a1 1 0 0 1 2 0V12a3.5 3.5 0 0 0 7 0v-.5a1 1 0 1 1 2 0V12a5.5 5.5 0 0 1-4.5 5.41V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.59A5.5 5.5 0 0 1 6.5 12v-.5Z"/></svg>`,
+    stop: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>`,
+    loading: `<span class="voice-button-spinner" aria-hidden="true"></span>`
+});
+
+const SPEECH_BUTTON_ICONS = Object.freeze({
+    idle: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7L8 5Z"/></svg>`,
+    loading: `<span class="message-speech-spinner" aria-hidden="true"></span>`,
+    playing: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 5h4v14H7V5Zm6 0h4v14h-4V5Z"/></svg>`,
+    paused: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7L8 5Z"/></svg>`,
+    finished: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5V2l-4 4 4 4V7a5 5 0 1 1-4.58 7H5.26A7 7 0 1 0 12 5Z"/></svg>`,
+    error: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-4.58 7H5.26A7 7 0 1 0 12 5Z"/></svg>`
+});
 
 
 function formatVoiceDuration(seconds) {
@@ -244,6 +268,21 @@ function stopVoiceTimer() {
 }
 
 
+function stopVoiceSuccessTimer() {
+    window.clearTimeout(
+        voiceRecorderState.successTimerId
+    );
+    voiceRecorderState.successTimerId = null;
+}
+
+
+function announceVoiceStatus(message) {
+    if (voiceLiveStatus) {
+        voiceLiveStatus.textContent = message;
+    }
+}
+
+
 function stopEveryVoiceTrack(stream) {
     stream?.getTracks().forEach(
         (track) => track.stop()
@@ -276,6 +315,7 @@ function revokeVoiceObjectUrl() {
 
 
 function cancelVoiceTranscription() {
+    stopVoiceSuccessTimer();
     voiceRecorderState.transcriptionRequestId += 1;
     voiceRecorderState
         .transcriptionController
@@ -300,7 +340,7 @@ function voiceTranscriptionErrorMessage(error) {
         return "Your session has expired. Please sign in again.";
     }
     if (error?.kind === "audio_format_unsupported") {
-        return "This recording format is not supported.";
+        return "This recording format is not supported. Try recording again.";
     }
     if (error?.kind === "audio_too_large") {
         return "The recording is too large.";
@@ -312,15 +352,22 @@ function voiceTranscriptionErrorMessage(error) {
         "network",
         "connection_error"
     ].includes(error?.kind)) {
-        return "Transcription is temporarily unavailable.";
+        return "Your recording could not be transcribed. You can try again or type your message.";
     }
-    return "The recording could not be transcribed. Please try again.";
+    if (error?.kind === "audio_empty") {
+        return "No speech was captured. Try speaking closer to the microphone.";
+    }
+    return "Your recording could not be transcribed. You can try again or type your message.";
 }
 
 
 function updateVoiceTranscriptionUi() {
     const phase =
         voiceRecorderState.transcriptionPhase;
+
+    if (voiceRecorderPanel) {
+        voiceRecorderPanel.dataset.transcriptionPhase = phase;
+    }
 
     if (voiceTranscribeButton) {
         voiceTranscribeButton.disabled =
@@ -333,7 +380,7 @@ function updateVoiceTranscriptionUi() {
             phase === "processing"
                 ? "Transcribing..."
                 : phase === "completed"
-                    ? "Transcribed"
+                    ? "Voice added"
                     : phase === "error"
                         ? "Retry transcription"
                         : "Transcribe";
@@ -344,7 +391,7 @@ function updateVoiceTranscriptionUi() {
             phase === "processing"
                 ? "Transcribing..."
                 : phase === "completed"
-                    ? "Transcript added to the message. Review and send it when ready."
+                    ? "Voice added. Review and send when ready."
                     : voiceTranscriptionStatus
                         .textContent;
     }
@@ -354,15 +401,15 @@ function updateVoiceTranscriptionUi() {
 function voiceErrorMessage(error) {
     switch (error?.name) {
         case "NotAllowedError":
-            return "Microphone access was denied. Allow microphone access in your browser settings and try again.";
+            return "Microphone access was blocked. Enable it in your browser settings and try again.";
         case "NotFoundError":
-            return "No microphone was found on this device.";
+            return "No microphone was detected.";
         case "NotReadableError":
             return "The microphone is currently unavailable or being used by another application.";
         case "AbortError":
             return "Microphone access was interrupted. Please try again.";
         default:
-            return "Voice recording could not start. Please try again.";
+            return "Recording could not start. Please try again.";
     }
 }
 
@@ -378,6 +425,7 @@ function updateVoiceRecorderUi() {
     if (voiceRecorderPanel) {
         voiceRecorderPanel.hidden =
             phase === "idle";
+        voiceRecorderPanel.dataset.voicePhase = phase;
     }
 
     if (voiceRecordingActive) {
@@ -399,7 +447,8 @@ function updateVoiceRecorderUi() {
         voiceRecordButton.hidden =
             phase === "ready";
         voiceRecordButton.disabled =
-            isActive;
+            phase === "requesting" ||
+            phase === "stopping";
         voiceRecordButton.classList.toggle(
             "is-recording",
             phase === "recording"
@@ -409,18 +458,34 @@ function updateVoiceRecorderUi() {
             phase === "requesting"
                 ? "Requesting microphone permission"
                 : phase === "recording"
-                    ? "Voice recording in progress"
-                    : "Record voice message"
+                    ? "Stop voice recording"
+                    : "Start voice recording"
         );
+        voiceRecordButton.setAttribute(
+            "aria-pressed",
+            phase === "recording" ? "true" : "false"
+        );
+        voiceRecordButton.title =
+            phase === "recording"
+                ? "Stop voice recording"
+                : phase === "requesting"
+                    ? "Requesting microphone permission"
+                    : "Start voice recording";
+        voiceRecordButton.innerHTML =
+            phase === "requesting" || phase === "stopping"
+                ? VOICE_BUTTON_ICONS.loading
+                : phase === "recording"
+                    ? VOICE_BUTTON_ICONS.stop
+                    : VOICE_BUTTON_ICONS.microphone;
     }
 
     if (voiceRecordingStatus) {
         voiceRecordingStatus.textContent =
             phase === "requesting"
-                ? "Requesting microphone access..."
+                ? "Requesting microphone permission..."
                 : phase === "stopping"
                     ? "Finishing recording..."
-                    : "Recording · 60 second limit";
+                    : "Recording";
     }
 
     if (voiceRecordingTimer) {
@@ -498,6 +563,7 @@ function finishStoppedVoiceRecording() {
         voiceRecorderState.durationSeconds = 0;
         voiceRecorderState.contextId = null;
         updateVoiceRecorderUi();
+        announceVoiceStatus("Voice recording cancelled.");
         return;
     }
 
@@ -515,7 +581,7 @@ function finishStoppedVoiceRecording() {
 
     if (!usableChunks.length) {
         showVoiceRecordingError(
-            "The recording did not contain usable audio. Please try again."
+            "No speech was captured. Try speaking closer to the microphone."
         );
         return;
     }
@@ -537,7 +603,7 @@ function finishStoppedVoiceRecording() {
 
     if (!blob.size) {
         showVoiceRecordingError(
-            "The recording did not contain usable audio. Please try again."
+            "No speech was captured. Try speaking closer to the microphone."
         );
         return;
     }
@@ -546,6 +612,16 @@ function finishStoppedVoiceRecording() {
     voiceRecorderState.objectUrl =
         URL.createObjectURL(blob);
     voiceRecorderState.phase = "ready";
+    if (voiceRecorderState.maximumReached) {
+        announceVoiceStatus(
+            "Maximum recording length reached. Recording is ready to transcribe."
+        );
+    } else {
+        announceVoiceStatus(
+            "Recording stopped and ready to transcribe."
+        );
+    }
+    voiceRecorderState.maximumReached = false;
 
     if (voicePreviewAudio) {
         voicePreviewAudio.src =
@@ -565,7 +641,8 @@ function finishStoppedVoiceRecording() {
 
 function stopVoiceRecording({
     discard = false,
-    errorMessage = ""
+    errorMessage = "",
+    maximumReached = false
 } = {}) {
     const phase = voiceRecorderState.phase;
 
@@ -617,6 +694,8 @@ function stopVoiceRecording({
             : "save";
     voiceRecorderState.stopErrorMessage =
         errorMessage;
+    voiceRecorderState.maximumReached =
+        maximumReached;
     voiceRecorderState.phase = "stopping";
     stopVoiceTimer();
     updateVoiceRecorderUi();
@@ -649,6 +728,7 @@ function deleteVoiceRecording() {
     voiceRecorderState.durationSeconds = 0;
     voiceRecorderState.contextId = null;
     voiceRecorderState.phase = "idle";
+    voiceRecorderState.maximumReached = false;
     updateVoiceRecorderUi();
     voiceRecordButton?.focus();
 }
@@ -673,6 +753,7 @@ function discardVoiceRecording() {
     voiceRecorderState.durationSeconds = 0;
     voiceRecorderState.contextId = null;
     voiceRecorderState.phase = "idle";
+    voiceRecorderState.maximumReached = false;
     updateVoiceRecorderUi();
 }
 
@@ -723,6 +804,9 @@ async function startVoiceRecording() {
     const requestId =
         ++voiceRecorderState.permissionRequestId;
     updateVoiceRecorderUi();
+    announceVoiceStatus(
+        "Requesting microphone permission."
+    );
 
     try {
         const stream =
@@ -785,6 +869,9 @@ async function startVoiceRecording() {
         voiceRecorderState.startedAt =
             Date.now();
         updateVoiceRecorderUi();
+        announceVoiceStatus(
+            "Voice recording started."
+        );
         voiceRecorderState.timerId =
             window.setInterval(() => {
                 const duration =
@@ -798,7 +885,9 @@ async function startVoiceRecording() {
                     duration >=
                     MAX_VOICE_RECORDING_SECONDS
                 ) {
-                    stopVoiceRecording();
+                    stopVoiceRecording({
+                        maximumReached: true
+                    });
                 }
             }, 250);
     } catch (error) {
@@ -832,6 +921,7 @@ async function transcribeReadyVoiceRecording() {
         controller;
     voiceRecorderState.transcriptionPhase =
         "processing";
+    announceVoiceStatus("Transcribing recording.");
     if (voiceTranscriptionStatus) {
         voiceTranscriptionStatus.textContent =
             "Transcribing...";
@@ -873,10 +963,34 @@ async function transcribeReadyVoiceRecording() {
                     120
                 )}px`;
             chatInput.focus();
+            chatInput.setSelectionRange?.(
+                chatInput.value.length,
+                chatInput.value.length
+            );
         }
 
         voiceRecorderState.transcriptionPhase =
             "completed";
+        announceVoiceStatus("Voice added to your message.");
+        stopVoiceSuccessTimer();
+        voiceRecorderState.successTimerId =
+            window.setTimeout(() => {
+                if (
+                    voiceRecorderState
+                        .transcriptionPhase !==
+                    "completed"
+                ) {
+                    return;
+                }
+                revokeVoiceObjectUrl();
+                voiceRecorderState.blob = null;
+                voiceRecorderState.durationSeconds = 0;
+                voiceRecorderState.contextId = null;
+                voiceRecorderState.transcriptionPhase = "idle";
+                voiceRecorderState.phase = "idle";
+                updateVoiceRecorderUi();
+                chatInput?.focus();
+            }, 1200);
     } catch (error) {
         if (
             requestId !==
@@ -889,6 +1003,9 @@ async function transcribeReadyVoiceRecording() {
 
         voiceRecorderState.transcriptionPhase =
             "error";
+        announceVoiceStatus(
+            voiceTranscriptionErrorMessage(error)
+        );
         if (voiceTranscriptionStatus) {
             voiceTranscriptionStatus.textContent =
                 voiceTranscriptionErrorMessage(
@@ -916,14 +1033,29 @@ async function transcribeReadyVoiceRecording() {
 /* Phase 9.5: persisted assistant message playback. */
 function messageSpeechButtonLabel(phase) {
     return phase === "loading"
-        ? "Generating voice"
+        ? "Preparing Berry voice"
         : phase === "playing"
-            ? "Pause voice"
+            ? "Pause Berry voice"
             : phase === "paused"
-                ? "Resume voice"
+                ? "Resume Berry voice"
+                : phase === "finished"
+                    ? "Replay Berry voice"
                 : phase === "error"
-                    ? "Retry voice"
-                    : "Play voice";
+                    ? "Retry Berry voice"
+                    : "Play Berry voice";
+}
+
+
+function formatPlaybackTime(seconds) {
+    if (!Number.isFinite(seconds) || seconds < 0) {
+        return "--:--";
+    }
+    const wholeSeconds = Math.floor(seconds);
+    const minutes = Math.floor(wholeSeconds / 60);
+    const remainder = String(
+        wholeSeconds % 60
+    ).padStart(2, "0");
+    return `${minutes}:${remainder}`;
 }
 
 
@@ -952,7 +1084,7 @@ function updateMessageSpeechControls() {
                 phase === "loading";
             button.setAttribute(
                 "aria-label",
-                `${label} for Berry message`
+                label
             );
             button.setAttribute(
                 "aria-pressed",
@@ -965,6 +1097,63 @@ function updateMessageSpeechControls() {
             );
             if (text) {
                 text.textContent = label;
+            }
+            const icon = button.querySelector(
+                ".message-speech-button-icon"
+            );
+            if (icon) {
+                icon.innerHTML =
+                    SPEECH_BUTTON_ICONS[phase] ||
+                    SPEECH_BUTTON_ICONS.idle;
+            }
+
+            const row = button.closest(
+                ".message-row"
+            );
+            row?.classList.toggle(
+                "is-speech-active",
+                isActive && [
+                    "loading",
+                    "playing",
+                    "paused"
+                ].includes(phase)
+            );
+            const progressRegion =
+                row?.querySelector(
+                    ".message-speech-progress"
+                );
+            if (progressRegion) {
+                const showProgress =
+                    isActive && [
+                        "playing",
+                        "paused"
+                    ].includes(phase);
+                progressRegion.hidden =
+                    !showProgress;
+                const progress =
+                    progressRegion.querySelector(
+                        "progress"
+                    );
+                if (progress) {
+                    progress.max =
+                        messageSpeechState.duration || 1;
+                    progress.value = Math.min(
+                        messageSpeechState.currentTime,
+                        progress.max
+                    );
+                }
+                const timing =
+                    progressRegion.querySelector(
+                        ".message-speech-time"
+                    );
+                if (timing) {
+                    timing.textContent =
+                        `${formatPlaybackTime(
+                            messageSpeechState.currentTime
+                        )} / ${formatPlaybackTime(
+                            messageSpeechState.duration
+                        )}`;
+                }
             }
         });
 }
@@ -981,12 +1170,16 @@ function disposeActiveMessageAudio() {
     if (!messageSpeechState.audio) {
         return;
     }
+    messageSpeechState.audioCleanup?.();
+    messageSpeechState.audioCleanup = null;
     messageSpeechState.audio.pause();
     messageSpeechState.audio.removeAttribute?.(
         "src"
     );
     messageSpeechState.audio.load?.();
     messageSpeechState.audio = null;
+    messageSpeechState.currentTime = 0;
+    messageSpeechState.duration = Number.NaN;
 }
 
 
@@ -1087,15 +1280,29 @@ async function playCachedMessageSpeech(
         entry.objectUrl
     );
     messageSpeechState.audio = audio;
+    messageSpeechState.currentTime = 0;
+    messageSpeechState.duration = Number.NaN;
     messageSpeechState.phase = "playing";
     updateMessageSpeechControls();
     setMessageSpeechStatus(
         "Playing Berry's voice."
     );
 
-    audio.addEventListener(
-        "ended",
-        () => {
+    const handleMetadata = () => {
+        if (Number.isFinite(audio.duration)) {
+            messageSpeechState.duration =
+                audio.duration;
+            updateMessageSpeechControls();
+        }
+    };
+    const handleTimeUpdate = () => {
+        messageSpeechState.currentTime =
+            Number.isFinite(audio.currentTime)
+                ? audio.currentTime
+                : 0;
+        handleMetadata();
+    };
+    const handleEnded = () => {
             if (
                 requestId !==
                     messageSpeechState
@@ -1107,16 +1314,14 @@ async function playCachedMessageSpeech(
                 return;
             }
             audio.currentTime = 0;
-            messageSpeechState.phase = "idle";
+            messageSpeechState.currentTime = 0;
+            messageSpeechState.phase = "finished";
             setMessageSpeechStatus(
                 "Playback finished."
             );
             updateMessageSpeechControls();
-        }
-    );
-    audio.addEventListener(
-        "error",
-        () => {
+    };
+    const handleError = () => {
             if (
                 requestId ===
                 messageSpeechState.requestId
@@ -1127,8 +1332,19 @@ async function playCachedMessageSpeech(
                 );
                 updateMessageSpeechControls();
             }
-        }
-    );
+    };
+    audio.addEventListener("loadedmetadata", handleMetadata);
+    audio.addEventListener("durationchange", handleMetadata);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
+    messageSpeechState.audioCleanup = () => {
+        audio.removeEventListener("loadedmetadata", handleMetadata);
+        audio.removeEventListener("durationchange", handleMetadata);
+        audio.removeEventListener("timeupdate", handleTimeUpdate);
+        audio.removeEventListener("ended", handleEnded);
+        audio.removeEventListener("error", handleError);
+    };
     await audio.play();
 }
 
@@ -1154,7 +1370,9 @@ async function toggleMessageSpeech(button) {
         messageSpeechState.phase === "playing"
     ) {
         messageSpeechState.audio?.pause();
-        messageSpeechState.phase = "paused";
+            messageSpeechState.phase = "paused";
+        messageSpeechState.currentTime =
+            messageSpeechState.audio?.currentTime || 0;
         setMessageSpeechStatus("Playback paused.");
         updateMessageSpeechControls();
         return;
@@ -1206,7 +1424,7 @@ async function toggleMessageSpeech(button) {
                 controller;
             messageSpeechState.phase = "loading";
             setMessageSpeechStatus(
-                "Generating Berry's AI voice..."
+                "Preparing Berry voice..."
             );
             updateMessageSpeechControls();
             const blob = await getMessageSpeech(
@@ -1275,14 +1493,14 @@ function createMessageSpeechButton(messageId) {
     button.dataset.messageId =
         String(messageId);
     button.innerHTML = `
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M4 9v6h4l5 4V5L8 9H4Zm11.5 0.5a1 1 0 0 1 1.41 0 3.54 3.54 0 0 1 0 5 1 1 0 1 1-1.41-1.41 1.54 1.54 0 0 0 0-2.18 1 1 0 0 1 0-1.41Zm2.83-2.83a1 1 0 0 1 1.42 0 7.54 7.54 0 0 1 0 10.66 1 1 0 1 1-1.42-1.41 5.54 5.54 0 0 0 0-7.84 1 1 0 0 1 0-1.41Z"/>
-        </svg>
-        <span class="message-speech-button-label">Play voice</span>
+        <span class="message-speech-button-icon" aria-hidden="true">
+            ${SPEECH_BUTTON_ICONS.idle}
+        </span>
+        <span class="message-speech-button-label">Play Berry voice</span>
     `;
     button.setAttribute(
         "aria-label",
-        "Play voice for Berry message"
+        "Play Berry voice"
     );
     button.setAttribute(
         "aria-pressed",
@@ -1309,14 +1527,30 @@ function attachMessageSpeechControl(
     const actions =
         document.createElement("div");
     actions.className =
-        "message-speech-actions";
+        "message-speech-actions voice-player";
+    actions.dataset.messageId =
+        String(normalizedId);
     row.classList.add("has-speech-control");
     actions.appendChild(
         createMessageSpeechButton(
             normalizedId
         )
     );
-    row.appendChild(actions);
+    const progress = document.createElement("div");
+    progress.className = "message-speech-progress";
+    progress.hidden = true;
+    progress.innerHTML = `
+        <progress value="0" max="1" aria-label="Berry voice playback progress"></progress>
+        <span class="message-speech-time">0:00 / --:--</span>
+    `;
+    actions.appendChild(progress);
+    const bubble = row.querySelector(
+        ".berry-message"
+    );
+    if (!bubble) {
+        return;
+    }
+    bubble.appendChild(actions);
     updateMessageSpeechControls();
 }
 /* End Phase 9.5 persisted assistant message playback. */
@@ -3187,7 +3421,13 @@ mobileNewChatButton?.addEventListener(
 
 voiceRecordButton?.addEventListener(
     "click",
-    startVoiceRecording
+    () => {
+        if (voiceRecorderState.phase === "recording") {
+            stopVoiceRecording();
+            return;
+        }
+        startVoiceRecording();
+    }
 );
 
 voiceStopButton?.addEventListener(

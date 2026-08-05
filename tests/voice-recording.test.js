@@ -16,7 +16,8 @@ const voiceBlock = script.match(
 
 test("composer exposes an accessible microphone button", () => {
     assert.match(html, /id="voiceRecordButton"/);
-    assert.match(html, /aria-label="Record voice message"/);
+    assert.match(html, /aria-label="Start voice recording"/);
+    assert.match(html, /aria-pressed="false"/);
     assert.match(styles, /\.voice-record-button/);
 });
 
@@ -62,7 +63,7 @@ test("recording selects the first supported MIME type", () => {
 
 test("a named sixty-second recording maximum is enforced", () => {
     assert.match(script, /const MAX_VOICE_RECORDING_SECONDS = 60;/);
-    assert.match(voiceBlock, /duration >=\s*MAX_VOICE_RECORDING_SECONDS[\s\S]*stopVoiceRecording\(\)/);
+    assert.match(voiceBlock, /duration >=\s*MAX_VOICE_RECORDING_SECONDS[\s\S]*stopVoiceRecording\(\{[\s\S]*maximumReached:\s*true/);
     assert.match(html, /00:00 \/ 01:00/);
 });
 
@@ -70,6 +71,7 @@ test("timer updates during recording and is always cleared", () => {
     assert.match(voiceBlock, /window\.setInterval\(/);
     assert.match(voiceBlock, /window\.clearInterval\(/);
     assert.match(voiceBlock, /formatVoiceDuration/);
+    assert.match(voiceBlock, /Date\.now\(\) -[\s\S]*startedAt/);
 });
 
 test("stopping releases every microphone track", () => {
@@ -138,4 +140,20 @@ test("voice controls are accessible and motion-safe", () => {
     assert.match(html, /aria-label="Cancel voice recording"/);
     assert.match(html, /aria-label="Delete voice recording"/);
     assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*voice-recording-pulse[\s\S]*animation:\s*none/);
+});
+
+test("premium recording states remain explicit and compact", () => {
+    assert.match(voiceBlock, /phase === "requesting"[\s\S]*VOICE_BUTTON_ICONS\.loading/);
+    assert.match(voiceBlock, /phase === "recording"[\s\S]*"Stop voice recording"/);
+    assert.match(voiceBlock, /announceVoiceStatus\(\s*"Voice recording started\."/);
+    assert.match(voiceBlock, /announceVoiceStatus\(\s*"Voice recording cancelled\."/);
+    assert.match(html, /class="voice-recording-bars"/);
+    assert.match(styles, /@media \(max-width: 360px\)[\s\S]*voice-recording-active/);
+});
+
+test("transcription success returns to idle without changing typed text", () => {
+    assert.match(voiceBlock, /"Voice added"/);
+    assert.match(voiceBlock, /setSelectionRange/);
+    assert.match(voiceBlock, /window\.setTimeout\([\s\S]*transcriptionPhase = "idle"[\s\S]*phase = "idle"/);
+    assert.doesNotMatch(voiceBlock, /chatInput\.value\s*=\s*""/);
 });
