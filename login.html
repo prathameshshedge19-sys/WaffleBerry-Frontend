@@ -161,90 +161,227 @@
 
             <form id="loginForm">
 
+                <!-- Stage 1: Identity Entry (Name & Email) -->
                 <div
-                    id="fullNameGroup"
-                    class="form-group"
-                    hidden
+                    id="stage1-identity"
+                    class="registration-stage"
                 >
-                    <label for="fullNameInput">
-                        Full Name
-                    </label>
-
-                    <input
-                        id="fullNameInput"
-                        type="text"
-                        placeholder="Enter your full name"
-                        autocomplete="name"
+                    <div
+                        id="fullNameGroup"
+                        class="form-group"
+                        hidden
                     >
-                </div>
-
-                <div class="form-group">
-                    <label for="emailInput">
-                        Email address
-                    </label>
-
-                    <input
-                        id="emailInput"
-                        type="email"
-                        placeholder="name@example.com"
-                        autocomplete="email"
-                        required
-                    >
-                </div>
-
-                <div class="form-group">
-
-                    <div class="password-label-row">
-                        <label for="passwordInput">
-                            Password
+                        <label for="fullNameInput">
+                            Full Name
                         </label>
 
-                        <button
-                            class="forgot-password"
-                            type="button"
+                        <input
+                            id="fullNameInput"
+                            type="text"
+                            placeholder="Enter your full name"
+                            autocomplete="name"
                         >
-                            Forgot password?
-                        </button>
                     </div>
 
-                    <div class="password-field">
+                    <div class="form-group">
+                        <label for="emailInput">
+                            Email address
+                        </label>
+
                         <input
-                            id="passwordInput"
-                            type="password"
-                            placeholder="Enter your password"
-                            autocomplete="current-password"
+                            id="emailInput"
+                            type="email"
+                            placeholder="name@example.com"
+                            autocomplete="email"
                             required
                         >
-
-                        <button
-                            id="togglePassword"
-                            class="password-toggle"
-                            type="button"
-                            aria-label="Show password"
-                        >
-                            👁
-                        </button>
                     </div>
 
+                    <div class="form-group">
+
+                        <div class="password-label-row">
+                            <label for="passwordInput">
+                                Password
+                            </label>
+
+                            <button
+                                class="forgot-password"
+                                type="button"
+                            >
+                                Forgot password?
+                            </button>
+                        </div>
+
+                        <div class="password-field">
+                            <input
+                                id="passwordInput"
+                                type="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                id="togglePassword"
+                                class="password-toggle"
+                                type="button"
+                                aria-label="Show password"
+                            >
+                                👁
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <label class="remember-row">
+                        <input
+                            id="rememberMe"
+                            type="checkbox"
+                        >
+
+                        <span>Remember me</span>
+                    </label>
+
+                    <button
+                        id="authSubmitButton"
+                        class="login-button"
+                        type="submit"
+                    >
+                        <span id="authSubmitText">Sign in</span>
+                        <span class="login-arrow">→</span>
+                    </button>
                 </div>
 
-                <label class="remember-row">
-                    <input
-                        id="rememberMe"
-                        type="checkbox"
-                    >
-
-                    <span>Remember me</span>
-                </label>
-
-                <button
-                    id="authSubmitButton"
-                    class="login-button"
-                    type="submit"
+                <!-- Stage 2: OTP Verification -->
+                <div
+                    id="stage2-otp"
+                    class="registration-stage"
+                    hidden
                 >
-                    <span id="authSubmitText">Sign in</span>
-                    <span class="login-arrow">→</span>
-                </button>
+                    <div class="otp-info">
+                        <p id="otpEmailDisplay"></p>
+                        <p id="otpExpiryDisplay"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="otpInput">
+                            Enter verification code
+                        </label>
+
+                        <input
+                            id="otpInput"
+                            type="text"
+                            placeholder="000000"
+                            inputmode="numeric"
+                            maxlength="6"
+                            autocomplete="off"
+                            aria-label="6-digit OTP code"
+                        >
+                        <small id="otpHelp">
+                            Enter the code we sent to your email
+                        </small>
+                    </div>
+
+                    <button
+                        id="verifyOtpButton"
+                        class="login-button"
+                        type="button"
+                    >
+                        <span>Verify Code</span>
+                        <span class="login-arrow">→</span>
+                    </button>
+
+                    <div class="otp-controls">
+                        <button
+                            id="resendOtpButton"
+                            class="text-button"
+                            type="button"
+                            aria-label="Resend OTP"
+                        >
+                            Resend code
+                        </button>
+
+                        <button
+                            id="changeEmailButton"
+                            class="text-button"
+                            type="button"
+                            aria-label="Change email"
+                        >
+                            Change email
+                        </button>
+
+                        <span id="resendCooldown" class="cooldown-timer"></span>
+                    </div>
+                </div>
+
+                <!-- Stage 3: Password Creation -->
+                <div
+                    id="stage3-password"
+                    class="registration-stage"
+                    hidden
+                >
+                    <p id="passwordStageSummary"></p>
+
+                    <div class="form-group">
+                        <label for="newPasswordInput">
+                            Create password
+                        </label>
+
+                        <div class="password-field">
+                            <input
+                                id="newPasswordInput"
+                                type="password"
+                                placeholder="At least 8 characters"
+                                autocomplete="new-password"
+                                minlength="8"
+                            >
+
+                            <button
+                                id="toggleNewPassword"
+                                class="password-toggle"
+                                type="button"
+                                aria-label="Show password"
+                            >
+                                👁
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPasswordInput">
+                            Confirm password
+                        </label>
+
+                        <div class="password-field">
+                            <input
+                                id="confirmPasswordInput"
+                                type="password"
+                                placeholder="Re-enter your password"
+                                autocomplete="new-password"
+                                minlength="8"
+                            >
+
+                            <button
+                                id="toggleConfirmPassword"
+                                class="password-toggle"
+                                type="button"
+                                aria-label="Show password"
+                            >
+                                👁
+                            </button>
+                        </div>
+                        <small id="passwordMismatchError" class="error-text"></small>
+                    </div>
+
+                    <button
+                        id="completeRegistrationButton"
+                        class="login-button"
+                        type="button"
+                    >
+                        <span>Create Account</span>
+                        <span class="login-arrow">→</span>
+                    </button>
+                </div>
 
             </form>
 

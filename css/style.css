@@ -6550,6 +6550,90 @@ body.dark-mode .wb-brand__mark {
         0 0 0 4px rgba(200, 63, 116, 0.1);
 }
 
+/* OTP Registration Stages */
+
+.registration-stage {
+    display: contents;
+}
+
+.registration-stage[hidden] {
+    display: none;
+}
+
+.otp-info {
+    margin-bottom: 16px;
+    color: #765766;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.otp-info p {
+    margin: 5px 0 0;
+}
+
+.otp-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.text-button {
+    border: none;
+    background: transparent;
+    color: #c83f74;
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 8px 0;
+    text-align: left;
+    transition:
+        color 0.2s ease,
+        text-decoration 0.2s ease;
+}
+
+.text-button:hover {
+    color: #a93462;
+    text-decoration: underline;
+}
+
+.text-button:disabled {
+    color: #d4a5b8;
+    cursor: not-allowed;
+    text-decoration: none;
+}
+
+.cooldown-timer {
+    display: inline-block;
+    color: #765766;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+.password-stage-summary {
+    margin-bottom: 20px;
+    padding: 12px 15px;
+    border-radius: 12px;
+    background: rgba(200, 63, 116, 0.08);
+    color: #6e4d5d;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.error-text {
+    display: none;
+    min-height: 1.25rem;
+    color: #a72c43;
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-top: 7px;
+}
+
+.error-text[style*="display"] {
+    display: block;
+}
+
 .password-label-row {
     display: flex;
     justify-content: space-between;
