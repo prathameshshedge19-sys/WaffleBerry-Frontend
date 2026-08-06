@@ -58,12 +58,82 @@
 
                 <form id="storyComposer" class="story-composer">
                     <label class="sr-only" for="storyReply">Share your story</label>
-                    <textarea
-                        id="storyReply"
-                        rows="3"
-                        placeholder="Share your story..."
-                        required
-                    ></textarea>
+                    <div class="voice-memory-container">
+                        <textarea
+                            id="storyReply"
+                            rows="3"
+                            maxlength="12000"
+                            aria-describedby="voiceMemoryReviewGuidance voiceMemoryCharacterCount voiceMemoryLengthError"
+                            placeholder="Share your story..."
+                            required
+                        ></textarea>
+                        <div class="voice-memory-control">
+                            <button
+                                id="voiceMemoryButton"
+                                class="voice-memory-button"
+                                type="button"
+                                aria-label="Record your answer"
+                                aria-describedby="voiceMemoryTooltip"
+                            >
+                                <svg class="voice-memory-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Zm-5.5-4a1 1 0 0 1 2 0V12a3.5 3.5 0 0 0 7 0v-.5a1 1 0 1 1 2 0V12a5.5 5.5 0 0 1-4.5 5.41V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.59A5.5 5.5 0 0 1 6.5 12v-.5Z"/>
+                                </svg>
+                                <span class="voice-memory-indicator" aria-hidden="true"></span>
+                            </button>
+                            <span id="voiceMemoryTooltip" class="voice-memory-tooltip" role="tooltip">Record your answer</span>
+                        </div>
+                        <div id="voiceMemoryPanel" class="voice-memory-panel" data-recording-state="idle" hidden>
+                            <div id="voiceMemoryRecording" class="voice-memory-recording" hidden>
+                                <span class="voice-memory-pulse" aria-hidden="true"></span>
+                                <span id="voiceMemoryRecordingLabel">Recording&hellip;</span>
+                                <time id="voiceMemoryTimer" class="voice-memory-timer" aria-label="Recording duration">00:00</time>
+                                <div class="voice-memory-actions">
+                                    <button id="voiceMemoryStop" type="button" aria-label="Stop voice recording">Stop</button>
+                                    <button id="voiceMemoryCancel" type="button" aria-label="Cancel voice recording">Cancel</button>
+                                </div>
+                            </div>
+                            <div id="voiceMemoryReady" class="voice-memory-ready" hidden>
+                                <span>Recording ready</span>
+                                <span aria-hidden="true">&middot;</span>
+                                <time id="voiceMemoryReadyDuration" aria-label="Recorded duration">00:00</time>
+                                <div class="voice-memory-actions">
+                                    <button id="voiceMemoryTranscribe" type="button" aria-label="Transcribe recording">Transcribe recording</button>
+                                    <button id="voiceMemoryAgain" type="button" aria-label="Record your answer again">Record again</button>
+                                    <button id="voiceMemoryDiscard" type="button" aria-label="Discard voice recording">Discard</button>
+                                </div>
+                            </div>
+                            <div id="voiceMemoryTranscribing" class="voice-memory-transcribing" hidden>
+                                <span class="voice-memory-progress" aria-hidden="true"></span>
+                                <span>Turning your voice into text&hellip;</span>
+                                <button id="voiceMemoryCancelTranscription" type="button" aria-label="Cancel transcription">Cancel</button>
+                            </div>
+                            <div id="voiceMemoryReview" class="voice-memory-review" hidden>
+                                <div class="voice-memory-review-heading">
+                                    <strong>Transcript ready</strong>
+                                    <span id="voiceMemoryEdited" class="voice-memory-edited" hidden>Edited</span>
+                                </div>
+                                <p id="voiceMemoryReviewGuidance">Review and edit your answer before saving.</p>
+                                <div class="voice-memory-review-meta">
+                                    <span>Recording: <time id="voiceMemoryReviewDuration" aria-label="Recorded duration">00:00</time></span>
+                                    <div class="voice-memory-actions">
+                                        <button id="voiceMemoryReviewAgain" type="button">Record again</button>
+                                        <button id="voiceMemoryReviewDiscard" type="button">Discard recording</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="voiceMemoryTranscriptDecision" class="voice-memory-transcript-decision" role="group" aria-labelledby="voiceMemoryTranscriptDecisionTitle" hidden>
+                                <p id="voiceMemoryTranscriptDecisionTitle">Your answer already contains text. How should the transcript be added?</p>
+                                <div class="voice-memory-actions">
+                                    <button id="voiceMemoryReplace" type="button">Replace existing answer</button>
+                                    <button id="voiceMemoryAppend" type="button">Append transcript</button>
+                                    <button id="voiceMemoryKeep" type="button">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                        <span id="voiceMemoryCharacterCount" class="voice-memory-character-count">0 / 12,000</span>
+                        <span id="voiceMemoryLengthError" class="voice-memory-length-error" role="alert" hidden>Your answer is too long. Shorten it before saving.</span>
+                        <span id="voiceMemoryLiveStatus" class="sr-only" role="status" aria-live="polite"></span>
+                    </div>
                     <div class="story-composer-actions">
                         <button id="pauseStoryButton" class="secondary-button" type="button">
                             Pause Story
@@ -93,11 +163,22 @@
             </article>
         </section>
     </main>
+    <div id="voiceMemoryAgainDialog" class="voice-memory-dialog-backdrop" hidden>
+        <section class="voice-memory-dialog" role="dialog" aria-modal="true" aria-labelledby="voiceMemoryAgainTitle" aria-describedby="voiceMemoryAgainDescription" tabindex="-1">
+            <h2 id="voiceMemoryAgainTitle">Start a new recording?</h2>
+            <p id="voiceMemoryAgainDescription">Your current answer will stay in the text box. The previous recording will be discarded.</p>
+            <div class="voice-memory-actions">
+                <button id="voiceMemoryConfirmAgain" type="button">Start new recording</button>
+                <button id="voiceMemoryCancelAgain" type="button">Cancel</button>
+            </div>
+        </section>
+    </div>
     <script src="js/theme.js"></script>
     <script src="js/back-navigation.js"></script>
     <script src="js/legacy-state.js"></script>
     <script src="js/guided-stories-state.js"></script>
     <script src="js/guided-stories-content.js"></script>
+    <script src="js/voice-memory-recorder.js"></script>
     <script src="js/story-session.js"></script>
 </body>
 </html>

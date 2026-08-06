@@ -50,6 +50,10 @@ const reply =
     document.getElementById(
         "storyReply"
     );
+const voiceMemoryButton =
+    document.getElementById(
+        "voiceMemoryButton"
+    );
 const sendButton =
     document.getElementById(
         "sendStoryButton"
@@ -65,6 +69,7 @@ const retryExtractionButton =
 
 let isStreaming = false;
 let requestController = null;
+let pendingAnswer = null;
 let persistedLegacy = null;
 let storySessionId = null;
 let extractionRun = null;
@@ -197,11 +202,69 @@ function updateComposer() {
 }
 
 
+function showVoiceMemoryToast(message) {
+    document.querySelector(
+        ".voice-memory-toast"
+    )?.remove();
+    const toast = document.createElement("div");
+    toast.className =
+        "logout-success-toast voice-memory-toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    window.setTimeout(() => toast.remove(), 2600);
+}
+
+
+const voiceMemoryRecorder =
+    window.WaffleBerryVoiceMemoryRecorder.create(
+        {
+            button: voiceMemoryButton,
+            panel: document.getElementById("voiceMemoryPanel"),
+            recording: document.getElementById("voiceMemoryRecording"),
+            ready: document.getElementById("voiceMemoryReady"),
+            recordingLabel: document.getElementById("voiceMemoryRecordingLabel"),
+            timer: document.getElementById("voiceMemoryTimer"),
+            readyDuration: document.getElementById("voiceMemoryReadyDuration"),
+            transcribing: document.getElementById("voiceMemoryTranscribing"),
+            review: document.getElementById("voiceMemoryReview"),
+            reviewDuration: document.getElementById("voiceMemoryReviewDuration"),
+            edited: document.getElementById("voiceMemoryEdited"),
+            characterCount: document.getElementById("voiceMemoryCharacterCount"),
+            lengthError: document.getElementById("voiceMemoryLengthError"),
+            decision: document.getElementById("voiceMemoryTranscriptDecision"),
+            stop: document.getElementById("voiceMemoryStop"),
+            cancel: document.getElementById("voiceMemoryCancel"),
+            transcribe: document.getElementById("voiceMemoryTranscribe"),
+            cancelTranscription: document.getElementById("voiceMemoryCancelTranscription"),
+            again: document.getElementById("voiceMemoryAgain"),
+            discard: document.getElementById("voiceMemoryDiscard"),
+            reviewAgain: document.getElementById("voiceMemoryReviewAgain"),
+            reviewDiscard: document.getElementById("voiceMemoryReviewDiscard"),
+            replace: document.getElementById("voiceMemoryReplace"),
+            append: document.getElementById("voiceMemoryAppend"),
+            keep: document.getElementById("voiceMemoryKeep"),
+            liveStatus: document.getElementById("voiceMemoryLiveStatus"),
+            againDialogBackdrop: document.getElementById("voiceMemoryAgainDialog"),
+            againDialog: document.querySelector(".voice-memory-dialog"),
+            confirmAgain: document.getElementById("voiceMemoryConfirmAgain"),
+            cancelAgain: document.getElementById("voiceMemoryCancelAgain")
+        },
+        {
+            notify: showVoiceMemoryToast,
+            transcribeAudio: api.transcribeAudio,
+            textarea: reply
+        }
+    );
+
+
 async function requestBerryResponse(
-    userContent = null
+    userContent = null,
+    messageId = clientMessageId()
 ) {
     if (isStreaming) {
-        return;
+        return null;
     }
 
     isStreaming = true;
@@ -222,7 +285,7 @@ async function requestBerryResponse(
             {
                 content: userContent,
                 client_message_id:
-                    clientMessageId()
+                    messageId
             },
             {
                 signal:
@@ -266,12 +329,7 @@ async function requestBerryResponse(
             );
         }
 
-        storyState.appendMessage(
-            legacy.id,
-            chapter.id,
-            "assistant",
-            completeText
-        );
+        return completeText;
     } catch (error) {
         streamText.closest(
             ".message-row"
@@ -287,6 +345,7 @@ async function requestBerryResponse(
                 )
             );
         }
+        return null;
     } finally {
         isStreaming = false;
         requestController = null;
@@ -328,7 +387,16 @@ async function initializePersistedChapter() {
     updateComposer();
     await ensurePersistedStory();
     if (!currentMessages().length) {
-        await requestBerryResponse();
+        const response =
+            await requestBerryResponse();
+        if (response) {
+            storyState.appendMessage(
+                legacy.id,
+                chapter.id,
+                "assistant",
+                response
+            );
+        }
     }
 }
 
@@ -349,25 +417,54 @@ reply?.addEventListener(
 
 composer?.addEventListener(
     "submit",
-    (event) => {
+    async (event) => {
         event.preventDefault();
         const content =
-            reply.value.trim();
+            reply.value;
 
-        if (!content || isStreaming) {
+        if (!content.trim() || isStreaming) {
             return;
         }
 
+        const messageId =
+            pendingAnswer?.content === content
+                ? pendingAnswer.messageId
+                : clientMessageId();
+        pendingAnswer = { content, messageId };
+        const userMessage =
+            appendMessage("user", content);
+        const response =
+            await requestBerryResponse(
+                content,
+                messageId
+            );
+        if (!response) {
+            userMessage.closest(
+                ".message-row"
+            )?.remove();
+            return;
+        }
         storyState.appendMessage(
             legacy.id,
             chapter.id,
             "user",
             content
         );
-        appendMessage("user", content);
+        storyState.appendMessage(
+            legacy.id,
+            chapter.id,
+            "assistant",
+            response
+        );
+        pendingAnswer = null;
+        voiceMemoryRecorder.completeSave();
         reply.value = "";
+        reply.dispatchEvent(
+            new Event("input", {
+                bubbles: true
+            })
+        );
         updateProgress();
-        requestBerryResponse(content);
     }
 );
 
