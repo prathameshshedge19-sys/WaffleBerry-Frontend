@@ -16,9 +16,9 @@ test("public homepage is indexable and has the production canonical", () => {
     assert.match(index, /<link rel="canonical" href="https:\/\/www\.waffleberry\.app\/">/);
 });
 
-test("public homepage consistently uses the WaffleBerry brand", () => {
-    assert.match(index, />WaffleBerry</);
-    assert.doesNotMatch(index, /Waffle Berry/i);
+test("public header uses the unified Waffle Berry navigation brand", () => {
+    assert.match(index, /class="public-brand wb-brand"[\s\S]*>Waffle Berry<\/span>/);
+    assert.match(index, /<h1>WaffleBerry<\/h1>/);
 });
 
 test("public product calls to action require login", () => {

@@ -80,7 +80,8 @@ test("Legacy card actions share one aligned responsive action row", () => {
 test("selected Legacy repaired flow contains no mojibake literals", () => {
     const affected = `${decisionHtml}\n${decision}`;
     assert.doesNotMatch(affected, /[\u00c2\u00c3\u00e2\u00f0]/i);
-    assert.match(decisionHtml, /<span class="brand-icon" aria-hidden="true">WB<\/span>/);
+    assert.match(decisionHtml, /class="[^"]*wb-brand/);
+    assert.match(decisionHtml, /assets\/waffle-berry-mascot\.png/);
     assert.match(decisionHtml, /<svg viewBox="0 0 24 24" focusable="false">/);
     assert.match(decisionHtml, /Chat with Companion/);
     assert.match(decisionHtml, /Add More to Legacy/);
