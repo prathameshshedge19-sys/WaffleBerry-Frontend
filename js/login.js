@@ -348,6 +348,20 @@ if (createAccountButton) {
         }
     );
 }
+if (
+    forgotPasswordButton) {
+    forgotPasswordButton.addEventListener(
+        "click",
+        () => {
+            if (isSubmitting) {
+                return;
+            }
+
+            window.location.href =
+                "forgot-password.html";
+        }
+    );
+}
 
 
 if (
