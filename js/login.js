@@ -179,6 +179,10 @@ async function login(email, password) {
         response.access_token,
         response.user
     );
+
+    sessionStorage.removeItem(
+        "waffleberryNightModeDiscoveryShownSession"
+    );
 }
 
 

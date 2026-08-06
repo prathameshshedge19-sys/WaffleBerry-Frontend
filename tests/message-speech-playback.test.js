@@ -118,12 +118,11 @@ test("mobile playback control keeps a touch-sized target without changing stream
     assert.match(chatSource, /transcribeReadyVoiceRecording/);
 });
 
-test("frontend contains no voice selection or Legacy relationship inference", () => {
+test("speech playback contains no client voice override or Legacy relationship inference", () => {
     assert.doesNotMatch(apiSource, /standard_male|standard_female|cedar|marin/);
     assert.doesNotMatch(chatSource, /standard_male|standard_female|cedar|marin/);
     assert.doesNotMatch(chatSource, /relationship.*voice|voice.*relationship/i);
-    assert.doesNotMatch(html, /voice-selector|cedar|marin/i);
-    assert.doesNotMatch(html, /<(select|input)[^>]*(name|id)="[^"]*voice/i);
+    assert.doesNotMatch(chatSource, /message.*speech[\s\S]*voice\s*:/i);
 });
 
 test("active playback exposes read-only progress and stable premium states", () => {

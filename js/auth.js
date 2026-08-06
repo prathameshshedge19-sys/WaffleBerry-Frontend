@@ -90,6 +90,14 @@ window.currentUserPromise =
 
 
 function logout() {
+    document.dispatchEvent(
+        new CustomEvent(
+            "waffleberry:signout"
+        )
+    );
+    sessionStorage.removeItem(
+        "waffleberryNightModeDiscoveryShownSession"
+    );
     clearStoredSession();
 
     const toast =

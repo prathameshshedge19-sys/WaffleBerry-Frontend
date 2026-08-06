@@ -3551,6 +3551,11 @@ document.addEventListener(
     true
 );
 
+document.addEventListener(
+    "waffleberry:voicepreferencechange",
+    () => stopMessageSpeech({ clearCache: true })
+);
+
 window.addEventListener(
     "pagehide",
     () => {
@@ -3612,6 +3617,8 @@ async function initializeChat() {
     updateControls();
     updateVoiceRecorderUi();
     await loadConversations();
+    window.WaffleBerryNightModeDiscovery
+        ?.notifyAuthenticatedContentReady();
 }
 
 
