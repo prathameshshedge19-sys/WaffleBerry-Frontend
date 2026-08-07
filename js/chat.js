@@ -47,11 +47,6 @@ function updateLiveCallLink() {
 
 liveCallButtons.forEach((button) => {
     button.setAttribute("aria-disabled", "true");
-    button.addEventListener("pointerdown", (event) => {
-        if (event.isPrimary === false || event.button > 0
-                || !liveCallContextReady || liveCallOpen) return;
-        prepareInPageLiveCall();
-    });
     button.addEventListener("click", (event) => {
         event.preventDefault();
         if (!liveCallContextReady || liveCallOpen) return;
@@ -95,11 +90,9 @@ function prepareInPageLiveCall() {
     if (inPageLiveCall || !selectedLegacy?.backendLegacyId) return inPageLiveCall;
     inPageLiveCall = window.WaffleBerryLiveCall.mountLiveCall({
         legacy: selectedLegacy,
-        allowAudioUnlockPrompt: false,
         onEnded: closeInPageLiveCall
     });
     window.liveCallController = inPageLiveCall;
-    inPageLiveCall.primeAudioFromGesture();
     return inPageLiveCall;
 }
 

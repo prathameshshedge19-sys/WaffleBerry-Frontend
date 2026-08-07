@@ -96,7 +96,7 @@ test("automatic speech detection provides immediate idempotent barge-in", () => 
     assert.match(script, /sendEvent\("interrupt", \{ turn_id: interruptedTurnId \}\)/);
     assert.match(script, /VAD_BARGE_IN_THRESHOLD = 0\.09/);
     assert.match(script, /this\.activeTurnId = null/);
-    assert.match(script, /this\.playbackUrl === url/);
+    assert.match(script, /interruptPlayback\(\)[\s\S]*this\.clearDecodedPlayback\(\)/);
 });
 
 test("barge-in preserves mute, speaker, cleanup and normal turn pipeline", () => {
@@ -139,7 +139,7 @@ test("turn-based audio loop reuses MediaRecorder and the versioned socket", () =
     assert.match(script, /sendEvent\("audio\.commit"/);
     assert.match(script, /setState\("processing", "Thinking"/);
     assert.match(script, /setState\("speaking", "Speaking"/);
-    assert.match(script, /addEventListener\("ended", finish/);
+    assert.match(script, /startDecodedSource\(buffer/);
     assert.match(script, /setState\("listening"/);
 });
 
@@ -199,7 +199,7 @@ test("turn recovery prevents duplicates and bounds disconnected recording", () =
     assert.match(script, /RECORDING_DISCONNECT_GRACE_MS = 5000/);
     assert.match(script, /this\.discardRecording = true[\s\S]*this\.recorder\.stop\(\)/);
     assert.match(script, /this\.transportState !== "connected"/);
-    assert.match(script, /this\.playbackUrl === url/);
+    assert.match(script, /recoverTurn\(code\)[\s\S]*this\.clearDecodedPlayback\(\)/);
 });
 
 test("network status is user-facing and accessibility announcements remain active", () => {
@@ -248,7 +248,7 @@ test("fast response pipeline reports VAD latency and plays ordered phrases immed
     assert.match(script, /message\.chunk_index \?\? 0/);
     assert.match(script, /this\.receivedAudioChunks\.has\(key\)/);
     assert.match(script, /this\.responseAudio\.push[\s\S]*this\.playResponse\(message\.turn_id\)/);
-    assert.match(script, /addEventListener\("playing"[\s\S]*sendEvent\("latency\.playback_started", \{ turn_id: turnId \}\)/);
+    assert.match(script, /startDecodedSource\(buffer[\s\S]*sendEvent\("latency\.playback_started", \{ turn_id: turnId \}\)/);
     assert.match(script, /if \(this\.responseAudio\.length\) return this\.playResponse\(turnId\)/);
     assert.match(script, /if \(this\.responseCompleted\) this\.finishResponse\(turnId\)/);
 });
@@ -341,11 +341,11 @@ test("scheduled Web Audio is not falsely reported as audible", () => {
     assert.doesNotMatch(playback.slice(0, playback.indexOf("this.clock.setTimeout")), /latency\.playback_started/);
 });
 
-test("AudioContext resume delay and HTMLAudio playing are measured at browser-observable milestones", () => {
+test("AudioContext resume and decoded source milestones are measured", () => {
     assert.match(script, /audio_context_resume_started[\s\S]*await this\.resumeAudioContext\(\)[\s\S]*audio_context_resumed/);
     assert.match(script, /audio_context_resume_ms: elapsed\("audio_context_resume_started", "audio_context_resumed"\)/);
-    assert.match(script, /addEventListener\("canplay"[\s\S]*first_audio_chunk_decodable/);
-    assert.match(script, /addEventListener\("playing"[\s\S]*html_audio_playing[\s\S]*first_audible_playback/);
+    assert.match(script, /decodeAudioData\(chunk\.data\)[\s\S]*first_audio_chunk_decodable/);
+    assert.match(script, /startDecodedSource\(buffer[\s\S]*first_audible_playback/);
 });
 
 test("client latency uses only performance.now durations and reports streaming fallbacks", () => {
@@ -358,19 +358,19 @@ test("client latency uses only performance.now durations and reports streaming f
     assert.match(report, /streaming_stt_active:[\s\S]*streaming_stt_fallback_reason:[\s\S]*streaming_tts_active:[\s\S]*streaming_tts_fallback_reason:/);
 });
 
-test("streaming playback is cleared by barge-in, speaker off, end and stale turns", () => {
+test("streaming playback is cleared by barge-in, end and stale turns while speaker uses gain", () => {
     assert.match(script, /interruptPlayback\(\)[\s\S]*this\.clearPcmPlayback\(\)/);
-    assert.match(script, /toggleSpeaker\(\)[\s\S]*!this\.speakerEnabled[\s\S]*this\.clearPcmPlayback\(\)/);
+    assert.match(script, /toggleSpeaker\(\)[\s\S]*this\.outputGain\.gain\.value = this\.speakerEnabled \? 1 : 0/);
     assert.match(script, /stopTurnMedia\(\)[\s\S]*this\.clearPcmPlayback\(\)/);
     assert.match(script, /playPcmChunk\(message\)[\s\S]*message\.turn_id !== this\.activeTurnId/);
     assert.match(script, /clearPcmPlayback\(\)[\s\S]*source\.stop\(\)[\s\S]*this\.pcmSources\.clear\(\)/);
     assert.match(script, /scheduleReconnect\(\)[\s\S]*this\.clearPcmPlayback\(\)[\s\S]*this\.responseAudio = \[\]/);
 });
 
-test("complete-blob speech remains the provider-neutral playback fallback", () => {
+test("complete encoded speech decodes into the persistent output graph", () => {
     assert.match(script, /else \{[\s\S]*this\.responseAudio\.push[\s\S]*this\.playResponse\(message\.turn_id\)/);
-    assert.match(script, /playResponse\(turnId\)[\s\S]*new Blob[\s\S]*this\.createAudioPlayback\(url\)/);
-    assert.match(script, /createAudioPlayback\(url\)[\s\S]*this\.primedMediaElement \|\| new this\.AudioClass\(url\)/);
+    assert.match(script, /playResponse\(turnId\)[\s\S]*decodeAudioData\(chunk\.data\)[\s\S]*startDecodedSource\(buffer/);
+    assert.match(script, /startDecodedSource\(buffer[\s\S]*source\.connect\(this\.outputGain/);
 });
 
 test("greeting is automatic once and failure returns to listening", () => {
@@ -380,13 +380,13 @@ test("greeting is automatic once and failure returns to listening", () => {
     assert.match(script, /message\.type === "greeting\.failed"/);
     assert.match(script, /if \(!message\.greeting_completed\)/);
     assert.match(script, /finishGreeting\(\)[\s\S]*setState\("listening"/);
-    assert.match(script, /addEventListener\("playing"[\s\S]*sendEvent\("latency\.greeting_playback_started"\)/);
+    assert.match(script, /playGreeting\(message\)[\s\S]*startDecodedSource\(buffer[\s\S]*sendEvent\("latency\.greeting_playback_started"\)/);
 });
 
 test("initial startup uses a quiet local ringback without delaying session work", () => {
     assert.match(script, /RINGBACK_GAIN = 0\.025/);
-    assert.match(script, /this\.setState\("connecting", "Connecting"\)[\s\S]*this\.prepareAudioOutput\(\);[\s\S]*getUserMedia[\s\S]*createLiveCallSession/);
-    assert.match(script, /prepareAudioOutput\(\)[\s\S]*resumeAudioContext\(\)\.then[\s\S]*handleAudioOutputReady\(\)/);
+    assert.match(script, /this\.setState\("connecting", "Connecting"\)[\s\S]*getUserMedia[\s\S]*initializeCallAudioOutput\(\)[\s\S]*createLiveCallSession/);
+    assert.match(script, /initializeCallAudioOutput\(\)[\s\S]*createMediaStreamDestination\(\)[\s\S]*outputAudio\.srcObject/);
     assert.match(script, /createOscillator\(\)/);
     assert.match(script, /\[440, 480\]/);
     assert.doesNotMatch(script, /RINGBACK_ON_MS|RINGBACK_OFF_MS|soundCadence/);
@@ -414,7 +414,7 @@ test("startup work begins in parallel with the minimum ringback timer", () => {
 test("ringback is initial-only, speaker-aware, and never used for reconnect", () => {
     assert.match(script, /if \(this\.ringbackStarted \|\| !this\.speakerEnabled \|\| this\.intentionalEnd\) return/);
     assert.match(script, /this\.ringbackStarted = true/);
-    assert.match(script, /toggleSpeaker\(\)[\s\S]*if \(!this\.speakerEnabled\) \{[\s\S]*this\.stopRingback\(false\)/);
+    assert.match(script, /toggleSpeaker\(\)[\s\S]*this\.outputGain\.gain\.value = this\.speakerEnabled \? 1 : 0/);
     assert.doesNotMatch(script, /scheduleReconnect\(\)[\s\S]{0,700}startRingback\(/);
     assert.doesNotMatch(script, /connectTransport\(resume = false\)[\s\S]{0,700}startRingback\(/);
 });

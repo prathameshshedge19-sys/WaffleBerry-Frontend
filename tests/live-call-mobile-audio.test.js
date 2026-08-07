@@ -55,7 +55,9 @@ function elements() {
         settingsButton: button(), settingsDialog: { open: false },
         settingsForm: {}, settingsClose: button(), settingsStatus: { textContent: "" },
         currentVoice: { textContent: "" }, voiceOptions: {},
-        audioUnlock: { hidden: true, focus() {} }
+        audioUnlock: { hidden: true, focus() {} },
+        outputAudio: { autoplay: false, playsInline: false, muted: false, volume: 1,
+            srcObject: null, playCalls: 0, play() { this.playCalls += 1; return Promise.resolve(); }, pause() {} }
     };
 }
 
@@ -73,8 +75,12 @@ function audioContext(initialState = "running") {
         async close() { this.closeCalls += 1; this.state = "closed"; },
         addEventListener() {},
         createGain() {
-            return { gain: { value: 0, cancelScheduledValues() {}, setValueAtTime() {}, linearRampToValueAtTime() {} }, connect() {}, disconnect() {} };
+            return { gain: { value: 0, cancelScheduledValues() {}, setValueAtTime() {}, linearRampToValueAtTime() {} }, connectedTo: null, connect(node) { this.connectedTo = node; }, disconnect() {} };
         },
+        createMediaStreamDestination() {
+            return { stream: { getAudioTracks: () => [{ readyState: "live" }] }, disconnect() {} };
+        },
+        async decodeAudioData() { return { duration: 0.1 }; },
         createOscillator() {
             return { type: "", frequency: { value: 0 }, connect() {}, disconnect() {}, start() { sourceStarts += 1; }, stop() {} };
         },
@@ -82,7 +88,7 @@ function audioContext(initialState = "running") {
         createMediaStreamSource() { return { connect() {}, disconnect() {} }; },
         createBuffer(_channels, length, rate) { return { duration: length / rate, copyToChannel() {} }; },
         createBufferSource() {
-            return { buffer: null, connect() {}, disconnect() {}, addEventListener() {}, start() { sourceStarts += 1; }, stop() {} };
+            return { buffer: null, connectedTo: null, connect(node) { this.connectedTo = node; }, disconnect() {}, addEventListener() {}, start() { sourceStarts += 1; }, stop() {} };
         },
         starts() { return sourceStarts; }
     };
@@ -121,23 +127,18 @@ test("automatic desktop audio remains seamless and uses one authoritative contex
     assert.equal(context.starts(), 2);
 });
 
-test("suspended mobile audio shows one accessible activation and starts after one tap", async () => {
+test("suspended mobile audio resumes without exposing a second-tap control", async () => {
     const context = audioContext("suspended");
     const fixture = makeController(context);
-    const ready = fixture.controller.ensureAudioReady();
-    await new Promise(setImmediate);
-    assert.equal(fixture.controller.elements.audioUnlock.hidden, false);
-    assert.equal(fixture.controller.elements.status.textContent, "Ready when you are");
     context.allowResume();
-    assert.equal(await fixture.controller.activateAudio(), true);
-    assert.equal(await ready, true);
+    assert.equal(await fixture.controller.resumeAudioContext(), true);
     assert.equal(context.state, "running");
     assert.equal(fixture.controller.elements.audioUnlock.hidden, true);
     fixture.controller.startRingback();
     assert.equal(context.starts(), 2);
 });
 
-test("call startup initializes microphone, session, and transport before sound unlock", async () => {
+test("call startup captures a live microphone before attaching persistent output", async () => {
     const context = audioContext("suspended");
     const fixture = makeController(context);
     let microphoneRequests = 0;
@@ -146,7 +147,8 @@ test("call startup initializes microphone, session, and transport before sound u
     fixture.controller.mediaDevices = {
         async getUserMedia() {
             microphoneRequests += 1;
-            return { getTracks: () => [], getAudioTracks: () => [] };
+            const track = { readyState: "live", enabled: true, stop() {} };
+            return { getTracks: () => [track], getAudioTracks: () => [track] };
         }
     };
     fixture.controller.api = {
@@ -163,41 +165,61 @@ test("call startup initializes microphone, session, and transport before sound u
     assert.equal(transports, 1);
     assert.equal(context.starts(), 0);
     assert.equal(fixture.controller.state, "connecting");
-    assert.equal(fixture.controller.elements.audioUnlock.hidden, false);
-    context.allowResume();
-    await fixture.controller.activateAudio();
+    assert.equal(fixture.controller.elements.outputAudio.srcObject, fixture.controller.outputDestination.stream);
+    assert.equal(fixture.controller.elements.outputAudio.playCalls, 1);
     assert.equal(microphoneRequests, 1);
     assert.equal(sessions, 1);
     assert.equal(transports, 1);
-    assert.equal(context.starts(), 2);
+    assert.equal(context.starts(), 0);
 });
 
-test("HTMLAudio activation rejection is retained and retried exactly once", async () => {
+test("WebKit output uses one persistent autoplay MediaStream element after live capture", async () => {
     const context = audioContext("running");
     const fixture = makeController(context);
-    let plays = 0;
-    const media = { play() { plays += 1; return Promise.resolve(); } };
-    fixture.controller.handleBlockedMediaPlayback(
-        { name: "NotAllowedError" }, media, () => assert.fail("response was discarded")
-    );
-    assert.equal(fixture.controller.elements.audioUnlock.hidden, false);
-    assert.equal(await fixture.controller.activateAudio(), true);
-    assert.equal(plays, 1);
-    assert.equal(fixture.controller.pendingBlockedPlayback, null);
+    fixture.controller.stream = { getAudioTracks: () => [{ readyState: "live" }] };
+    await fixture.controller.initializeCallAudioOutput();
+    const output = fixture.controller.elements.outputAudio;
+    const destination = fixture.controller.outputDestination;
+    assert.equal(output.autoplay, true);
+    assert.equal(output.playsInline, true);
+    assert.equal(output.srcObject, destination.stream);
+    assert.equal(output.playCalls, 1);
+    assert.equal(fixture.controller.outputGain.connectedTo, destination);
+    await fixture.controller.initializeCallAudioOutput();
+    assert.equal(output.playCalls, 1);
+    assert.match(markup, /<audio id="liveCallOutput" autoplay playsinline aria-label="Live Call audio"><\/audio>/);
+    assert.match(chat, /<audio id="liveCallOutput" autoplay playsinline aria-label="Live Call audio"><\/audio>/);
+});
+
+test("Speaker changes shared gain without destroying the persistent output route", async () => {
+    const context = audioContext("running");
+    const fixture = makeController(context);
+    fixture.controller.stream = { getAudioTracks: () => [{ readyState: "live" }] };
+    await fixture.controller.initializeCallAudioOutput();
+    const destination = fixture.controller.outputDestination;
+    await fixture.controller.toggleSpeaker();
+    assert.equal(fixture.controller.outputGain.gain.value, 0);
+    assert.equal(fixture.controller.outputDestination, destination);
+    assert.equal(fixture.controller.elements.outputAudio.srcObject, destination.stream);
+    await fixture.controller.toggleSpeaker();
+    assert.equal(fixture.controller.outputGain.gain.value, 1);
+    assert.equal(fixture.controller.outputDestination, destination);
+});
+
+test("normal call entry contains no pointer or silent-media priming", () => {
+    const entry = chatScript.slice(0, chatScript.indexOf("const STREAM_INACTIVITY_TIMEOUT_MS"));
+    assert.doesNotMatch(entry, /pointerdown|primeAudioFromGesture|data:audio|Tap for sound/);
 });
 
 test("streaming PCM waits for a running context and preserves queued playback", async () => {
     const context = audioContext("suspended");
     const fixture = makeController(context);
     fixture.controller.activeTurnId = 7;
+    context.allowResume();
     const queued = fixture.controller.queuePcmChunk({
         turn_id: 7, data: btoa("\u0000\u0000"), sample_rate: 24000
     });
     await new Promise(setImmediate);
-    assert.equal(context.starts(), 0);
-    assert.equal(fixture.controller.elements.audioUnlock.hidden, false);
-    context.allowResume();
-    await fixture.controller.activateAudio();
     await queued;
     assert.equal(context.starts(), 1);
     assert.equal(fixture.controller.pcmPlaybackTurn, 7);
@@ -232,10 +254,10 @@ test("visibility recovery is bounded and navigation cleanup closes the shared co
     assert.equal(fixture.controller.audioContext, null);
 });
 
-test("audio unlock UI remains mobile-safe, keyboard visible, and motion safe", () => {
-    assert.match(markup, /id="liveCallAudioUnlock"[\s\S]*type="button"[\s\S]*aria-label="Enable Live Call sound"[\s\S]*Tap for sound/);
+test("persistent output has no second-tap UI and existing controls remain accessible", () => {
+    assert.doesNotMatch(markup, /liveCallAudioUnlock|Tap for sound|Tap to start call/);
     assert.doesNotMatch(markup, /Tap to start call/);
-    assert.match(markup, /aria-describedby="liveCallStatus"/);
+    assert.match(markup, /id="liveCallStatus"[^>]*role="status"[^>]*aria-live="assertive"/);
     assert.match(styles, /\.live-call-audio-unlock[\s\S]*min-height:\s*48px/);
     assert.match(styles, /\.live-call-audio-unlock:focus-visible/);
     assert.match(styles, /@media \(max-width: 650px\)[\s\S]*\.live-call-audio-unlock[\s\S]*min-height:\s*48px/);
@@ -251,7 +273,7 @@ test("normal product entry mounts one shared controller without document navigat
     assert.doesNotMatch(chatScript, /window\.location\.(assign|replace)\([^)]*live-call/);
 });
 
-test("original Call click unlocks audio before call start and exposes no second tap", () => {
+test("original Call click starts directly without priming or a second tap", () => {
     const open = chatScript.slice(
         chatScript.indexOf("function openInPageLiveCall"),
         chatScript.indexOf("window.addEventListener(\"popstate\"")
@@ -260,33 +282,17 @@ test("original Call click unlocks audio before call start and exposes no second 
         chatScript.indexOf("function prepareInPageLiveCall"),
         chatScript.indexOf("function openInPageLiveCall")
     );
-    assert.match(prepare, /allowAudioUnlockPrompt:\s*false/);
-    assert.match(prepare, /inPageLiveCall\.primeAudioFromGesture\(\)/);
-    assert.doesNotMatch(prepare.slice(0, prepare.indexOf("primeAudioFromGesture")), /await|Promise|setTimeout|import\(/);
+    assert.doesNotMatch(prepare, /primeAudioFromGesture|silent|pointerdown/);
     assert.ok(open.indexOf("prepareInPageLiveCall()") < open.indexOf("inPageLiveCall.start()"));
     assert.doesNotMatch(chat, /Tap for sound|Tap to start call/);
 });
 
-test("strict mobile gesture priming starts silent WebAudio and HTMLAudio synchronously", async () => {
-    const context = audioContext("suspended");
-    const fixture = makeController(context);
-    context.allowResume();
-    const prime = fixture.controller.primeAudioFromGesture();
-    assert.equal(context.starts(), 1);
-    assert.equal(fixture.contexts(), 1);
-    assert.equal(await prime, true);
-    fixture.controller.startRingback();
-    assert.equal(fixture.contexts(), 1);
-    assert.equal(context.starts(), 3);
-    const fields = fixture.controller.audioDiagnostics.map(({ field }) => field);
-    for (const field of [
-        "call_gesture_received", "audio_context_created_in_gesture",
-        "silent_buffer_started_in_gesture", "html_audio_prime_started_in_gesture",
-        "audio_context_post_prime_state", "html_audio_prime_success", "audio_unlock_verified"
-    ]) assert.ok(fields.includes(field), field);
+test("MediaStream output replaces gesture priming in the product flow", () => {
+    assert.doesNotMatch(chatScript, /primeAudioFromGesture|pointerdown/);
+    assert.match(source, /createMediaStreamDestination\(\)/);
 });
 
-test("temporarily suspended context gets a bounded verification window", async () => {
+test("temporarily suspended context resumes through the shared context", async () => {
     const context = audioContext("suspended");
     const fixture = makeController(context);
     fixture.controller.clock.setTimeout = (callback, delay) => {
@@ -296,16 +302,15 @@ test("temporarily suspended context gets a bounded verification window", async (
         }
         return 1;
     };
-    const verified = await fixture.controller.primeAudioFromGesture();
+    fixture.controller.getAudioContext();
+    const verified = await fixture.controller.waitForRunningAudioContext();
     assert.equal(verified, true);
     assert.equal(fixture.controller.intentionalEnd, false);
-    assert.equal(fixture.controller.audioDiagnostics.some(
-        ({ field, value }) => field === "audio_unlock_verified" && value === true
-    ), true);
+    assert.equal(context.state, "running");
 });
 
-test("pointerdown primes once, click launches once, and keyboard click remains supported", () => {
-    assert.match(chatScript, /addEventListener\("pointerdown"[\s\S]*prepareInPageLiveCall\(\)/);
+test("click launches once, keyboard click remains supported, and pointer priming is absent", () => {
+    assert.doesNotMatch(chatScript, /addEventListener\("pointerdown"/);
     assert.match(chatScript, /if \(inPageLiveCall[\s\S]*return inPageLiveCall/);
     assert.match(chatScript, /addEventListener\("click"[\s\S]*openInPageLiveCall\(button\)/);
     assert.match(chatScript, /if \(!liveCallContextReady \|\| liveCallOpen\) return/);

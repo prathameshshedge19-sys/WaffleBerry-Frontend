@@ -40,10 +40,8 @@
             <div class="live-call-state-line">
                 <p id="liveCallStatus" class="live-call-status" role="status" aria-live="assertive">Connecting</p>
             </div>
-            <button id="liveCallAudioUnlock" class="live-call-audio-unlock" type="button" aria-label="Enable Live Call sound" aria-describedby="liveCallStatus" hidden>
-                <span aria-hidden="true">&#128266;</span><span>Tap for sound</span>
-            </button>
             <p id="liveCallMicrophoneStatus" class="live-call-microphone-status sr-only" aria-live="polite">Preparing microphone&hellip;</p>
+            <audio id="liveCallOutput" autoplay playsinline aria-label="Live Call audio"></audio>
             <div id="liveCallControls" class="live-call-controls">
                 <button id="liveCallMuteButton" class="live-call-control" type="button" aria-label="Mute microphone" aria-pressed="false" disabled>
                     <span class="live-call-control-icon" aria-hidden="true">&#128263;</span><span>Mute</span>
