@@ -3728,10 +3728,16 @@ async function initializeChat() {
 
     liveCallContextReady = Boolean(selectedLegacy?.backendLegacyId);
     updateLiveCallLink();
+    window.WaffleBerryLegacyContextUi?.updateLegacyAwareUI(selectedLegacy, {
+        conversationId: state.activeConversationId
+    });
 
     updateControls();
     updateVoiceRecorderUi();
     await loadConversations();
+    window.WaffleBerryLegacyContextUi?.updateLegacyAwareUI(selectedLegacy, {
+        conversationId: state.activeConversationId
+    });
     window.WaffleBerryNightModeDiscovery
         ?.notifyAuthenticatedContentReady();
 }

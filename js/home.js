@@ -20,6 +20,9 @@ const fallbackHeadingText =
 const descriptionText =
     "I preserve memories, stories and conversations so the people you love are never forgotten.";
 
+const legacyDescriptionText =
+    "Explore memories, stories and conversations that keep their story close.";
+
 
 function getFirstName(fullName) {
     if (typeof fullName !== "string") {
@@ -35,9 +38,13 @@ function getFirstName(fullName) {
 }
 
 
-async function getHeadingText() {
+async function getPageContext() {
+    let legacy = null;
     try {
         await window.authReady;
+
+        legacy = await window.WaffleBerryLegacyContextUi.resolveSelectedLegacy();
+        window.WaffleBerryLegacyContextUi.updateLegacyAwareUI(legacy);
 
         const currentUser =
             window.WaffleBerryApi
@@ -49,16 +56,19 @@ async function getHeadingText() {
             );
 
         if (firstName) {
-            return (
-                `Hello, ${firstName}. ` +
-                "I'm Berry."
-            );
+            return {
+                heading: `Hello, ${firstName}. I'm ${legacy?.displayName || "Berry"}.`,
+                description: legacy ? legacyDescriptionText : descriptionText
+            };
         }
     } catch {
         // Use the default greeting.
     }
 
-    return fallbackHeadingText;
+    return {
+        heading: legacy?.displayName ? `Hello, I'm ${legacy.displayName}.` : fallbackHeadingText,
+        description: legacy ? legacyDescriptionText : descriptionText
+    };
 }
 
 
@@ -103,13 +113,14 @@ async function startHomepageTyping() {
         return;
     }
 
-    const headingText =
-        await getHeadingText();
+    const pageContext = await getPageContext();
+    const headingText = pageContext.heading;
 
     typedHeading.setAttribute(
         "aria-label",
         headingText
     );
+    typedDescription.setAttribute("aria-label", pageContext.description);
 
     await new Promise((resolve) => {
         window.setTimeout(resolve, 400);
@@ -127,7 +138,7 @@ async function startHomepageTyping() {
 
     await typeText(
         typedDescription,
-        descriptionText,
+        pageContext.description,
         28
     );
 
@@ -146,8 +157,9 @@ if (startChatButton) {
         "click",
         (event) => {
             event.preventDefault();
-            window.location.href =
-                "chat.html?new=1";
+            const destination = new URL(startChatButton.href, window.location.href);
+            destination.searchParams.set("new", "1");
+            window.location.href = destination.href;
         }
     );
 }
