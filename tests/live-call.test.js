@@ -342,7 +342,7 @@ test("scheduled Web Audio is not falsely reported as audible", () => {
 });
 
 test("AudioContext resume delay and HTMLAudio playing are measured at browser-observable milestones", () => {
-    assert.match(script, /audio_context_resume_started[\s\S]*await this\.audioContext\.resume\(\)[\s\S]*audio_context_resumed/);
+    assert.match(script, /audio_context_resume_started[\s\S]*await this\.resumeAudioContext\(\)[\s\S]*audio_context_resumed/);
     assert.match(script, /audio_context_resume_ms: elapsed\("audio_context_resume_started", "audio_context_resumed"\)/);
     assert.match(script, /addEventListener\("canplay"[\s\S]*first_audio_chunk_decodable/);
     assert.match(script, /addEventListener\("playing"[\s\S]*html_audio_playing[\s\S]*first_audible_playback/);

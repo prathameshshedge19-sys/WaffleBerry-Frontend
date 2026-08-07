@@ -60,6 +60,7 @@ class LiveCallController {
         this.pcmNextStart = 0;
         this.pcmPlaybackTurn = null;
         this.pcmPlaybackReported = false;
+        this.pcmPlaybackChain = Promise.resolve();
         this.pendingVadSilenceMs = null;
         this.lastVoiceDetectedAt = null;
         this.turnTimings = new Map();
@@ -83,6 +84,16 @@ class LiveCallController {
         this.intentionalEnd = false;
         this.socketGeneration = 0;
         this.audioContext = null;
+        this.audioResumePromise = null;
+        this.audioUnlockPromise = null;
+        this.audioUnlockResolve = null;
+        this.audioUnlocked = false;
+        this.pendingBlockedPlayback = null;
+        this.audioDiagnostics = [];
+        this.debugAudio = options.debugAudio ?? (
+            ["localhost", "127.0.0.1"].includes(window.location.hostname)
+            || new URLSearchParams(window.location.search).has("debugAudio")
+        );
         this.vadAnalyser = null;
         this.vadSource = null;
         this.vadTimer = null;
@@ -94,7 +105,6 @@ class LiveCallController {
         this.greetingPlayback = false;
         this.ringbackStarted = false;
         this.ringbackActive = false;
-        this.ringbackContext = null;
         this.ringbackGain = null;
         this.ringbackOscillators = [];
         this.ringbackMinimumTimer = null;
@@ -125,8 +135,118 @@ class LiveCallController {
             settingsClose: document.getElementById("liveCallSettingsClose"),
             settingsStatus: document.getElementById("liveCallSettingsStatus"),
             currentVoice: document.getElementById("liveCallCurrentVoice"),
-            voiceOptions: document.getElementById("liveCallVoiceOptions")
+            voiceOptions: document.getElementById("liveCallVoiceOptions"),
+            audioUnlock: document.getElementById("liveCallAudioUnlock")
         };
+    }
+
+    recordAudioDiagnostic(field, value) {
+        if (!this.debugAudio) return;
+        this.audioDiagnostics.push({ field, value, at: Math.round(this.performance.now()) });
+    }
+
+    getAudioContext() {
+        if (!this.audioContext || this.audioContext.state === "closed") {
+            this.audioContext = new this.AudioContextClass();
+            this.recordAudioDiagnostic("audio_context_initial_state", this.audioContext.state);
+            this.audioContext.addEventListener?.("statechange", () => {
+                if (["suspended", "interrupted"].includes(this.audioContext?.state)) {
+                    this.recoverAudioAfterVisibility();
+                }
+            });
+        }
+        return this.audioContext;
+    }
+
+    async resumeAudioContext() {
+        const context = this.getAudioContext();
+        if (context.state === "running") return true;
+        if (this.audioResumePromise) return this.audioResumePromise;
+        this.audioResumePromise = (async () => {
+            try { await context.resume?.(); } catch { /* activation may be required */ }
+            this.recordAudioDiagnostic("audio_context_after_resume", context.state);
+            return context.state === "running";
+        })().finally(() => { this.audioResumePromise = null; });
+        return this.audioResumePromise;
+    }
+
+    async unlockHtmlAudio() {
+        const probe = new this.AudioClass(
+            "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="
+        );
+        probe.muted = true;
+        try {
+            await Promise.resolve(probe.play());
+            probe.pause?.();
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    requestAudioUnlock() {
+        if (this.audioUnlocked && this.audioContext?.state === "running") {
+            return Promise.resolve(true);
+        }
+        if (!this.audioUnlockPromise) {
+            this.recordAudioDiagnostic("audio_unlock_required", true);
+            this.elements.audioUnlock.hidden = false;
+            this.elements.audioUnlock.focus?.({ preventScroll: true });
+            this.elements.status.textContent = "Ready when you are";
+            this.audioUnlockPromise = new Promise((resolve) => {
+                this.audioUnlockResolve = resolve;
+            });
+        }
+        return this.audioUnlockPromise;
+    }
+
+    async activateAudio() {
+        const contextPromise = this.resumeAudioContext();
+        const blockedPlayback = this.pendingBlockedPlayback;
+        const mediaPromise = blockedPlayback
+            ? Promise.resolve(blockedPlayback.media.play())
+                .then(() => true, () => false)
+            : this.unlockHtmlAudio();
+        const [contextReady, mediaReady] = await Promise.all([
+            contextPromise, mediaPromise
+        ]);
+        if (!contextReady || !mediaReady) return false;
+        this.audioUnlocked = true;
+        if (this.pendingBlockedPlayback === blockedPlayback) {
+            this.pendingBlockedPlayback = null;
+        }
+        this.elements.audioUnlock.hidden = true;
+        this.recordAudioDiagnostic("audio_unlock_success", true);
+        const resolve = this.audioUnlockResolve;
+        this.audioUnlockResolve = null;
+        this.audioUnlockPromise = null;
+        resolve?.(true);
+        return true;
+    }
+
+    isAudioActivationError(error) {
+        return ["NotAllowedError", "AbortError"].includes(error?.name)
+            || this.audioContext?.state === "suspended"
+            || this.audioContext?.state === "interrupted";
+    }
+
+    handleBlockedMediaPlayback(error, media, onFailure) {
+        this.recordAudioDiagnostic("html_audio_play_rejected", error?.name || "play_rejected");
+        if (!this.isAudioActivationError(error) || this.intentionalEnd) {
+            onFailure();
+            return;
+        }
+        this.audioUnlocked = false;
+        this.pendingBlockedPlayback = { media, onFailure };
+        this.requestAudioUnlock();
+    }
+
+    async ensureAudioReady() {
+        if (await this.resumeAudioContext()) {
+            this.audioUnlocked = true;
+            return true;
+        }
+        return this.requestAudioUnlock();
     }
 
     setState(nextState, message) {
@@ -151,7 +271,6 @@ class LiveCallController {
 
     async start() {
         if (this.state !== "idle") return;
-        this.setState("connecting", "Connecting");
         if (!this.legacy?.backendLegacyId) {
             return this.fail("This Companion is not available for Live Call.");
         }
@@ -160,6 +279,8 @@ class LiveCallController {
             return this.fail("Live Call is not supported in this browser.");
         }
         this.elements.relationship.textContent = this.legacy.relationship;
+        if (!await this.ensureAudioReady() || this.intentionalEnd) return;
+        this.setState("connecting", "Connecting");
         this.startRingback();
         try {
             this.stream = await this.mediaDevices.getUserMedia({
@@ -192,6 +313,8 @@ class LiveCallController {
 
     startRingback() {
         if (this.ringbackStarted || !this.speakerEnabled || this.intentionalEnd) return;
+        const context = this.getAudioContext();
+        if (context.state !== "running") return;
         this.ringbackStarted = true;
         this.ringbackActive = true;
         this.ringbackMinimumTimer = this.clock.setTimeout(() => {
@@ -200,23 +323,21 @@ class LiveCallController {
             this.completeInitialConnection();
         }, MINIMUM_CONNECTING_MS);
         try {
-            this.ringbackContext = new this.AudioContextClass();
-            Promise.resolve(this.ringbackContext.resume?.()).catch(() => {});
-            const gain = this.ringbackContext.createGain();
+            const gain = context.createGain();
             this.ringbackGain = gain;
             gain.gain.value = RINGBACK_GAIN;
-            gain.connect(this.ringbackContext.destination);
+            gain.connect(context.destination);
             this.ringbackOscillators = [440, 480].map((frequency) => {
-                const oscillator = this.ringbackContext.createOscillator();
+                const oscillator = context.createOscillator();
                 oscillator.type = "sine";
                 oscillator.frequency.value = frequency;
                 oscillator.connect(gain);
                 oscillator.start();
                 return oscillator;
             });
+            this.recordAudioDiagnostic("ringback_started", true);
         } catch {
             this.stopRingbackTone();
-            this.ringbackContext = null;
         }
     }
 
@@ -232,9 +353,6 @@ class LiveCallController {
 
     closeRingbackAudio() {
         this.stopRingbackTone();
-        const context = this.ringbackContext;
-        this.ringbackContext = null;
-        if (context && context.state !== "closed") Promise.resolve(context.close()).catch(() => {});
     }
 
     stopRingback(discardPendingGreeting = true, fadeOut = false) {
@@ -247,8 +365,8 @@ class LiveCallController {
         this.ringbackFadeTimer = null;
         this.ringbackFadeResolver?.();
         this.ringbackFadeResolver = null;
-        if (fadeOut && this.ringbackGain && this.ringbackContext) {
-            const now = this.ringbackContext.currentTime;
+        if (fadeOut && this.ringbackGain && this.audioContext) {
+            const now = this.audioContext.currentTime;
             this.ringbackGain.gain.cancelScheduledValues?.(now);
             this.ringbackGain.gain.setValueAtTime?.(this.ringbackGain.gain.value, now);
             this.ringbackGain.gain.linearRampToValueAtTime?.(0, now + RINGBACK_FADE_OUT_MS / 1000);
@@ -267,9 +385,8 @@ class LiveCallController {
     }
 
     async initializeVad() {
-        if (!this.AudioContextClass || this.audioContext || !this.stream) return;
-        this.audioContext = new this.AudioContextClass();
-        try { await this.audioContext.resume?.(); } catch { /* analyser may resume after permission settles */ }
+        if (!this.AudioContextClass || this.vadAnalyser || !this.stream) return;
+        this.getAudioContext();
         this.vadAnalyser = this.audioContext.createAnalyser();
         this.vadAnalyser.fftSize = 1024;
         this.vadAnalyser.smoothingTimeConstant = 0.2;
@@ -411,8 +528,18 @@ class LiveCallController {
         this.vadSource?.disconnect?.();
         this.vadSource = null;
         this.vadAnalyser = null;
-        this.audioContext?.close?.();
+    }
+
+    closeAudioContext() {
+        const context = this.audioContext;
         this.audioContext = null;
+        this.audioUnlocked = false;
+        this.pendingBlockedPlayback = null;
+        this.elements.audioUnlock.hidden = true;
+        this.audioUnlockResolve?.(false);
+        this.audioUnlockResolve = null;
+        this.audioUnlockPromise = null;
+        if (context && context.state !== "closed") Promise.resolve(context.close?.()).catch(() => {});
     }
 
     startStreamingTranscription(turnId) {
@@ -588,9 +715,11 @@ class LiveCallController {
         this.playback = new this.AudioClass(url);
         this.playback.muted = !this.speakerEnabled;
         this.greetingPlayback = true;
-        this.startTimer();
-        this.setState("greeting", "Speaking");
+        this.recordAudioDiagnostic("greeting_play_requested", true);
         this.playback.addEventListener("playing", () => {
+            this.startTimer();
+            this.setState("greeting", "Speaking");
+            this.recordAudioDiagnostic("greeting_play_started", true);
             this.sendEvent("latency.greeting_playback_started");
         }, { once: true });
         const finish = () => {
@@ -602,7 +731,9 @@ class LiveCallController {
         };
         this.playback.addEventListener("ended", finish, { once: true });
         this.playback.addEventListener("error", finish, { once: true });
-        Promise.resolve(this.playback.play()).catch(finish);
+        Promise.resolve(this.playback.play()).catch((error) => {
+            this.handleBlockedMediaPlayback(error, this.playback, finish);
+        });
     }
 
     finishGreeting() {
@@ -769,7 +900,7 @@ class LiveCallController {
         }
     }
 
-    toggleSpeaker() {
+    async toggleSpeaker() {
         if (["ending", "ended", "error"].includes(this.state)) return;
         this.speakerEnabled = !this.speakerEnabled;
         if (!this.speakerEnabled) {
@@ -779,6 +910,8 @@ class LiveCallController {
             this.stopRingback(false);
             if (pendingGreeting) this.playGreeting(pendingGreeting);
             this.completeInitialConnection();
+        } else if (this.audioContext?.state !== "running") {
+            await this.activateAudio();
         }
         if (this.playback) this.playback.muted = !this.speakerEnabled;
         this.elements.speaker.setAttribute("aria-pressed", String(this.speakerEnabled));
@@ -787,6 +920,17 @@ class LiveCallController {
         );
         this.elements.speaker.lastElementChild.textContent =
             this.speakerEnabled ? "Speaker on" : "Speaker off";
+    }
+
+    async recoverAudioAfterVisibility() {
+        if (document.visibilityState !== "visible" || this.intentionalEnd
+                || !this.speakerEnabled || !this.audioContext
+                || ["running", "closed"].includes(this.audioContext.state)) return;
+        await this.resumeAudioContext();
+        if (!["running", "closed"].includes(this.audioContext?.state)) {
+            this.audioUnlocked = false;
+            this.requestAudioUnlock();
+        }
     }
 
     async openSettings() {
@@ -1084,7 +1228,7 @@ class LiveCallController {
             if (this.receivedAudioChunks.has(key)) return;
             this.receivedAudioChunks.add(key);
             if (message.streaming && message.mime_type === "audio/L16") {
-                this.playPcmChunk(message);
+                this.queuePcmChunk(message);
             } else {
                 this.responseAudio.push({ data: message.data, mimeType: message.mime_type });
                 this.playResponse(message.turn_id);
@@ -1141,7 +1285,18 @@ class LiveCallController {
         };
         this.playback.addEventListener("ended", finish, { once: true });
         this.playback.addEventListener("error", () => { finish(); }, { once: true });
-        Promise.resolve(this.playback.play()).catch(() => finish());
+        Promise.resolve(this.playback.play()).catch((error) => {
+            this.handleBlockedMediaPlayback(error, this.playback, finish);
+        });
+    }
+
+    queuePcmChunk(message) {
+        this.pcmPlaybackChain = this.pcmPlaybackChain
+            .then(() => this.playPcmChunk(message))
+            .catch(() => {
+                if (message.turn_id === this.activeTurnId) this.recoverTurn("audio_unavailable");
+            });
+        return this.pcmPlaybackChain;
     }
 
     async playPcmChunk(message) {
@@ -1155,12 +1310,18 @@ class LiveCallController {
             samples[index] = view.getInt16(index * 2, true) / 32768;
         }
         this.markTurnTiming(message.turn_id, "first_audio_chunk_decodable");
-        if (this.audioContext.state !== "running" && this.audioContext.resume) {
+        this.recordAudioDiagnostic("pcm_playback_context_state", this.audioContext?.state || "missing");
+        if (this.audioContext?.state !== "running") {
             this.markTurnTiming(message.turn_id, "audio_context_resume_started");
-            await this.audioContext.resume();
+            const running = await this.resumeAudioContext();
             this.markTurnTiming(message.turn_id, "audio_context_resumed");
             if (message.turn_id !== this.activeTurnId || !this.speakerEnabled) return;
+            if (!running) {
+                await this.requestAudioUnlock();
+                if (message.turn_id !== this.activeTurnId || !this.speakerEnabled) return;
+            }
         }
+        if (this.audioContext?.state !== "running") throw new Error("Audio output unavailable.");
         const sampleRate = Number.isInteger(message.sample_rate) ? message.sample_rate : 24000;
         const buffer = this.audioContext.createBuffer(1, samples.length, sampleRate);
         buffer.copyToChannel(samples, 0);
@@ -1248,6 +1409,7 @@ class LiveCallController {
         this.stopVad();
         this.stopTurnMedia();
         this.releaseMicrophone();
+        this.closeAudioContext();
         document.dispatchEvent(new CustomEvent("waffleberry:stopspeech"));
         await this.requestTransportEnd();
         this.socket?.close();
@@ -1297,6 +1459,7 @@ class LiveCallController {
         document.body.dataset.recording = "false";
         if (this.playback) { this.playback.pause(); this.playback.src = ""; }
         this.playback = null;
+        this.pendingBlockedPlayback = null;
         if (this.playbackUrl) this.URLClass.revokeObjectURL(this.playbackUrl);
         this.playbackUrl = null;
         this.activeTurnId = null;
@@ -1315,6 +1478,7 @@ class LiveCallController {
     finishEnded() {
         this.stopTimer();
         this.releaseMicrophone();
+        this.closeAudioContext();
         this.setState("ended", "Call ended");
         this.elements.endedTitle.textContent = "Call ended";
         this.elements.controls.hidden = true;
@@ -1348,13 +1512,14 @@ class LiveCallController {
     }
 
     cleanupForNavigation() {
-        if (["idle", "ended"].includes(this.state)) return;
+        if (this.state === "ended") return;
         this.intentionalEnd = true;
         this.stopRingback();
         this.clearReconnectTimer();
         this.stopHeartbeat();
         this.stopTimer();
         this.releaseMicrophone();
+        this.closeAudioContext();
         this.sendEvent("session.end");
         this.socket?.close();
         if (this.session?.session_id) {
@@ -1423,8 +1588,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     controller.elements.settingsDialog.addEventListener("close", () => controller.elements.settingsButton.focus());
     controller.elements.end.addEventListener("click", () => controller.end());
+    controller.elements.audioUnlock.addEventListener("click", () => controller.activateAudio());
     window.addEventListener("offline", () => controller.handleOffline());
     window.addEventListener("online", () => controller.handleOnline());
+    document.addEventListener("visibilitychange", () => controller.recoverAudioAfterVisibility());
     window.addEventListener("pagehide", () => controller.cleanupForNavigation(), { once: true });
     document.addEventListener("waffleberry:signout", () => controller.cleanupForNavigation(), { once: true });
     controller.start();

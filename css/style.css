@@ -7952,6 +7952,34 @@ body.dark-mode .live-call-settings-panel {
     text-align: center;
 }
 
+.live-call-audio-unlock {
+    min-width: 190px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 18px;
+    border: 1px solid rgba(165, 47, 91, 0.34);
+    border-radius: 999px;
+    color: #fff;
+    background: linear-gradient(135deg, #a52f5b, #c83f74);
+    box-shadow: 0 12px 28px rgba(103, 32, 58, 0.2);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 780;
+}
+
+.live-call-audio-unlock[hidden] {
+    display: none;
+}
+
+.live-call-audio-unlock:focus-visible {
+    outline: 3px solid rgba(200, 63, 116, 0.42);
+    outline-offset: 3px;
+}
+
 body[data-call-state="processing"] .live-call-status::after {
     content: "  · · ·";
     display: inline-block;
@@ -8137,6 +8165,11 @@ body.dark-mode .live-call-control:not(.live-call-end) {
     color: #ffe8f1;
 }
 
+body.dark-mode .live-call-audio-unlock {
+    border-color: rgba(255, 213, 229, 0.42);
+    color: #fff;
+}
+
 body.dark-mode .live-call-avatar {
     background: linear-gradient(145deg, #3f2b34, #24191e);
 }
@@ -8187,6 +8220,11 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
         font-size: 0.76rem;
     }
 
+    .live-call-audio-unlock {
+        width: min(100%, 260px);
+        min-height: 48px;
+    }
+
     .live-call-end { flex-grow: 0.82; }
 
     .live-call-settings-dialog {
@@ -8216,6 +8254,7 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
 @media (prefers-reduced-motion: reduce) {
     .live-call-entry,
     .live-call-return-link,
+    .live-call-audio-unlock,
     .live-call-control,
     .live-call-orbit,
     .live-call-voice-bars,
