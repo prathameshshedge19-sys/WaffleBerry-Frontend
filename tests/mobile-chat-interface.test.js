@@ -22,6 +22,40 @@ test("mobile chat top bar exists", () => {
     assert.match(chat, /id="mobileNewChatButton"/);
 });
 
+test("mobile Live Call stays visible, discoverable, and touch accessible", () => {
+    assert.match(
+        chat,
+        /id="mobileLiveCallButton"[\s\S]*data-live-call-entry[\s\S]*aria-label="Start Live Call"[\s\S]*<span>Call<\/span>/
+    );
+    const mobileShell = styles.slice(
+        styles.indexOf("Mobile chat application shell")
+    );
+    assert.match(
+        mobileShell,
+        /@media \(max-width: 768px\)[\s\S]*\.chat-page \.mobile-live-call-button[\s\S]*min-height:\s*44px/
+    );
+    assert.match(
+        mobileShell,
+        /@media \(max-width: 768px\)[\s\S]*\.chat-page \.mobile-live-call-button,[\s\S]*display:\s*inline-grid/
+    );
+    assert.match(
+        mobileShell,
+        /grid-template-columns:\s*44px minmax\(0, 1fr\) 58px 58px/
+    );
+    assert.match(
+        mobileShell,
+        /\.mobile-live-call-button:focus-visible/
+    );
+});
+
+test("desktop and mobile Live Call actions share hydrated context safely", () => {
+    assert.equal((chat.match(/data-live-call-entry/g) || []).length, 2);
+    assert.match(chatScript, /querySelectorAll\("\[data-live-call-entry\]"\)/);
+    assert.match(chatScript, /liveCallContextReady = Boolean\(selectedLegacy\?\.backendLegacyId\)/);
+    assert.match(chatScript, /if \(liveCallContextReady\) return;[\s\S]*event\.preventDefault\(\)/);
+    assert.match(chatScript, /button\.href = href/);
+});
+
 test("the single conversation list is reused inside the drawer", () => {
     assert.equal((chat.match(/id="conversationList"/g) || []).length, 1);
     assert.match(

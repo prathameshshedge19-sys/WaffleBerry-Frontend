@@ -17,18 +17,36 @@ const companionIdentity =
 let selectedLegacy = companionIdentity.getLegacy();
 
 companionIdentity.applyToDocument();
-const liveCallButton = document.getElementById("liveCallButton");
+const liveCallButtons = Array.from(
+    document.querySelectorAll("[data-live-call-entry]")
+);
+let liveCallContextReady = false;
 
 function updateLiveCallLink() {
-    if (!liveCallButton) return;
+    if (!liveCallButtons.length) return;
     const parameters = new URLSearchParams();
     if (selectedLegacy?.id) parameters.set("legacyId", selectedLegacy.id);
     if (state.activeConversationId) {
         parameters.set("conversationId", String(state.activeConversationId));
     }
     const query = parameters.toString();
-    liveCallButton.href = `live-call.html${query ? `?${query}` : ""}`;
+    const href = `live-call.html${query ? `?${query}` : ""}`;
+    liveCallButtons.forEach((button) => {
+        button.href = href;
+        button.setAttribute(
+            "aria-disabled",
+            String(!liveCallContextReady)
+        );
+    });
 }
+
+liveCallButtons.forEach((button) => {
+    button.setAttribute("aria-disabled", "true");
+    button.addEventListener("click", (event) => {
+        if (liveCallContextReady) return;
+        event.preventDefault();
+    });
+});
 
 const STREAM_INACTIVITY_TIMEOUT_MS = 45000;
 const NON_STREAMING_TIMEOUT_MS = 60000;
@@ -3632,6 +3650,7 @@ async function initializeChat() {
         }
     }
 
+    liveCallContextReady = Boolean(selectedLegacy?.backendLegacyId);
     updateLiveCallLink();
 
     updateControls();

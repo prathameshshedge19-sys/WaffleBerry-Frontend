@@ -28,6 +28,8 @@ test("selected Legacy and conversation are handed from Chat to Live Call after h
     assert.match(chatScript, /parameters\.set\("conversationId", String\(state\.activeConversationId\)\)/);
     assert.match(chatScript, /selectedLegacy = await window\.WaffleBerryLegacyState[\s\S]*\.ensurePersisted\(selectedLegacy\.id\)[\s\S]*updateLiveCallLink\(\)/);
     assert.match(chatScript, /state\.activeConversationId =[\s\S]*conversationId;[\s\S]*updateLiveCallLink\(\)/);
+    assert.match(chatScript, /liveCallButtons\.forEach\([\s\S]*button\.href = href/);
+    assert.match(chatScript, /liveCallContextReady = Boolean\(selectedLegacy\?\.backendLegacyId\);[\s\S]*updateLiveCallLink\(\)/);
 });
 
 test("Live Call resolves authoritative Aaji context before creating its session", () => {

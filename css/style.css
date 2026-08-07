@@ -8577,6 +8577,7 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
 
 /* Mobile chat application shell and off-canvas navigation */
 .mobile-chat-topbar,
+.mobile-live-call-button,
 .conversation-drawer-header,
 .conversation-drawer-navigation,
 .conversation-drawer-backdrop,
@@ -8632,7 +8633,7 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
         z-index: 950;
         min-height: calc(56px + env(safe-area-inset-top));
         display: grid;
-        grid-template-columns: 44px minmax(0, 1fr) 58px;
+        grid-template-columns: 44px minmax(0, 1fr) 58px 58px;
         align-items: end;
         gap: 8px;
         padding:
@@ -8660,6 +8661,7 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
     }
 
     .chat-page .mobile-topbar-button,
+    .chat-page .mobile-live-call-button,
     .chat-page .mobile-new-chat-button {
         min-width: 44px;
         min-height: 44px;
@@ -8674,6 +8676,20 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
         font: inherit;
         font-size: 0.82rem;
         font-weight: 760;
+    }
+
+    .chat-page .mobile-live-call-button {
+        gap: 4px;
+        padding: 0 7px;
+        border-color: rgba(255, 195, 218, 0.3);
+        color: #fff8fc;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .chat-page .mobile-live-call-button[aria-disabled="true"] {
+        cursor: wait;
+        opacity: 0.62;
     }
 
     .chat-page .mobile-topbar-button {
@@ -9063,6 +9079,7 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
     }
 
     .chat-page .mobile-topbar-button:focus-visible,
+    .chat-page .mobile-live-call-button:focus-visible,
     .chat-page .mobile-new-chat-button:focus-visible,
     .chat-page .conversation-drawer-close:focus-visible,
     .chat-page .conversation-drawer-navigation a:focus-visible,
@@ -9075,7 +9092,7 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
 
 @media (max-width: 350px) {
     .chat-page .mobile-chat-topbar {
-        grid-template-columns: 44px minmax(0, 1fr) 52px;
+        grid-template-columns: 44px minmax(0, 1fr) 52px 52px;
         gap: 5px;
         padding-right: 6px;
         padding-left: 6px;
@@ -9084,6 +9101,12 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
     .chat-page .mobile-new-chat-button {
         padding-right: 5px;
         padding-left: 5px;
+        font-size: 0.76rem;
+    }
+
+    .chat-page .mobile-live-call-button {
+        padding-right: 4px;
+        padding-left: 4px;
         font-size: 0.76rem;
     }
 }
