@@ -115,6 +115,8 @@ class LiveCallController {
         this.ringbackFadeTimer = null;
         this.ringbackFadeResolver = null;
         this.navigate = options.navigate || ((url) => window.location.assign(url));
+        this.onEnded = options.onEnded || null;
+        this.allowAudioUnlockPrompt = options.allowAudioUnlockPrompt !== false;
     }
 
     readElements() {
@@ -188,6 +190,10 @@ class LiveCallController {
         if (this.audioUnlocked && this.audioContext?.state === "running") {
             return Promise.resolve(true);
         }
+        if (!this.allowAudioUnlockPrompt) {
+            this.fail("Sound isn’t available for this call. Please try again.");
+            return Promise.resolve(false);
+        }
         if (!this.audioUnlockPromise) {
             this.recordAudioDiagnostic("audio_unlock_required", true);
             this.elements.audioUnlock.hidden = false;
@@ -215,7 +221,7 @@ class LiveCallController {
         if (this.pendingBlockedPlayback === blockedPlayback) {
             this.pendingBlockedPlayback = null;
         }
-        this.elements.audioUnlock.hidden = true;
+        if (this.elements.audioUnlock) this.elements.audioUnlock.hidden = true;
         this.recordAudioDiagnostic("audio_unlock_success", true);
         this.handleAudioOutputReady();
         const resolve = this.audioUnlockResolve;
@@ -557,7 +563,7 @@ class LiveCallController {
         this.audioContext = null;
         this.audioUnlocked = false;
         this.pendingBlockedPlayback = null;
-        this.elements.audioUnlock.hidden = true;
+        if (this.elements.audioUnlock) this.elements.audioUnlock.hidden = true;
         this.audioUnlockResolve?.(false);
         this.audioUnlockResolve = null;
         this.audioUnlockPromise = null;
@@ -1439,6 +1445,11 @@ class LiveCallController {
             try { await this.api.endLiveCallSession(this.session.session_id); } catch { /* cleanup remains local */ }
         }
         this.finishEnded();
+        this.disposeLifecycleListeners?.();
+        if (this.onEnded) {
+            this.onEnded();
+            return;
+        }
         const returnUrl = this.elements.ended.querySelector('a[href^="chat.html"]')?.href
             || document.getElementById("returnToChatTop")?.href || "chat.html";
         this.clock.setTimeout(() => this.navigate(returnUrl), 150);
@@ -1514,6 +1525,8 @@ class LiveCallController {
         this.stopHeartbeat();
         this.stopTimer();
         this.releaseMicrophone();
+        this.closeAudioContext();
+        this.disposeLifecycleListeners?.();
         this.setState("error", message);
         this.elements.endedTitle.textContent = "Call unavailable";
         this.elements.controls.hidden = true;
@@ -1542,6 +1555,7 @@ class LiveCallController {
         this.stopTimer();
         this.releaseMicrophone();
         this.closeAudioContext();
+        this.disposeLifecycleListeners?.();
         this.sendEvent("session.end");
         this.socket?.close();
         if (this.session?.session_id) {
@@ -1580,14 +1594,40 @@ async function resolveLiveCallLegacy() {
     return legacy;
 }
 
+function mountLiveCall(options = {}) {
+    const controller = new LiveCallController(options);
+    const lifecycle = new AbortController();
+    const listenerOptions = { signal: lifecycle.signal };
+    controller.disposeLifecycleListeners = () => lifecycle.abort();
+    controller.elements.mute.addEventListener("click", () => controller.toggleMute(), listenerOptions);
+    controller.elements.speaker.addEventListener("click", () => controller.toggleSpeaker(), listenerOptions);
+    controller.elements.settingsButton.addEventListener("click", () => controller.openSettings(), listenerOptions);
+    controller.elements.settingsClose.addEventListener("click", () => controller.closeSettings(), listenerOptions);
+    controller.elements.settingsForm.addEventListener("submit", (event) => controller.saveSettings(event), listenerOptions);
+    controller.elements.settingsDialog.addEventListener("keydown", (event) => controller.trapSettingsFocus(event), listenerOptions);
+    controller.elements.settingsDialog.addEventListener("cancel", (event) => {
+        event.preventDefault(); controller.closeSettings();
+    }, listenerOptions);
+    controller.elements.settingsDialog.addEventListener("close", () => controller.elements.settingsButton.focus(), listenerOptions);
+    controller.elements.end.addEventListener("click", () => controller.end(), listenerOptions);
+    controller.elements.audioUnlock?.addEventListener("click", () => controller.activateAudio(), listenerOptions);
+    window.addEventListener("offline", () => controller.handleOffline(), { signal: lifecycle.signal });
+    window.addEventListener("online", () => controller.handleOnline(), { signal: lifecycle.signal });
+    document.addEventListener("visibilitychange", () => controller.recoverAudioAfterVisibility(), { signal: lifecycle.signal });
+    window.addEventListener("pagehide", () => controller.cleanupForNavigation(), { once: true, signal: lifecycle.signal });
+    document.addEventListener("waffleberry:signout", () => controller.cleanupForNavigation(), { once: true, signal: lifecycle.signal });
+    return controller;
+}
+
 window.WaffleBerryLiveCall = Object.freeze({
     CALL_STATES, TRANSPORT_STATES, RECONNECT_DELAYS_MS, HEARTBEAT_INTERVAL_MS,
     HEARTBEAT_TIMEOUT_MS, RECORDING_DISCONNECT_GRACE_MS, RINGBACK_GAIN,
     MINIMUM_CONNECTING_MS, RINGBACK_FADE_OUT_MS,
-    LiveCallController
+    LiveCallController, mountLiveCall
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
+    if (!document.body.classList.contains("live-call-page")) return;
     await window.authReady;
     const legacy = await resolveLiveCallLegacy();
     scopeLinks(legacy);
@@ -1597,25 +1637,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
         document.title = `${legacy.displayName} | Waffle Berry`;
     }
-    const controller = new LiveCallController({ legacy });
+    const controller = mountLiveCall({ legacy });
     window.liveCallController = controller;
-    controller.elements.mute.addEventListener("click", () => controller.toggleMute());
-    controller.elements.speaker.addEventListener("click", () => controller.toggleSpeaker());
-    controller.elements.settingsButton.addEventListener("click", () => controller.openSettings());
-    controller.elements.settingsClose.addEventListener("click", () => controller.closeSettings());
-    controller.elements.settingsForm.addEventListener("submit", (event) => controller.saveSettings(event));
-    controller.elements.settingsDialog.addEventListener("keydown", (event) => controller.trapSettingsFocus(event));
-    controller.elements.settingsDialog.addEventListener("cancel", (event) => {
-        event.preventDefault(); controller.closeSettings();
-    });
-    controller.elements.settingsDialog.addEventListener("close", () => controller.elements.settingsButton.focus());
-    controller.elements.end.addEventListener("click", () => controller.end());
-    controller.elements.audioUnlock.addEventListener("click", () => controller.activateAudio());
-    window.addEventListener("offline", () => controller.handleOffline());
-    window.addEventListener("online", () => controller.handleOnline());
-    document.addEventListener("visibilitychange", () => controller.recoverAudioAfterVisibility());
-    window.addEventListener("pagehide", () => controller.cleanupForNavigation(), { once: true });
-    document.addEventListener("waffleberry:signout", () => controller.cleanupForNavigation(), { once: true });
     controller.start();
 });
 })();

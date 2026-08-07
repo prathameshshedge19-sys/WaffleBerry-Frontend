@@ -9,6 +9,8 @@ const vm = require("node:vm");
 const root = path.join(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "js", "live-call.js"), "utf8");
 const markup = fs.readFileSync(path.join(root, "live-call.html"), "utf8");
+const chat = fs.readFileSync(path.join(root, "chat.html"), "utf8");
+const chatScript = fs.readFileSync(path.join(root, "js", "chat.js"), "utf8");
 const styles = fs.readFileSync(path.join(root, "css", "style.css"), "utf8");
 
 function loadController() {
@@ -239,3 +241,40 @@ test("audio unlock UI remains mobile-safe, keyboard visible, and motion safe", (
     assert.match(styles, /@media \(max-width: 650px\)[\s\S]*\.live-call-audio-unlock[\s\S]*min-height:\s*48px/);
     assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.live-call-audio-unlock/);
 });
+
+test("normal product entry mounts one shared controller without document navigation", () => {
+    assert.match(chat, /id="liveCallOverlay"[\s\S]*class="live-call-overlay"[\s\S]*id="liveCallEndButton"/);
+    assert.match(chat, /src="js\/live-call\.js"[\s\S]*src="js\/chat\.js"/);
+    assert.match(scriptForSharedController(), /LiveCallController, mountLiveCall/);
+    assert.match(chatScript, /window\.WaffleBerryLiveCall\.mountLiveCall\(/);
+    assert.match(chatScript, /event\.preventDefault\(\);[\s\S]*openInPageLiveCall\(button\)/);
+    assert.doesNotMatch(chatScript, /window\.location\.(assign|replace)\([^)]*live-call/);
+});
+
+test("original Call click unlocks audio before call start and exposes no second tap", () => {
+    const open = chatScript.slice(
+        chatScript.indexOf("function openInPageLiveCall"),
+        chatScript.indexOf("window.addEventListener(\"popstate\"")
+    );
+    assert.ok(open.indexOf("inPageLiveCall.activateAudio()") < open.indexOf("inPageLiveCall.start()"));
+    assert.doesNotMatch(open.slice(0, open.indexOf("inPageLiveCall.activateAudio()")), /await|Promise|setTimeout/);
+    assert.match(open, /allowAudioUnlockPrompt:\s*false/);
+    assert.doesNotMatch(chat, /Tap for sound|Tap to start call/);
+});
+
+test("full-screen call preserves Chat and history while End and Back cleanly exit", () => {
+    assert.match(styles, /\.live-call-overlay\s*\{[\s\S]*position:\s*fixed;[\s\S]*inset:\s*0;[\s\S]*z-index:\s*3000/);
+    assert.match(styles, /\.live-call-overlay\s*\{[\s\S]*height:\s*100dvh/);
+    assert.match(styles, /\.live-call-overlay[\s\S]*env\(safe-area-inset-top\)[\s\S]*env\(safe-area-inset-bottom\)/);
+    assert.match(styles, /body\.dark-mode \.live-call-overlay/);
+    assert.match(chatScript, /chatWebsite\.inert = true/);
+    assert.match(chatScript, /onEnded:\s*closeInPageLiveCall/);
+    assert.match(chatScript, /chatWebsite\.inert = false/);
+    assert.match(chatScript, /history\.pushState\(\{ liveCall: true \}/);
+    assert.match(chatScript, /popstate[\s\S]*inPageLiveCall\.end\(\)/);
+    assert.match(chatScript, /window\.location\.hash === "#live-call"[\s\S]*window\.history\.back\(\)/);
+});
+
+function scriptForSharedController() {
+    return source;
+}

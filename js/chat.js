@@ -21,6 +21,10 @@ const liveCallButtons = Array.from(
     document.querySelectorAll("[data-live-call-entry]")
 );
 let liveCallContextReady = false;
+const liveCallOverlay = document.getElementById("liveCallOverlay");
+let inPageLiveCall = null;
+let liveCallTrigger = null;
+let titleBeforeLiveCall = document.title;
 
 function updateLiveCallLink() {
     if (!liveCallButtons.length) return;
@@ -43,9 +47,75 @@ function updateLiveCallLink() {
 liveCallButtons.forEach((button) => {
     button.setAttribute("aria-disabled", "true");
     button.addEventListener("click", (event) => {
-        if (liveCallContextReady) return;
         event.preventDefault();
+        if (!liveCallContextReady || inPageLiveCall) return;
+        openInPageLiveCall(button);
     });
+});
+
+function resetLiveCallView() {
+    document.getElementById("liveCallControls").hidden = false;
+    document.getElementById("liveCallEnded").hidden = true;
+    document.getElementById("liveCallTimer").textContent = "00:00";
+    document.getElementById("liveCallStatus").textContent = "Connecting";
+    document.getElementById("liveCallMicrophoneStatus").textContent = "Preparing microphone…";
+    const mute = document.getElementById("liveCallMuteButton");
+    const speaker = document.getElementById("liveCallSpeakerButton");
+    mute.disabled = true;
+    mute.setAttribute("aria-pressed", "false");
+    mute.setAttribute("aria-label", "Mute microphone");
+    mute.lastElementChild.textContent = "Mute";
+    speaker.disabled = true;
+    speaker.setAttribute("aria-pressed", "true");
+    speaker.setAttribute("aria-label", "Turn speaker off");
+    speaker.lastElementChild.textContent = "Speaker on";
+}
+
+function closeInPageLiveCall() {
+    liveCallOverlay.hidden = true;
+    chatWebsite.inert = false;
+    chatWebsite.removeAttribute("aria-hidden");
+    document.body.classList.remove("live-call-overlay-open");
+    document.title = titleBeforeLiveCall;
+    inPageLiveCall = null;
+    window.liveCallController = null;
+    if (window.location.hash === "#live-call") window.history.back();
+    liveCallTrigger?.focus();
+    liveCallTrigger = null;
+}
+
+function openInPageLiveCall(trigger) {
+    if (!liveCallOverlay || !selectedLegacy?.backendLegacyId) return;
+    liveCallTrigger = trigger;
+    titleBeforeLiveCall = document.title;
+    resetLiveCallView();
+    liveCallOverlay.querySelectorAll("[data-companion-name]").forEach((element) => {
+        element.textContent = selectedLegacy.displayName;
+    });
+    inPageLiveCall = window.WaffleBerryLiveCall.mountLiveCall({
+        legacy: selectedLegacy,
+        allowAudioUnlockPrompt: false,
+        onEnded: closeInPageLiveCall
+    });
+    window.liveCallController = inPageLiveCall;
+
+    // These calls intentionally happen synchronously in the original trusted click.
+    inPageLiveCall.activateAudio();
+    liveCallOverlay.hidden = false;
+    chatWebsite.inert = true;
+    chatWebsite.setAttribute("aria-hidden", "true");
+    document.body.classList.add("live-call-overlay-open");
+    document.title = `${selectedLegacy.displayName} | Live Call | Waffle Berry`;
+    window.history.pushState({ liveCall: true }, "", `${window.location.pathname}${window.location.search}#live-call`);
+    inPageLiveCall.start();
+    document.getElementById("liveCallEndButton").focus({ preventScroll: true });
+}
+
+window.addEventListener("popstate", () => {
+    if (inPageLiveCall) inPageLiveCall.end();
+});
+document.getElementById("liveCallReturnToChat")?.addEventListener("click", () => {
+    inPageLiveCall?.end();
 });
 
 const STREAM_INACTIVITY_TIMEOUT_MS = 45000;
