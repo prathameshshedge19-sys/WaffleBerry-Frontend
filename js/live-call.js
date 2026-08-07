@@ -217,6 +217,7 @@ class LiveCallController {
         }
         this.elements.audioUnlock.hidden = true;
         this.recordAudioDiagnostic("audio_unlock_success", true);
+        this.handleAudioOutputReady();
         const resolve = this.audioUnlockResolve;
         this.audioUnlockResolve = null;
         this.audioUnlockPromise = null;
@@ -249,6 +250,28 @@ class LiveCallController {
         return this.requestAudioUnlock();
     }
 
+    prepareAudioOutput() {
+        this.resumeAudioContext().then((running) => {
+            if (this.intentionalEnd) return;
+            if (!running) {
+                this.requestAudioUnlock();
+                return;
+            }
+            this.audioUnlocked = true;
+            this.handleAudioOutputReady();
+        });
+    }
+
+    handleAudioOutputReady() {
+        if (this.intentionalEnd || !this.speakerEnabled || this.state !== "connecting") return;
+        if (this.pendingInitialReady) {
+            this.ringbackMinimumElapsed = true;
+            this.completeInitialConnection();
+            return;
+        }
+        this.startRingback();
+    }
+
     setState(nextState, message) {
         if (!CALL_STATES.includes(nextState)) throw new Error("Invalid call state.");
         this.state = nextState;
@@ -271,6 +294,7 @@ class LiveCallController {
 
     async start() {
         if (this.state !== "idle") return;
+        this.setState("connecting", "Connecting");
         if (!this.legacy?.backendLegacyId) {
             return this.fail("This Companion is not available for Live Call.");
         }
@@ -279,9 +303,7 @@ class LiveCallController {
             return this.fail("Live Call is not supported in this browser.");
         }
         this.elements.relationship.textContent = this.legacy.relationship;
-        if (!await this.ensureAudioReady() || this.intentionalEnd) return;
-        this.setState("connecting", "Connecting");
-        this.startRingback();
+        this.prepareAudioOutput();
         try {
             this.stream = await this.mediaDevices.getUserMedia({
                 audio: { echoCancellation: true, noiseSuppression: true },

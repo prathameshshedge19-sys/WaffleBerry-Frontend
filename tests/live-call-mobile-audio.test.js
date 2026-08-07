@@ -135,11 +135,12 @@ test("suspended mobile audio shows one accessible activation and starts after on
     assert.equal(context.starts(), 2);
 });
 
-test("call startup waits for unlock before microphone, ringback, and transport work", async () => {
+test("call startup initializes microphone, session, and transport before sound unlock", async () => {
     const context = audioContext("suspended");
     const fixture = makeController(context);
     let microphoneRequests = 0;
     let sessions = 0;
+    let transports = 0;
     fixture.controller.mediaDevices = {
         async getUserMedia() {
             microphoneRequests += 1;
@@ -151,18 +152,22 @@ test("call startup waits for unlock before microphone, ringback, and transport w
         async endLiveCallSession() {}
     };
     fixture.controller.initializeVad = async () => {};
-    fixture.controller.connectTransport = () => {};
+    fixture.controller.connectTransport = () => { transports += 1; };
     const starting = fixture.controller.start();
-    await new Promise(setImmediate);
-    assert.equal(microphoneRequests, 0);
-    assert.equal(context.starts(), 0);
-    context.allowResume();
-    await fixture.controller.activateAudio();
     await starting;
+    await new Promise(setImmediate);
     assert.equal(microphoneRequests, 1);
     assert.equal(sessions, 1);
-    assert.equal(context.starts(), 2);
+    assert.equal(transports, 1);
+    assert.equal(context.starts(), 0);
     assert.equal(fixture.controller.state, "connecting");
+    assert.equal(fixture.controller.elements.audioUnlock.hidden, false);
+    context.allowResume();
+    await fixture.controller.activateAudio();
+    assert.equal(microphoneRequests, 1);
+    assert.equal(sessions, 1);
+    assert.equal(transports, 1);
+    assert.equal(context.starts(), 2);
 });
 
 test("HTMLAudio activation rejection is retained and retried exactly once", async () => {
@@ -226,7 +231,8 @@ test("visibility recovery is bounded and navigation cleanup closes the shared co
 });
 
 test("audio unlock UI remains mobile-safe, keyboard visible, and motion safe", () => {
-    assert.match(markup, /id="liveCallAudioUnlock"[\s\S]*type="button"[\s\S]*Tap to start call/);
+    assert.match(markup, /id="liveCallAudioUnlock"[\s\S]*type="button"[\s\S]*aria-label="Enable Live Call sound"[\s\S]*Tap for sound/);
+    assert.doesNotMatch(markup, /Tap to start call/);
     assert.match(markup, /aria-describedby="liveCallStatus"/);
     assert.match(styles, /\.live-call-audio-unlock[\s\S]*min-height:\s*48px/);
     assert.match(styles, /\.live-call-audio-unlock:focus-visible/);

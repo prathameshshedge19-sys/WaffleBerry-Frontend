@@ -384,7 +384,8 @@ test("greeting is automatic once and failure returns to listening", () => {
 
 test("initial startup uses a quiet local ringback without delaying session work", () => {
     assert.match(script, /RINGBACK_GAIN = 0\.025/);
-    assert.match(script, /this\.setState\("connecting", "Connecting"\)[\s\S]*this\.startRingback\(\)[\s\S]*getUserMedia[\s\S]*createLiveCallSession/);
+    assert.match(script, /this\.setState\("connecting", "Connecting"\)[\s\S]*this\.prepareAudioOutput\(\);[\s\S]*getUserMedia[\s\S]*createLiveCallSession/);
+    assert.match(script, /prepareAudioOutput\(\)[\s\S]*resumeAudioContext\(\)\.then[\s\S]*handleAudioOutputReady\(\)/);
     assert.match(script, /createOscillator\(\)/);
     assert.match(script, /\[440, 480\]/);
     assert.doesNotMatch(script, /RINGBACK_ON_MS|RINGBACK_OFF_MS|soundCadence/);
