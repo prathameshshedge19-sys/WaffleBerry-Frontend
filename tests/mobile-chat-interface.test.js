@@ -52,7 +52,7 @@ test("desktop and mobile Live Call actions share hydrated context safely", () =>
     assert.equal((chat.match(/data-live-call-entry/g) || []).length, 2);
     assert.match(chatScript, /querySelectorAll\("\[data-live-call-entry\]"\)/);
     assert.match(chatScript, /liveCallContextReady = Boolean\(selectedLegacy\?\.backendLegacyId\)/);
-    assert.match(chatScript, /event\.preventDefault\(\);[\s\S]*if \(!liveCallContextReady \|\| inPageLiveCall\) return/);
+    assert.match(chatScript, /event\.preventDefault\(\);[\s\S]*if \(!liveCallContextReady \|\| liveCallOpen\) return/);
     assert.match(chatScript, /openInPageLiveCall\(button\)/);
     assert.match(chatScript, /button\.href = href/);
 });

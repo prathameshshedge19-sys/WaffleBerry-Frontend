@@ -23,6 +23,7 @@ const liveCallButtons = Array.from(
 let liveCallContextReady = false;
 const liveCallOverlay = document.getElementById("liveCallOverlay");
 let inPageLiveCall = null;
+let liveCallOpen = false;
 let liveCallTrigger = null;
 let titleBeforeLiveCall = document.title;
 
@@ -46,9 +47,14 @@ function updateLiveCallLink() {
 
 liveCallButtons.forEach((button) => {
     button.setAttribute("aria-disabled", "true");
+    button.addEventListener("pointerdown", (event) => {
+        if (event.isPrimary === false || event.button > 0
+                || !liveCallContextReady || liveCallOpen) return;
+        prepareInPageLiveCall();
+    });
     button.addEventListener("click", (event) => {
         event.preventDefault();
-        if (!liveCallContextReady || inPageLiveCall) return;
+        if (!liveCallContextReady || liveCallOpen) return;
         openInPageLiveCall(button);
     });
 });
@@ -78,29 +84,36 @@ function closeInPageLiveCall() {
     document.body.classList.remove("live-call-overlay-open");
     document.title = titleBeforeLiveCall;
     inPageLiveCall = null;
+    liveCallOpen = false;
     window.liveCallController = null;
     if (window.location.hash === "#live-call") window.history.back();
     liveCallTrigger?.focus();
     liveCallTrigger = null;
 }
 
-function openInPageLiveCall(trigger) {
-    if (!liveCallOverlay || !selectedLegacy?.backendLegacyId) return;
-    liveCallTrigger = trigger;
-    titleBeforeLiveCall = document.title;
-    resetLiveCallView();
-    liveCallOverlay.querySelectorAll("[data-companion-name]").forEach((element) => {
-        element.textContent = selectedLegacy.displayName;
-    });
+function prepareInPageLiveCall() {
+    if (inPageLiveCall || !selectedLegacy?.backendLegacyId) return inPageLiveCall;
     inPageLiveCall = window.WaffleBerryLiveCall.mountLiveCall({
         legacy: selectedLegacy,
         allowAudioUnlockPrompt: false,
         onEnded: closeInPageLiveCall
     });
     window.liveCallController = inPageLiveCall;
+    inPageLiveCall.primeAudioFromGesture();
+    return inPageLiveCall;
+}
 
-    // These calls intentionally happen synchronously in the original trusted click.
-    inPageLiveCall.activateAudio();
+function openInPageLiveCall(trigger) {
+    if (!liveCallOverlay || !selectedLegacy?.backendLegacyId) return;
+    prepareInPageLiveCall();
+    if (!inPageLiveCall) return;
+    liveCallOpen = true;
+    liveCallTrigger = trigger;
+    titleBeforeLiveCall = document.title;
+    resetLiveCallView();
+    liveCallOverlay.querySelectorAll("[data-companion-name]").forEach((element) => {
+        element.textContent = selectedLegacy.displayName;
+    });
     liveCallOverlay.hidden = false;
     chatWebsite.inert = true;
     chatWebsite.setAttribute("aria-hidden", "true");

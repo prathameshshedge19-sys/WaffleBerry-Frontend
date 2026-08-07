@@ -369,7 +369,8 @@ test("streaming playback is cleared by barge-in, speaker off, end and stale turn
 
 test("complete-blob speech remains the provider-neutral playback fallback", () => {
     assert.match(script, /else \{[\s\S]*this\.responseAudio\.push[\s\S]*this\.playResponse\(message\.turn_id\)/);
-    assert.match(script, /playResponse\(turnId\)[\s\S]*new Blob[\s\S]*new this\.AudioClass/);
+    assert.match(script, /playResponse\(turnId\)[\s\S]*new Blob[\s\S]*this\.createAudioPlayback\(url\)/);
+    assert.match(script, /createAudioPlayback\(url\)[\s\S]*this\.primedMediaElement \|\| new this\.AudioClass\(url\)/);
 });
 
 test("greeting is automatic once and failure returns to listening", () => {

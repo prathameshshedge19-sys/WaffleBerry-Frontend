@@ -256,10 +256,59 @@ test("original Call click unlocks audio before call start and exposes no second 
         chatScript.indexOf("function openInPageLiveCall"),
         chatScript.indexOf("window.addEventListener(\"popstate\"")
     );
-    assert.ok(open.indexOf("inPageLiveCall.activateAudio()") < open.indexOf("inPageLiveCall.start()"));
-    assert.doesNotMatch(open.slice(0, open.indexOf("inPageLiveCall.activateAudio()")), /await|Promise|setTimeout/);
-    assert.match(open, /allowAudioUnlockPrompt:\s*false/);
+    const prepare = chatScript.slice(
+        chatScript.indexOf("function prepareInPageLiveCall"),
+        chatScript.indexOf("function openInPageLiveCall")
+    );
+    assert.match(prepare, /allowAudioUnlockPrompt:\s*false/);
+    assert.match(prepare, /inPageLiveCall\.primeAudioFromGesture\(\)/);
+    assert.doesNotMatch(prepare.slice(0, prepare.indexOf("primeAudioFromGesture")), /await|Promise|setTimeout|import\(/);
+    assert.ok(open.indexOf("prepareInPageLiveCall()") < open.indexOf("inPageLiveCall.start()"));
     assert.doesNotMatch(chat, /Tap for sound|Tap to start call/);
+});
+
+test("strict mobile gesture priming starts silent WebAudio and HTMLAudio synchronously", async () => {
+    const context = audioContext("suspended");
+    const fixture = makeController(context);
+    context.allowResume();
+    const prime = fixture.controller.primeAudioFromGesture();
+    assert.equal(context.starts(), 1);
+    assert.equal(fixture.contexts(), 1);
+    assert.equal(await prime, true);
+    fixture.controller.startRingback();
+    assert.equal(fixture.contexts(), 1);
+    assert.equal(context.starts(), 3);
+    const fields = fixture.controller.audioDiagnostics.map(({ field }) => field);
+    for (const field of [
+        "call_gesture_received", "audio_context_created_in_gesture",
+        "silent_buffer_started_in_gesture", "html_audio_prime_started_in_gesture",
+        "audio_context_post_prime_state", "html_audio_prime_success", "audio_unlock_verified"
+    ]) assert.ok(fields.includes(field), field);
+});
+
+test("temporarily suspended context gets a bounded verification window", async () => {
+    const context = audioContext("suspended");
+    const fixture = makeController(context);
+    fixture.controller.clock.setTimeout = (callback, delay) => {
+        if (delay === 30) {
+            context.state = "running";
+            queueMicrotask(callback);
+        }
+        return 1;
+    };
+    const verified = await fixture.controller.primeAudioFromGesture();
+    assert.equal(verified, true);
+    assert.equal(fixture.controller.intentionalEnd, false);
+    assert.equal(fixture.controller.audioDiagnostics.some(
+        ({ field, value }) => field === "audio_unlock_verified" && value === true
+    ), true);
+});
+
+test("pointerdown primes once, click launches once, and keyboard click remains supported", () => {
+    assert.match(chatScript, /addEventListener\("pointerdown"[\s\S]*prepareInPageLiveCall\(\)/);
+    assert.match(chatScript, /if \(inPageLiveCall[\s\S]*return inPageLiveCall/);
+    assert.match(chatScript, /addEventListener\("click"[\s\S]*openInPageLiveCall\(button\)/);
+    assert.match(chatScript, /if \(!liveCallContextReady \|\| liveCallOpen\) return/);
 });
 
 test("full-screen call preserves Chat and history while End and Back cleanly exit", () => {
