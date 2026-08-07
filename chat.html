@@ -93,7 +93,7 @@
                     class="chat-settings-button"
                     type="button"
                     data-open-voice-settings
-                    aria-label="Open voice settings"
+                    aria-label="Open conversation settings"
                 >
                     Settings
                 </button>
@@ -245,7 +245,7 @@
                             type="button"
                             data-open-voice-settings
                         >
-                            Voice settings
+                            Conversation settings
                         </button>
                         <button
                             id="mobileDeleteChatButton"
@@ -513,7 +513,6 @@
                     <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
                     <span class="brand-text wb-brand__name">Waffle Berry</span>
                 </span>
-                <button id="liveCallSettingsButton" class="live-call-settings-button" type="button" aria-label="Live Call settings">&#9881;</button>
             </header>
             <div class="live-call-card">
                 <p class="live-call-eyebrow">Live with Waffle Berry</p>
@@ -541,31 +540,6 @@
                 </div>
             </div>
         </div>
-        <dialog id="liveCallSettingsDialog" class="live-call-settings-dialog" aria-modal="true" aria-labelledby="liveCallSettingsTitle" aria-describedby="liveCallSettingsDescription">
-            <form id="liveCallSettingsForm" class="live-call-settings-panel">
-                <button id="liveCallSettingsClose" class="voice-settings-close" type="button" aria-label="Close Live Call settings">&times;</button>
-                <p class="live-call-eyebrow">Call preferences</p>
-                <h2 id="liveCallSettingsTitle">Live Call Settings</h2>
-                <p id="liveCallSettingsDescription">Adjust this call without leaving your conversation.</p>
-                <fieldset class="live-call-setting-group">
-                    <legend>Voice</legend><p id="liveCallCurrentVoice" class="live-call-current-voice">Loading current voice&hellip;</p>
-                    <div id="liveCallVoiceOptions" class="live-call-voice-options" aria-busy="false"></div>
-                    <p class="live-call-setting-note">Voice changes will be used on your next call.</p>
-                </fieldset>
-                <fieldset class="live-call-setting-group"><legend>Conversation style</legend><div class="live-call-choice-row">
-                    <label><input type="radio" name="conversationStyle" value="natural" checked> Natural</label>
-                    <label><input type="radio" name="conversationStyle" value="gentle"> Gentle</label>
-                    <label><input type="radio" name="conversationStyle" value="expressive"> Expressive</label>
-                </div></fieldset>
-                <fieldset class="live-call-setting-group"><legend>Response length</legend><div class="live-call-choice-row">
-                    <label><input type="radio" name="responseLength" value="short"> Short</label>
-                    <label><input type="radio" name="responseLength" value="balanced" checked> Balanced</label>
-                    <label><input type="radio" name="responseLength" value="detailed"> Detailed</label>
-                </div></fieldset>
-                <p id="liveCallSettingsStatus" class="voice-settings-status" role="status" aria-live="polite"></p>
-                <div class="voice-settings-actions"><button class="primary-button" type="submit">Save settings</button></div>
-            </form>
-        </dialog>
     </section>
     <dialog
         id="voiceSettingsDialog"
@@ -582,10 +556,10 @@
                 aria-label="Close voice settings"
             >&times;</button>
 
-            <p class="voice-settings-eyebrow">Voice</p>
-            <h2 id="voiceSettingsTitle">Choose Berry&rsquo;s voice</h2>
+            <p class="voice-settings-eyebrow">Conversation</p>
+            <h2 id="voiceSettingsTitle">Conversation settings</h2>
             <p id="voiceSettingsDescription">
-                Select the voice Berry uses when reading messages aloud.
+                These preferences apply to Chat and future Live Calls.
             </p>
 
             <div
@@ -595,6 +569,19 @@
             >
                 <p class="voice-settings-loading">Loading voice choices&hellip;</p>
             </div>
+
+            <fieldset class="conversation-preference-group">
+                <legend>Style</legend>
+                <label><input type="radio" name="conversationStyle" value="natural" checked> Natural</label>
+                <label><input type="radio" name="conversationStyle" value="gentle"> Gentle</label>
+                <label><input type="radio" name="conversationStyle" value="expressive"> Expressive</label>
+            </fieldset>
+            <fieldset class="conversation-preference-group">
+                <legend>Response length</legend>
+                <label><input type="radio" name="responseLength" value="short"> Short</label>
+                <label><input type="radio" name="responseLength" value="balanced" checked> Balanced</label>
+                <label><input type="radio" name="responseLength" value="detailed"> Detailed</label>
+            </fieldset>
 
             <p
                 id="voiceSettingsStatus"
@@ -614,7 +601,7 @@
                     class="primary-button"
                     type="submit"
                     disabled
-                >Save voice</button>
+                >Save settings</button>
             </div>
         </form>
     </dialog>

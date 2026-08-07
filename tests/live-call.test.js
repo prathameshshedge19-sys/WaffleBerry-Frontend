@@ -107,30 +107,19 @@ test("barge-in preserves mute, speaker, cleanup and normal turn pipeline", () =>
     assert.match(script, /sendEvent\("audio\.commit"/);
 });
 
-test("compact Live Call settings reuse voice preference and safe session options", () => {
-    assert.match(call, /id="liveCallSettingsButton"[\s\S]*aria-label="Live Call settings"/);
-    assert.match(call, /id="liveCallSettingsDialog"[\s\S]*aria-modal="true"/);
-    assert.match(call, /Natural[\s\S]*Gentle[\s\S]*Expressive/);
-    assert.match(call, /Short[\s\S]*Balanced[\s\S]*Detailed/);
-    assert.match(script, /apiRequest\("\/user\/voice-preference"/);
-    assert.match(script, /Voice updated\. It will be used on your next call/);
-    assert.match(script, /sendEvent\("session\.settings"/);
-    assert.match(script, /natural", "gentle", "expressive/);
-    assert.match(script, /short", "balanced", "detailed/);
-    assert.doesNotMatch(call, /OpenAI|Sarvam|provider|model|temperature/i);
+test("Live Call exposes no mutable settings while retaining call controls", () => {
+    assert.doesNotMatch(call + chat, /liveCallSettingsButton|liveCallSettingsDialog|Live Call Settings/);
+    assert.doesNotMatch(script, /sendEvent\("session\.settings"|session\.settings\.updated/);
+    for (const id of ["liveCallMuteButton", "liveCallSpeakerButton", "liveCallEndButton"]) {
+        assert.match(call, new RegExp(`id="${id}"`));
+        assert.match(chat, new RegExp(`id="${id}"`));
+    }
 });
 
-test("settings dialog preserves call lifecycle and accessibility", () => {
-    assert.match(script, /showModal\(\)/);
-    assert.match(script, /trapSettingsFocus\(event\)/);
-    assert.match(script, /event\.key !== "Tab"/);
-    assert.match(script, /event\.preventDefault\(\); controller\.closeSettings\(\)/);
-    assert.match(script, /settingsButton\.focus\(\)/);
-    assert.match(script, /closeSettings\(true\)/);
-    assert.match(script, /Your call can continue/);
-    assert.match(styles, /\.live-call-settings-dialog/);
-    assert.match(styles, /body\.dark-mode \.live-call-settings-panel/);
-    assert.match(styles, /max-height: 86dvh/);
+test("Chat is the sole accessible conversation settings surface", () => {
+    assert.match(chat, /id="voiceSettingsDialog"[\s\S]*Conversation settings/);
+    assert.match(chat, /Style[\s\S]*Natural[\s\S]*Gentle[\s\S]*Expressive/);
+    assert.match(chat, /Response length[\s\S]*Short[\s\S]*Balanced[\s\S]*Detailed/);
 });
 
 test("turn-based audio loop reuses MediaRecorder and the versioned socket", () => {
@@ -178,7 +167,7 @@ test("transport resilience is bounded and preserves the logical call", () => {
     assert.match(script, /startTimer\(\)[\s\S]*if \(this\.connectedAt\) return/);
     assert.match(script, /this\.muted \? "Muted" : "Listening/);
     assert.match(script, /this\.playback\.muted = !this\.speakerEnabled/);
-    assert.match(script, /this\.session\.conversation_style/);
+    assert.doesNotMatch(script, /this\.session\.conversation_style\s*=/);
 });
 
 test("heartbeat, offline recovery and intentional end have safe lifecycle guards", () => {

@@ -15,6 +15,8 @@ let returnFocusTarget = null;
 let isLoading = false;
 let isSaving = false;
 let selectedVoice = null;
+let conversationStyle = "natural";
+let responseLength = "balanced";
 
 function setStatus(message, type = "") {
     status.textContent = message;
@@ -58,6 +60,8 @@ function createSection(title, voices) {
 
 function renderOptions(preference) {
     selectedVoice = preference.selected_voice;
+    conversationStyle = preference.conversation_style || "natural";
+    responseLength = preference.response_length || "balanced";
     const automatic = createSection("Automatic", [{
         id: "",
         name: "Automatic",
@@ -73,6 +77,8 @@ function renderOptions(preference) {
     );
     options.replaceChildren(automatic, male, female);
     options.setAttribute("aria-busy", "false");
+    form.elements.conversationStyle.value = conversationStyle;
+    form.elements.responseLength.value = responseLength;
     saveButton.disabled = false;
 }
 
@@ -82,7 +88,7 @@ async function loadPreference() {
     setStatus("");
     try {
         const preference = await apiRequest(
-            "/user/voice-preference"
+            "/user/conversation-preferences"
         );
         renderOptions(preference);
     } catch {
@@ -120,24 +126,30 @@ async function savePreference(event) {
     const selected = form.elements.berryVoice?.value ?? "";
     isSaving = true;
     saveButton.disabled = true;
-    setStatus("Saving voice...");
+    setStatus("Saving settings...");
     try {
         const preference = await apiRequest(
-            "/user/voice-preference",
+            "/user/conversation-preferences",
             {
                 method: "PUT",
-                body: { voice: selected || null }
+                body: {
+                    voice: selected || null,
+                    conversation_style: form.elements.conversationStyle.value,
+                    response_length: form.elements.responseLength.value
+                }
             }
         );
         selectedVoice = preference.selected_voice;
-        setStatus("Voice updated");
+        conversationStyle = preference.conversation_style;
+        responseLength = preference.response_length;
+        setStatus("Conversation settings updated.");
         document.dispatchEvent(
             new CustomEvent("waffleberry:voicepreferencechange")
         );
         window.setTimeout(() => dialog.close(), 350);
     } catch {
         setStatus(
-            "Your voice preference could not be saved. Please try again.",
+            "Your conversation settings could not be saved. Please try again.",
             "error"
         );
         saveButton.disabled = false;

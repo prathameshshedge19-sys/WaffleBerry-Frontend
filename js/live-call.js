@@ -71,9 +71,6 @@ class LiveCallController {
         this.transcriptionSilentGain = null;
         this.discardRecording = false;
         this.speakerEnabled = true;
-        this.voicePreference = null;
-        this.settingsSaving = false;
-        this.voiceChangedForNextCall = false;
         this.transportState = "degraded";
         this.reconnectAttempt = 0;
         this.reconnectTimer = null;
@@ -130,13 +127,6 @@ class LiveCallController {
             ended: document.getElementById("liveCallEnded"),
             relationship: document.getElementById("liveCallRelationship"),
             endedTitle: document.getElementById("liveCallEndedTitle"),
-            settingsButton: document.getElementById("liveCallSettingsButton"),
-            settingsDialog: document.getElementById("liveCallSettingsDialog"),
-            settingsForm: document.getElementById("liveCallSettingsForm"),
-            settingsClose: document.getElementById("liveCallSettingsClose"),
-            settingsStatus: document.getElementById("liveCallSettingsStatus"),
-            currentVoice: document.getElementById("liveCallCurrentVoice"),
-            voiceOptions: document.getElementById("liveCallVoiceOptions"),
             outputAudio: document.getElementById("liveCallOutput")
         };
     }
@@ -809,13 +799,6 @@ class LiveCallController {
             if (message.type === "greeting.failed") this.finishGreeting();
             if (message.type === "greeting.completed"
                     && !this.greetingPlayback && !this.pendingGreeting) this.finishGreeting();
-            if (message.type === "session.settings.updated") {
-                this.session.conversation_style = message.conversation_style;
-                this.session.response_length = message.response_length;
-                this.elements.settingsStatus.textContent = this.voiceChangedForNextCall
-                    ? "Voice updated. It will be used on your next call. Call settings updated."
-                    : "Call settings updated.";
-            }
             if (["transcription.final", "response.started", "response.text.delta", "audio.chunk", "response.completed", "latency.commit_received"].includes(message.type)) {
                 this.handleTurnEvent(message);
             }
@@ -1244,9 +1227,6 @@ class LiveCallController {
                 voiceChanged = true;
                 this.voiceChangedForNextCall = true;
             }
-            this.sendEvent("session.settings", {
-                conversation_style: style, response_length: length
-            });
             this.elements.settingsStatus.textContent = voiceChanged
                 ? "Voice updated. It will be used on your next call."
                 : "Updating call settings…";
@@ -1607,7 +1587,6 @@ class LiveCallController {
         this.clearReconnectTimer();
         this.stopHeartbeat();
         this.setState("ending", "Ending call…");
-        this.closeSettings(true);
         this.stopTimer();
         this.stopVad();
         this.stopTurnMedia();
@@ -1777,14 +1756,6 @@ function mountLiveCall(options = {}) {
     controller.disposeLifecycleListeners = () => lifecycle.abort();
     controller.elements.mute.addEventListener("click", () => controller.toggleMute(), listenerOptions);
     controller.elements.speaker.addEventListener("click", () => controller.toggleSpeaker(), listenerOptions);
-    controller.elements.settingsButton.addEventListener("click", () => controller.openSettings(), listenerOptions);
-    controller.elements.settingsClose.addEventListener("click", () => controller.closeSettings(), listenerOptions);
-    controller.elements.settingsForm.addEventListener("submit", (event) => controller.saveSettings(event), listenerOptions);
-    controller.elements.settingsDialog.addEventListener("keydown", (event) => controller.trapSettingsFocus(event), listenerOptions);
-    controller.elements.settingsDialog.addEventListener("cancel", (event) => {
-        event.preventDefault(); controller.closeSettings();
-    }, listenerOptions);
-    controller.elements.settingsDialog.addEventListener("close", () => controller.elements.settingsButton.focus(), listenerOptions);
     controller.elements.end.addEventListener("click", () => controller.end(), listenerOptions);
     controller.elements.audioUnlock?.addEventListener("click", () => controller.activateAudio(), listenerOptions);
     window.addEventListener("offline", () => controller.handleOffline(), { signal: lifecycle.signal });

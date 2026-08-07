@@ -19,7 +19,6 @@
                 <span class="brand-text wb-brand__name">Waffle Berry</span>
             </a>
             <nav class="live-call-header-actions" aria-label="Call navigation">
-                <button id="liveCallSettingsButton" class="live-call-settings-button" type="button" aria-label="Live Call settings">&#9881;</button>
                 <a id="returnToChatTop" class="live-call-return-link" href="chat.html">Return to chat</a>
                 <a class="logout-button" href="/">Sign out</a>
             </nav>
@@ -60,40 +59,6 @@
             </div>
         </section>
     </main>
-    <dialog id="liveCallSettingsDialog" class="live-call-settings-dialog" aria-modal="true" aria-labelledby="liveCallSettingsTitle" aria-describedby="liveCallSettingsDescription">
-        <form id="liveCallSettingsForm" class="live-call-settings-panel">
-            <button id="liveCallSettingsClose" class="voice-settings-close" type="button" aria-label="Close Live Call settings">&times;</button>
-            <p class="live-call-eyebrow">Call preferences</p>
-            <h2 id="liveCallSettingsTitle">Live Call Settings</h2>
-            <p id="liveCallSettingsDescription">Adjust this call without leaving your conversation.</p>
-            <fieldset class="live-call-setting-group">
-                <legend>Voice</legend>
-                <p id="liveCallCurrentVoice" class="live-call-current-voice">Loading current voice&hellip;</p>
-                <div id="liveCallVoiceOptions" class="live-call-voice-options" aria-busy="false"></div>
-                <p class="live-call-setting-note">Voice changes will be used on your next call.</p>
-            </fieldset>
-            <fieldset class="live-call-setting-group">
-                <legend>Conversation style</legend>
-                <div class="live-call-choice-row">
-                    <label><input type="radio" name="conversationStyle" value="natural" checked> Natural</label>
-                    <label><input type="radio" name="conversationStyle" value="gentle"> Gentle</label>
-                    <label><input type="radio" name="conversationStyle" value="expressive"> Expressive</label>
-                </div>
-            </fieldset>
-            <fieldset class="live-call-setting-group">
-                <legend>Response length</legend>
-                <div class="live-call-choice-row">
-                    <label><input type="radio" name="responseLength" value="short"> Short</label>
-                    <label><input type="radio" name="responseLength" value="balanced" checked> Balanced</label>
-                    <label><input type="radio" name="responseLength" value="detailed"> Detailed</label>
-                </div>
-            </fieldset>
-            <p id="liveCallSettingsStatus" class="voice-settings-status" role="status" aria-live="polite"></p>
-            <div class="voice-settings-actions">
-                <button id="liveCallSettingsDone" class="primary-button" type="submit">Save settings</button>
-            </div>
-        </form>
-    </dialog>
     <script src="js/theme.js"></script>
     <script src="js/legacy-state.js"></script>
     <script src="js/companion-identity.js"></script>

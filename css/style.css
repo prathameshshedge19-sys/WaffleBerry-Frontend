@@ -9965,6 +9965,34 @@ body.dark-mode .night-mode-discovery-icon {
     border: 0;
 }
 
+.conversation-preference-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin: 18px 0 0;
+    padding: 14px 0 0;
+    border: 0;
+    border-top: 1px solid rgba(105, 83, 146, 0.18);
+}
+
+.conversation-preference-group legend {
+    width: 100%;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.conversation-preference-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    cursor: pointer;
+}
+
+body.dark-mode .conversation-preference-group {
+    border-top-color: rgba(255, 255, 255, 0.18);
+}
+
 .voice-settings-options legend {
     margin-bottom: 8px;
     color: var(--text-main);
