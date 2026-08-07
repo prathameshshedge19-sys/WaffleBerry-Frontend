@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Live Call with your Waffle Berry Companion.">
+    <title>Live Call | Waffle Berry</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+</head>
+<body class="live-call-page">
+    <main class="live-call-shell">
+        <header class="live-call-brand">
+            <a href="home.html" class="brand wb-brand">
+                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
+                <span class="brand-text wb-brand__name">Waffle Berry</span>
+            </a>
+            <nav class="live-call-header-actions" aria-label="Call navigation">
+                <button id="liveCallSettingsButton" class="live-call-settings-button" type="button" aria-label="Live Call settings">&#9881;</button>
+                <a id="returnToChatTop" class="live-call-return-link" href="chat.html">Return to chat</a>
+                <a class="logout-button" href="/">Sign out</a>
+            </nav>
+        </header>
+        <section class="live-call-card" aria-labelledby="liveCallTitle">
+            <p class="live-call-eyebrow">Live with Waffle Berry</p>
+            <div class="live-call-ambient" aria-hidden="true">
+                <span class="live-call-orbit live-call-orbit-one"></span>
+                <span class="live-call-orbit live-call-orbit-two"></span>
+                <span class="live-call-voice-bars"><i></i><i></i><i></i><i></i><i></i></span>
+                <div class="live-call-avatar">
+                    <img src="assets/waffle-berry-mascot.png" alt="" width="132" height="132">
+                </div>
+            </div>
+            <h1 id="liveCallTitle" data-companion-name>Berry</h1>
+            <p id="liveCallRelationship" class="live-call-relationship">Your Companion</p>
+            <p id="liveCallTimer" class="live-call-timer" role="timer" aria-label="Call duration">00:00</p>
+            <div class="live-call-state-line">
+                <p id="liveCallStatus" class="live-call-status" role="status" aria-live="assertive">Connecting</p>
+            </div>
+            <p id="liveCallMicrophoneStatus" class="live-call-microphone-status sr-only" aria-live="polite">Preparing microphone&hellip;</p>
+            <div id="liveCallControls" class="live-call-controls">
+                <button id="liveCallMuteButton" class="live-call-control" type="button" aria-label="Mute microphone" aria-pressed="false" disabled>
+                    <span class="live-call-control-icon" aria-hidden="true">&#128263;</span><span>Mute</span>
+                </button>
+                <button id="liveCallSpeakerButton" class="live-call-control" type="button" aria-label="Turn speaker off" aria-pressed="true" disabled>
+                    <span class="live-call-control-icon" aria-hidden="true">&#128266;</span><span>Speaker on</span>
+                </button>
+                <button id="liveCallEndButton" class="live-call-control live-call-end" type="button" aria-label="End call">
+                    <span class="live-call-control-icon" aria-hidden="true">&#9742;</span><span>End</span>
+                </button>
+            </div>
+            <div id="liveCallEnded" class="live-call-ended" role="status" aria-live="assertive" hidden>
+                <strong id="liveCallEndedTitle">Call ended</strong>
+                <p>Your conversation remains private and was not recorded.</p>
+                <a id="returnToChatButton" class="primary-button" href="chat.html">Return to chat</a>
+            </div>
+        </section>
+    </main>
+    <dialog id="liveCallSettingsDialog" class="live-call-settings-dialog" aria-modal="true" aria-labelledby="liveCallSettingsTitle" aria-describedby="liveCallSettingsDescription">
+        <form id="liveCallSettingsForm" class="live-call-settings-panel">
+            <button id="liveCallSettingsClose" class="voice-settings-close" type="button" aria-label="Close Live Call settings">&times;</button>
+            <p class="live-call-eyebrow">Call preferences</p>
+            <h2 id="liveCallSettingsTitle">Live Call Settings</h2>
+            <p id="liveCallSettingsDescription">Adjust this call without leaving your conversation.</p>
+            <fieldset class="live-call-setting-group">
+                <legend>Voice</legend>
+                <p id="liveCallCurrentVoice" class="live-call-current-voice">Loading current voice&hellip;</p>
+                <div id="liveCallVoiceOptions" class="live-call-voice-options" aria-busy="false"></div>
+                <p class="live-call-setting-note">Voice changes will be used on your next call.</p>
+            </fieldset>
+            <fieldset class="live-call-setting-group">
+                <legend>Conversation style</legend>
+                <div class="live-call-choice-row">
+                    <label><input type="radio" name="conversationStyle" value="natural" checked> Natural</label>
+                    <label><input type="radio" name="conversationStyle" value="gentle"> Gentle</label>
+                    <label><input type="radio" name="conversationStyle" value="expressive"> Expressive</label>
+                </div>
+            </fieldset>
+            <fieldset class="live-call-setting-group">
+                <legend>Response length</legend>
+                <div class="live-call-choice-row">
+                    <label><input type="radio" name="responseLength" value="short"> Short</label>
+                    <label><input type="radio" name="responseLength" value="balanced" checked> Balanced</label>
+                    <label><input type="radio" name="responseLength" value="detailed"> Detailed</label>
+                </div>
+            </fieldset>
+            <p id="liveCallSettingsStatus" class="voice-settings-status" role="status" aria-live="polite"></p>
+            <div class="voice-settings-actions">
+                <button id="liveCallSettingsDone" class="primary-button" type="submit">Save settings</button>
+            </div>
+        </form>
+    </dialog>
+    <script src="js/theme.js"></script>
+    <script src="js/legacy-state.js"></script>
+    <script src="js/companion-identity.js"></script>
+    <script src="js/live-call.js"></script>
+</body>
+</html>

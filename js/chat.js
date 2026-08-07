@@ -17,6 +17,18 @@ const companionIdentity =
 let selectedLegacy = companionIdentity.getLegacy();
 
 companionIdentity.applyToDocument();
+const liveCallButton = document.getElementById("liveCallButton");
+
+function updateLiveCallLink() {
+    if (!liveCallButton) return;
+    const parameters = new URLSearchParams();
+    if (selectedLegacy?.id) parameters.set("legacyId", selectedLegacy.id);
+    if (state.activeConversationId) {
+        parameters.set("conversationId", String(state.activeConversationId));
+    }
+    const query = parameters.toString();
+    liveCallButton.href = `live-call.html${query ? `?${query}` : ""}`;
+}
 
 const STREAM_INACTIVITY_TIMEOUT_MS = 45000;
 const NON_STREAMING_TIMEOUT_MS = 60000;
@@ -2594,6 +2606,7 @@ function selectConversation(
 
     state.activeConversationId =
         conversationId;
+    updateLiveCallLink();
     hideTypingIndicator();
     storeActiveConversationId(
         conversationId
@@ -2809,8 +2822,13 @@ async function loadConversations() {
             return;
         }
 
-        const storedId =
-            getStoredActiveConversationId();
+        const requestedConversationId = Number(new URLSearchParams(
+            window.location.search
+        ).get("conversationId"));
+        const storedId = Number.isInteger(requestedConversationId)
+                && requestedConversationId > 0
+            ? requestedConversationId
+            : getStoredActiveConversationId();
         const storedConversation =
             state.conversations.find(
                 (conversation) =>
@@ -3613,6 +3631,8 @@ async function initializeChat() {
             return;
         }
     }
+
+    updateLiveCallLink();
 
     updateControls();
     updateVoiceRecorderUi();

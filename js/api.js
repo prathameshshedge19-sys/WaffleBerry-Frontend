@@ -920,6 +920,29 @@ function retryStoryExtraction(
     );
 }
 
+function createLiveCallSession(legacyId) {
+    return apiRequest("/live-call/session", {
+        method: "POST",
+        body: { legacy_id: Number(legacyId) }
+    });
+}
+
+function endLiveCallSession(sessionId) {
+    return apiRequest(
+        `/live-call/session/${encodeURIComponent(sessionId)}`,
+        { method: "DELETE" }
+    );
+}
+
+function liveCallWebSocketUrl(sessionId) {
+    const base = new URL(API_BASE_URL, window.location?.href);
+    base.protocol = base.protocol === "https:" ? "wss:" : "ws:";
+    base.pathname = `${base.pathname.replace(/\/+$/, "")}/live-call/ws/${encodeURIComponent(sessionId)}`;
+    base.search = "";
+    base.hash = "";
+    return base.toString();
+}
+
 
 window.WaffleBerryApi = Object.freeze({
     API_BASE_URL,
@@ -945,6 +968,9 @@ window.WaffleBerryApi = Object.freeze({
     completeStorySession,
     getStoryExtractionRun,
     retryStoryExtraction,
+    createLiveCallSession,
+    endLiveCallSession,
+    liveCallWebSocketUrl,
     transcribeAudio,
     getMessageSpeech,
     supportsResponseStreaming,
