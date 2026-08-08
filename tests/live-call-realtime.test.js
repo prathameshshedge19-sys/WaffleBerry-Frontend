@@ -38,8 +38,104 @@ function loadRealtimeModule() {
 class Emitter {
     constructor() { this.listeners = {}; }
     addEventListener(name, callback) { this.listeners[name] = callback; }
+    removeEventListener(name, callback) {
+        if (this.listeners[name] === callback) delete this.listeners[name];
+    }
     emit(name, value = {}) { this.listeners[name]?.(value); }
 }
+
+test("renderer transitions isolate stale external callbacks from the first native call", async () => {
+    const { RealtimeLiveCallController, ExternalNonStreamingRenderer, RealtimeNativeRenderer } = loadRealtimeModule();
+    const nativeAudio = new Emitter();
+    Object.assign(nativeAudio, {
+        paused: false, muted: false, volume: 1, srcObject: null, src: "",
+        pauseCalls: 0, playCalls: 0,
+        pause() { this.pauseCalls += 1; this.paused = true; },
+        async play() { this.playCalls += 1; this.paused = false; },
+    });
+    const externalAudio = new Emitter();
+    Object.assign(externalAudio, {
+        paused: true, muted: false, srcObject: null, src: "",
+        pauseCalls: 0, playCalls: 0,
+        pause() { this.pauseCalls += 1; this.paused = true; },
+        async play() { this.playCalls += 1; this.paused = false; },
+    });
+    const states = [];
+    let resolveLateSpeech;
+    const baseOwner = {
+        api: { renderRealtimeSpeech: () => new Promise((resolve) => { resolveLateSpeech = resolve; }) },
+        elements: { realtimeOutput: nativeAudio, outputAudio: externalAudio, mute: {}, speaker: {} },
+        clock: { setTimeout, clearTimeout }, performance: { now: () => 10 },
+        speakerEnabled: true, muted: false, setState: (state) => states.push(state),
+    };
+
+    const externalOwner = { ...baseOwner, session: {
+        session_id: "simran-session", effective_voice: "simran",
+        speech_renderer: "external_nonstreaming_tts",
+    } };
+    const simran = new RealtimeLiveCallController(externalOwner, { performance: baseOwner.performance });
+    assert.ok(simran.renderer instanceof ExternalNonStreamingRenderer);
+    simran.renderer.startResponse("old-response");
+    simran.renderer.enqueueChunks(["Old Simran phrase."]);
+    assert.equal(typeof resolveLateSpeech, "function");
+
+    const nativeOwner = { ...baseOwner, session: {
+        session_id: "marin-session", effective_voice: "marin",
+        speech_renderer: "realtime_native",
+    } };
+    const marin = new RealtimeLiveCallController(nativeOwner, { performance: baseOwner.performance });
+    assert.ok(marin.renderer instanceof RealtimeNativeRenderer);
+    const remoteTrack = new Emitter();
+    Object.assign(remoteTrack, { kind: "audio", readyState: "live", enabled: true, muted: false });
+    const remoteStream = { id: "marin-stream" };
+    marin.attachRemoteAudio({ track: remoteTrack, streams: [remoteStream] });
+    assert.equal(nativeAudio.srcObject, remoteStream);
+
+    const nativePauseCalls = nativeAudio.pauseCalls;
+    simran.close();
+    assert.equal(simran.renderer.closed, true);
+    assert.equal(simran.renderer.synthesisQueue.length, 0);
+    assert.equal(simran.renderer.readyQueue.length, 0);
+    resolveLateSpeech({ audio: "AA==", content_type: "audio/wav" });
+    await new Promise((resolve) => setImmediate(resolve));
+    await simran.renderer.pumpPlayback();
+
+    assert.equal(nativeAudio.srcObject, remoteStream);
+    assert.equal(nativeAudio.pauseCalls, nativePauseCalls);
+    assert.equal(externalAudio.playCalls, 0);
+    assert.equal(states.includes("listening"), false);
+    assert.ok(simran.staleRendererCallbackCount >= 1);
+    marin.close();
+});
+
+test("voice transition matrix always constructs a fresh renderer from the new session snapshot", () => {
+    const { RealtimeLiveCallController } = loadRealtimeModule();
+    const transitions = [
+        ["simran", "external_nonstreaming_tts", "marin", "realtime_native"],
+        ["shubh", "external_nonstreaming_tts", "cedar", "realtime_native"],
+        ["marin", "realtime_native", "simran", "external_nonstreaming_tts"],
+        ["cedar", "realtime_native", "shubh", "external_nonstreaming_tts"],
+        ["marin", "realtime_native", "cedar", "realtime_native"],
+        ["simran", "external_nonstreaming_tts", "shubh", "external_nonstreaming_tts"],
+    ];
+    for (const [firstVoice, firstRenderer, nextVoice, nextRenderer] of transitions) {
+        const elements = {
+            realtimeOutput: { pause() {}, removeEventListener() {} },
+            outputAudio: { pause() {}, src: "" }, mute: {}, speaker: {},
+        };
+        const owner = (voice, speechRenderer) => ({
+            api: {}, elements, session: { effective_voice: voice, speech_renderer: speechRenderer },
+            clock: { setTimeout, clearTimeout }, performance: { now: () => 0 },
+        });
+        const first = new RealtimeLiveCallController(owner(firstVoice, firstRenderer));
+        const next = new RealtimeLiveCallController(owner(nextVoice, nextRenderer));
+        assert.notEqual(first.renderer, next.renderer);
+        assert.equal(first.renderer.kind, firstRenderer === "realtime_native" ? "native" : "external");
+        assert.equal(next.renderer.kind, nextRenderer === "realtime_native" ? "native" : "external");
+        first.close();
+        next.close();
+    }
+});
 
 test("native realtime uses WebRTC microphone and one persistent remote audio element", () => {
     assert.match(realtime, /new this\.RTCPeerConnectionClass\(\)/);
@@ -88,7 +184,7 @@ test("function calls complete once through authenticated WaffleBerry tools", () 
     assert.match(realtime, /this\.completedToolCalls\.has\(event\.call_id\)/);
     assert.match(realtime, /executeRealtimeTool/);
     assert.match(realtime, /type: "function_call_output"/);
-    assert.match(realtime, /this\.send\(\{ type: "response\.create", response: \{ output_modalities: \[this\.renderer\.kind === "native" \? "audio" : "text"\] \} \}\)/);
+    assert.match(realtime, /this\.send\(\{ type: "response\.create", response: \{ output_modalities: \[this\.renderer\.kind === "native" \? "audio" : "text"\], tool_choice: "none" \} \}\)/);
 });
 
 test("hybrid selection and startup-only cascade fallback remain explicit", () => {
@@ -725,6 +821,7 @@ test("tool continuation is explicitly audio-capable before the same media path s
         arguments: "{}", response_id: "response-tool" });
     const continuation = sent.find((event) => event.type === "response.create");
     assert.deepEqual(continuation.response.output_modalities, ["audio"]);
+    assert.equal(continuation.response.tool_choice, "none");
     controller.handleResponseCreated({ id: "response-after-tool" });
     controller.handleAudioDelta("response-after-tool");
     assert.notEqual(owner.state, "speaking");

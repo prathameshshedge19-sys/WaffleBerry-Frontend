@@ -16,6 +16,10 @@ const EXTERNAL_FIRST_CHUNK_MIN = 72;
 const EXTERNAL_FIRST_CHUNK_WAIT_MS = 160;
 const ICE_DISCONNECT_GRACE_MS = 5000;
 const TRACK_INTERRUPTION_GRACE_MS = 3000;
+let nextLogicalCallGeneration = 0;
+let activeLogicalCallGeneration = 0;
+let previousRendererKind = "none";
+const mediaOwnerGenerations = new WeakMap();
 
 class RealtimeNativeRenderer {
     constructor(controller) { this.controller = controller; this.kind = "native"; }
@@ -105,6 +109,7 @@ class ExternalNonStreamingRenderer {
         this.objectUrl = null;
         this._playing = false;
         this.resolvePlayback = null;
+        this.closed = false;
     }
 
     get playing() { return this._playing; }
@@ -144,6 +149,7 @@ class ExternalNonStreamingRenderer {
         if (this.firstSentenceTimer !== null) return;
         this.firstSentenceTimer = this.controller.clock.setTimeout(() => {
             this.firstSentenceTimer = null;
+            if (!this.controller.isCurrentCall()) return this.controller.recordStaleRendererCallback();
             this.enqueueChunks(this.assembler.finish());
         }, EXTERNAL_FIRST_CHUNK_WAIT_MS);
     }
@@ -189,8 +195,10 @@ class ExternalNonStreamingRenderer {
                 `${phrase.generation}:${phrase.sequence}`,
                 this.controller.activeUserInputTurnId || 0, phrase.text
             );
-            if (phrase.generation !== this.generation || this.controller.userSpeaking) {
+            if (!this.controller.isCurrentCall() || phrase.generation !== this.generation
+                    || this.controller.userSpeaking) {
                 this.controller.recordStaleEvent();
+                if (!this.controller.isCurrentCall()) this.controller.recordStaleRendererCallback();
                 return;
             }
             this.controller.metric("tts_first_chunk_ms", Math.max(0, Math.round(this.controller.performance.now() - requestAt)));
@@ -200,7 +208,9 @@ class ExternalNonStreamingRenderer {
                 this.controller.metric("external_prefetch_ready_before_previous_end", this.prefetchReady);
             }
         } catch {
-            if (phrase.generation === this.generation) this.controller.recoverResponse("external_tts_failed");
+            if (this.controller.isCurrentCall() && phrase.generation === this.generation) {
+                this.controller.recoverResponse("external_tts_failed");
+            }
         } finally {
             this.synthesizing = false;
             this.pumpPlayback();
@@ -220,22 +230,23 @@ class ExternalNonStreamingRenderer {
         this.playingQueue = false;
         if (this.readyQueue.length) return this.pumpPlayback();
         if (!this.synthesizing && !this.synthesisQueue.length && !this.controller.userSpeaking
-                && !this.controller.activeResponseId) {
+                && !this.controller.activeResponseId && this.controller.isCurrentCall()) {
             this.controller.owner.setState("listening", this.controller.owner.muted ? "Muted" : "Listening");
         }
     }
 
     async play(result, generation) {
-        if (!this.audio || generation !== this.generation) return;
+        if (!this.audio || !this.controller.isCurrentCall() || generation !== this.generation) return;
         const bytes = Uint8Array.from(atob(result.audio), (value) => value.charCodeAt(0));
         const blob = new Blob([bytes], { type: result.content_type || "audio/wav" });
         if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
         this.objectUrl = URL.createObjectURL(blob);
+        this.controller.claimMedia(this.audio);
         this.audio.srcObject = null;
         this.audio.src = this.objectUrl;
         this.audio.muted = !this.controller.owner.speakerEnabled;
         await this.audio.play();
-        if (generation !== this.generation) return this.stopAudio();
+        if (!this.controller.isCurrentCall() || generation !== this.generation) return this.stopAudio();
         const startedAt = this.controller.performance.now();
         if (this.previousEndedAt !== null) {
             const gap = Math.max(0, Math.round(startedAt - this.previousEndedAt));
@@ -254,7 +265,7 @@ class ExternalNonStreamingRenderer {
             this.resolvePlayback = done;
             this.audio.addEventListener("ended", done, { once: true });
         });
-        if (generation === this.generation) {
+        if (this.controller.isCurrentCall() && generation === this.generation) {
             this.previousEndedAt = this.controller.performance.now();
             this._playing = false;
             this.controller.assistantSpeaking = false;
@@ -263,11 +274,13 @@ class ExternalNonStreamingRenderer {
     }
 
     stopAudio() {
+        if (!this.controller.ownsMedia(this.audio)) return;
         this.audio?.pause?.();
         if (this.audio) this.audio.src = "";
         this.resolvePlayback?.();
         this.resolvePlayback = null;
         this._playing = false;
+        this.controller.releaseMedia(this.audio);
     }
 
     cancelResponse() {
@@ -283,6 +296,7 @@ class ExternalNonStreamingRenderer {
         this.cancelResponse();
         if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
         this.objectUrl = null;
+        this.closed = true;
     }
 }
 
@@ -294,6 +308,9 @@ class RealtimeLiveCallController {
         this.fetch = options.fetch || window.fetch.bind(window);
         this.performance = options.performance || window.performance;
         this.clock = options.clock || owner.clock || window;
+        this.logicalCallGeneration = ++nextLogicalCallGeneration;
+        activeLogicalCallGeneration = this.logicalCallGeneration;
+        this.staleRendererCallbackCount = 0;
         this.AudioContextClass = options.AudioContextClass || owner.AudioContextClass || window.AudioContext;
         this.peer = null;
         this.channel = null;
@@ -399,9 +416,31 @@ class RealtimeLiveCallController {
         this.boundMicMute = () => this.handleMicMute();
         this.boundMicUnmute = () => this.handleMicUnmute();
         this.boundMicEnded = () => this.handleMicEnded();
+        this.boundRemoteTrackMute = () => this.handleTrackMute();
+        this.boundRemoteTrackUnmute = () => this.handleTrackUnmute();
+        this.boundRemoteTrackEnded = () => this.handleTrackEnded();
+        this.boundMediaPlaying = () => this.handleMediaPlaying("playing");
+        this.boundMediaTimeUpdate = () => this.handleMediaPlaying("timeupdate");
+        this.boundMediaPause = () => this.handleMediaPause();
+        this.boundMediaWaiting = () => this.handleMediaStall("waiting");
+        this.boundMediaStalled = () => this.handleMediaStall("stalled");
+        this.boundMediaError = () => this.handleMediaFailure("media_error");
+        this.boundMediaEnded = () => this.handleMediaFailure("media_ended");
         this.renderer = owner.session?.speech_renderer === "external_nonstreaming_tts"
             || owner.session?.speech_renderer === "external_streaming_tts"
             ? new ExternalNonStreamingRenderer(this) : new RealtimeNativeRenderer(this);
+        this.previousRendererKind = previousRendererKind;
+        previousRendererKind = this.renderer.kind;
+        if (this.renderer.kind === "native") this.claimMedia(owner.elements.realtimeOutput);
+    }
+
+    isCurrentCall() { return !this.closed && this.logicalCallGeneration === activeLogicalCallGeneration; }
+    claimMedia(audio) { if (audio) mediaOwnerGenerations.set(audio, this.logicalCallGeneration); }
+    ownsMedia(audio) { return Boolean(audio) && mediaOwnerGenerations.get(audio) === this.logicalCallGeneration; }
+    releaseMedia(audio) { if (this.ownsMedia(audio)) mediaOwnerGenerations.delete(audio); }
+    recordStaleRendererCallback() {
+        this.staleRendererCallbackCount += 1;
+        this.metric("stale_renderer_callback_count", this.staleRendererCallbackCount);
     }
 
     recordStartup(stage, success = true, failureCategory = "none", statusCode = null, error = null) {
@@ -716,7 +755,7 @@ class RealtimeLiveCallController {
             this.greetingSent = true;
             this.send({
                 type: "response.create",
-                response: { output_modalities: [this.renderer.kind === "native" ? "audio" : "text"], instructions: "Say exactly: Hello? Do not say anything else." }
+                response: { output_modalities: [this.renderer.kind === "native" ? "audio" : "text"], tool_choice: "none", instructions: "Say exactly: Hello? Do not say anything else." }
             });
             this.armResponseWatchdog();
         }
@@ -730,21 +769,22 @@ class RealtimeLiveCallController {
         this.remoteTrack = event.track;
         this.recordStartup("remote_audio_track_received");
         const audio = this.owner.elements.realtimeOutput;
+        this.claimMedia(audio);
         audio.autoplay = true;
         audio.playsInline = true;
         audio.muted = !this.owner.speakerEnabled;
         audio.volume = 1;
         audio.srcObject = stream;
-        event.track.addEventListener?.("mute", () => this.handleTrackMute());
-        event.track.addEventListener?.("unmute", () => this.handleTrackUnmute());
-        event.track.addEventListener?.("ended", () => this.handleTrackEnded(), { once: true });
-        audio.addEventListener("playing", () => this.handleMediaPlaying("playing"));
-        audio.addEventListener("timeupdate", () => this.handleMediaPlaying("timeupdate"));
-        audio.addEventListener("pause", () => this.handleMediaPause());
-        audio.addEventListener("waiting", () => this.handleMediaStall("waiting"));
-        audio.addEventListener("stalled", () => this.handleMediaStall("stalled"));
-        audio.addEventListener("error", () => this.handleMediaFailure("media_error"));
-        audio.addEventListener("ended", () => this.handleMediaFailure("media_ended"));
+        event.track.addEventListener?.("mute", this.boundRemoteTrackMute);
+        event.track.addEventListener?.("unmute", this.boundRemoteTrackUnmute);
+        event.track.addEventListener?.("ended", this.boundRemoteTrackEnded, { once: true });
+        audio.addEventListener("playing", this.boundMediaPlaying);
+        audio.addEventListener("timeupdate", this.boundMediaTimeUpdate);
+        audio.addEventListener("pause", this.boundMediaPause);
+        audio.addEventListener("waiting", this.boundMediaWaiting);
+        audio.addEventListener("stalled", this.boundMediaStalled);
+        audio.addEventListener("error", this.boundMediaError);
+        audio.addEventListener("ended", this.boundMediaEnded);
         this.debugRemoteAudio({ track_received: true, audio_srcobject_attached: true });
         this.requestRemotePlay("track_attached");
         this.startRemoteLevelDiagnostic(event.track);
@@ -1216,7 +1256,7 @@ class RealtimeLiveCallController {
         this.activeToolCallId = null;
         if (!obsolete) {
             this.waitingForToolContinuation = true;
-            this.send({ type: "response.create", response: { output_modalities: [this.renderer.kind === "native" ? "audio" : "text"] } });
+            this.send({ type: "response.create", response: { output_modalities: [this.renderer.kind === "native" ? "audio" : "text"], tool_choice: "none" } });
             this.armResponseWatchdog();
         }
         const elapsed = Math.round(this.performance.now() - startedAt);
@@ -1334,7 +1374,7 @@ class RealtimeLiveCallController {
 
     async requestRemotePlay(reason) {
         const audio = this.owner.elements.realtimeOutput;
-        if (!audio || !this.remoteStream || this.closed) return false;
+        if (!audio || !this.remoteStream || !this.isCurrentCall() || !this.ownsMedia(audio)) return false;
         this.playStatus = "requested";
         this.lastMediaEvent = `play_requested:${reason}`;
         this.debugRemoteAudio({ play_requested: true });
@@ -1354,6 +1394,9 @@ class RealtimeLiveCallController {
     }
 
     handleMediaPlaying(eventName) {
+        if (!this.isCurrentCall() || !this.ownsMedia(this.owner.elements.realtimeOutput)) {
+            return this.recordStaleRendererCallback();
+        }
         this.lastMediaEvent = eventName;
         this.mediaPlaying = true;
         this.debugInputPath();
@@ -1375,6 +1418,7 @@ class RealtimeLiveCallController {
     }
 
     handleMediaPause() {
+        if (!this.isCurrentCall() || !this.ownsMedia(this.owner.elements.realtimeOutput)) return;
         this.lastMediaEvent = "pause";
         this.mediaPlaying = false;
         this.assistantSpeaking = false;
@@ -1384,6 +1428,7 @@ class RealtimeLiveCallController {
     }
 
     handleMediaStall(eventName) {
+        if (!this.isCurrentCall() || !this.ownsMedia(this.owner.elements.realtimeOutput)) return;
         this.lastMediaEvent = eventName;
         this.mediaPlaying = false;
         this.assistantSpeaking = false;
@@ -1408,6 +1453,7 @@ class RealtimeLiveCallController {
     }
 
     handleTrackMute() {
+        if (!this.isCurrentCall()) return this.recordStaleRendererCallback();
         this.lastMediaEvent = "track_muted";
         this.mediaPlaying = false;
         this.assistantSpeaking = false;
@@ -1422,6 +1468,7 @@ class RealtimeLiveCallController {
     }
 
     handleTrackUnmute() {
+        if (!this.isCurrentCall()) return this.recordStaleRendererCallback();
         if (this.remoteMuteTimer !== null) this.clock.clearTimeout(this.remoteMuteTimer);
         this.remoteMuteTimer = null;
         this.lastMediaEvent = "track_unmuted";
@@ -1430,6 +1477,7 @@ class RealtimeLiveCallController {
     }
 
     handleTrackEnded() {
+        if (!this.isCurrentCall()) return this.recordStaleRendererCallback();
         this.lastMediaEvent = "track_ended";
         this.lastAudioFailure = "remote_track_ended";
         this.debugRemoteAudio({ ended_event_received: true });
@@ -1437,6 +1485,7 @@ class RealtimeLiveCallController {
     }
 
     handleMediaFailure(reason) {
+        if (!this.isCurrentCall() || !this.ownsMedia(this.owner.elements.realtimeOutput)) return;
         this.lastMediaEvent = reason;
         this.lastAudioFailure = reason;
         this.debugRemoteAudio({ ended_event_received: reason === "media_ended" });
@@ -1658,6 +1707,14 @@ class RealtimeLiveCallController {
         if (!this.owner.debugLiveCall) return;
         console.debug(event, {
             session_id: this.owner.session?.session_id,
+            logical_call_generation: this.logicalCallGeneration,
+            media_owner_generation: mediaOwnerGenerations.get(this.owner.elements.realtimeOutput) || null,
+            previous_renderer: this.previousRendererKind,
+            current_renderer: this.renderer.kind,
+            effective_voice: this.owner.session?.effective_voice || "unknown",
+            output_modality: this.renderer.kind === "native" ? "audio" : "text",
+            external_renderer_closed: this.renderer.kind === "external" ? this.renderer.closed : null,
+            stale_renderer_callback_count: this.staleRendererCallbackCount,
             ...detail
         });
     }
@@ -1699,11 +1756,28 @@ class RealtimeLiveCallController {
         this.micTrack?.removeEventListener?.("mute", this.boundMicMute);
         this.micTrack?.removeEventListener?.("unmute", this.boundMicUnmute);
         this.micTrack?.removeEventListener?.("ended", this.boundMicEnded);
+        this.remoteTrack?.removeEventListener?.("mute", this.boundRemoteTrackMute);
+        this.remoteTrack?.removeEventListener?.("unmute", this.boundRemoteTrackUnmute);
+        this.remoteTrack?.removeEventListener?.("ended", this.boundRemoteTrackEnded);
         this.metric("call_duration_ms", Math.max(0, Math.round(this.performance.now() - this.sessionStartedAt)));
         try { this.channel?.close(); } catch { /* already closed */ }
         try { this.peer?.close(); } catch { /* already closed */ }
         const audio = this.owner.elements.realtimeOutput;
-        if (audio) { audio.pause?.(); audio.srcObject = null; }
+        if (audio) {
+            audio.removeEventListener?.("playing", this.boundMediaPlaying);
+            audio.removeEventListener?.("timeupdate", this.boundMediaTimeUpdate);
+            audio.removeEventListener?.("pause", this.boundMediaPause);
+            audio.removeEventListener?.("waiting", this.boundMediaWaiting);
+            audio.removeEventListener?.("stalled", this.boundMediaStalled);
+            audio.removeEventListener?.("error", this.boundMediaError);
+            audio.removeEventListener?.("ended", this.boundMediaEnded);
+        }
+        if (this.ownsMedia(audio)) {
+            audio.pause?.();
+            audio.srcObject = null;
+            this.releaseMedia(audio);
+        }
+        if (activeLogicalCallGeneration === this.logicalCallGeneration) activeLogicalCallGeneration = 0;
         this.peer = null;
         this.channel = null;
         this.remoteStream = null;
