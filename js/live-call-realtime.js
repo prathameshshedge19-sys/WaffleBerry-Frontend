@@ -365,6 +365,7 @@ class RealtimeLiveCallController {
         this.turnIndex = 0;
         this.cancelledResponseIds = new Set();
         this.completedToolCalls = new Set();
+        this.pendingLearningTurns = new Map();
         this.responseWatchdog = null;
         this.speechStartedAt = null;
         this.speechEndedAt = null;
@@ -754,6 +755,7 @@ class RealtimeLiveCallController {
         this.resolveDataChannelReady?.();
         this.owner.stopRingback(false);
         this.owner.startTimer();
+        this.owner.reportOperational?.("call_started", "started");
         this.owner.elements.mute.disabled = false;
         this.owner.elements.speaker.disabled = false;
         this.owner.setState("greeting", "Connecting…");
@@ -841,6 +843,14 @@ class RealtimeLiveCallController {
             this.handleSpeechStopped();
         } else if (event.type === "input_audio_buffer.committed") {
             this.turnEvidence.user_turn_committed = true;
+        } else if (event.type === "conversation.item.input_audio_transcription.completed") {
+            const text = typeof event.transcript === "string" ? event.transcript.trim() : "";
+            if (text && this.activeUserInputTurnId > 0) {
+                this.pendingLearningTurns.set(this.activeUserInputTurnId, text);
+                while (this.pendingLearningTurns.size > 32) {
+                    this.pendingLearningTurns.delete(this.pendingLearningTurns.keys().next().value);
+                }
+            }
         } else if (event.type === "response.created") {
             this.handleResponseCreated(event.response);
         } else if (event.type === "response.output_item.added") {
@@ -923,6 +933,7 @@ class RealtimeLiveCallController {
     beginUserSpeech(now, playbackActive, generationActive) {
         const interrupting = playbackActive || generationActive;
         this.userInputTurnId += 1;
+        this.owner.countOperational?.("turn_started_count");
         this.activeUserInputTurnId = this.userInputTurnId;
         this.userSpeaking = true;
         this.speechStartedAt = now;
@@ -1112,6 +1123,8 @@ class RealtimeLiveCallController {
         if (stale) return this.recordStaleEvent();
         if (status === "failed") {
             this.lastProviderFailureCategory = "response_failed";
+            this.owner.countOperational?.("turn_failed_count");
+            this.pendingLearningTurns.delete(this.activeUserInputTurnId);
             return this.recoverResponse("response_failed");
         }
         this.clearResponseWatchdog();
@@ -1132,6 +1145,16 @@ class RealtimeLiveCallController {
             this.owner.setState("listening", this.owner.muted ? "Muted" : "Listening");
         }
         this.debug("REALTIME_TURN", { turn_index: this.turnIndex, response_done_ms: Math.round(this.performance.now()) });
+        if (status === "completed") {
+            this.owner.countOperational?.("turn_completed_count");
+            const text = this.pendingLearningTurns.get(this.activeUserInputTurnId);
+            if (text) {
+                this.pendingLearningTurns.delete(this.activeUserInputTurnId);
+                this.api.learnRealtimeMemoryTurn?.(
+                    this.owner.session.session_id, this.activeUserInputTurnId, text
+                ).catch?.(() => {});
+            }
+        }
     }
 
     handleRealtimeInterruption({ playbackActive, generationActive }) {
@@ -1223,6 +1246,7 @@ class RealtimeLiveCallController {
         let args = {};
         try { args = JSON.parse(event.arguments || "{}"); } catch { /* backend validates */ }
         let result;
+        let toolTimedOut = false;
         try {
             result = await this.withTimeout(
                 this.api.executeRealtimeTool(this.owner.session.session_id, event.call_id, event.name, args),
@@ -1230,7 +1254,18 @@ class RealtimeLiveCallController {
             );
             result = result.result;
         } catch (error) {
+            toolTimedOut = error?.message === "realtime_tool_stalled";
             result = { status: error?.message === "realtime_tool_stalled" ? "error" : "error", uncertain: true };
+        }
+        this.owner.countOperational?.("memory_route_count");
+        if (result?.status === "supported" || result?.status === "conflicted") {
+            this.owner.countOperational?.("memory_supported_count");
+        } else if (result?.status === "unsupported") {
+            this.owner.countOperational?.("memory_unsupported_count");
+        } else if (toolTimedOut) {
+            this.owner.countOperational?.("memory_timeout_count");
+        } else {
+            this.owner.countOperational?.("memory_error_count");
         }
         const safeDiagnostics = result?.diagnostics || {};
         this.memoryDiagnostics = {
@@ -1347,6 +1382,11 @@ class RealtimeLiveCallController {
             provider_failure_category: this.lastProviderFailureCategory
         });
         this.metric(reason, 1);
+        this.owner.countOperational?.("turn_recovered_count");
+        if (reason === "external_tts_failed") this.owner.countOperational?.("external_tts_failure_count");
+        if (["realtime_response_stalled", "response_failed"].includes(reason)) {
+            this.owner.countOperational?.("response_failure_count");
+        }
     }
 
     handleTransportFailure() {

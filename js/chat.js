@@ -3190,6 +3190,9 @@ async function sendMessage(event) {
                         } else if (
                             eventType === "complete"
                         ) {
+                            // Claim terminal success before any optional UI
+                            // bookkeeping so late abort/cleanup cannot revoke it.
+                            streamCompleted = true;
                             hideTypingIndicator(
                                 conversationId
                             );
@@ -3210,8 +3213,6 @@ async function sendMessage(event) {
                                 streamMessage,
                                 data.message
                             );
-                            streamCompleted = true;
-
                             if (data.conversation) {
                                 moveActiveConversationToTop(
                                     data.conversation
@@ -3302,6 +3303,10 @@ async function sendMessage(event) {
         }
     } catch (error) {
         hideTypingIndicator(conversationId);
+
+        if (streamCompleted) {
+            return;
+        }
 
         if (!isCurrentRequest()) {
             return;

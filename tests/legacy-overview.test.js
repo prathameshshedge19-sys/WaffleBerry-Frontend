@@ -31,6 +31,17 @@ test("dashboard API uses the shared authenticated request utility", () => {
     );
 });
 
+test("Stored Memories are scoped, safely rendered, editable, deletable, and bounded", () => {
+    assert.match(html, /id="storedMemoriesTitle"[^>]*>Stored Memories</);
+    assert.match(overview, /listStoredMemories\([\s\S]*storedLegacyId/);
+    assert.match(overview, /summary\.textContent = memory\.summary/);
+    assert.match(overview, /window\.prompt\("Edit this memory"/);
+    assert.match(overview, /window\.confirm\("Delete this memory\?"\)/);
+    assert.match(overview, /No stored memories yet/);
+    assert.match(api, /review_status=approved[\s\S]*offset=\$\{offset\}[\s\S]*limit=\$\{limit\}/);
+    assert.doesNotMatch(overview, /innerHTML\s*=/);
+});
+
 
 test("explicit Legacy URL selection falls back to active session state", () => {
     assert.match(overview, /window\.location\.search/);

@@ -878,6 +878,16 @@ test("reliability classification and rare-turn diagnostics remain privacy safe",
     assert.match(realtime, /REALTIME_RECOVERY[\s\S]*speech_started[\s\S]*user_turn_committed[\s\S]*first_output_received/);
 });
 
+test("production operational telemetry is aggregate, allowlisted, and independent of debug mode", () => {
+    assert.match(cascade, /reportOperational\("call_started", "started"\)/);
+    assert.match(realtime, /reportOperational\?\.\("call_started", "started"\)/);
+    assert.match(cascade, /reportOperational\("call_ended", "user_ended"\)/);
+    assert.match(cascade, /turn_started_count[\s\S]*turn_completed_count[\s\S]*memory_timeout_count/);
+    assert.match(realtime, /memory_unsupported_count/);
+    assert.match(realtime, /memory_timeout_count/);
+    assert.doesNotMatch(cascade, /reportOperational[\s\S]{0,900}(transcript|response_text|memory_text|client_secret|transport_token|sdp)/i);
+});
+
 test("recovery invalidates external queues and End/navigation always cancel replacement", () => {
     assert.match(realtime, /requestTransportRecovery\(reason\)[\s\S]*renderer\.cancelResponse\(\)/);
     assert.match(cascade, /performEnd\(\)[\s\S]*realtimeRecoveryGeneration \+= 1[\s\S]*realtimeController\?\.close\(\)/);

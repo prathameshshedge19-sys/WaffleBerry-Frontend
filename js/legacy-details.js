@@ -33,7 +33,77 @@ const elements = {
     helpDialog: document.getElementById("legacyDashboardHelpDialog"),
     helpClose: document.getElementById("legacyDashboardHelpClose"),
     archivedBanner: document.getElementById("legacyArchivedBanner"),
+    storedMemoriesStatus: document.getElementById("storedMemoriesStatus"),
+    storedMemoriesList: document.getElementById("storedMemoriesList"),
+    storedMemoriesMore: document.getElementById("storedMemoriesMore"),
 };
+
+let storedLegacyId = null;
+let storedMemoryOffset = 0;
+const STORED_MEMORY_PAGE_SIZE = 30;
+
+function storedMemoryCard(memory) {
+    const card = document.createElement("article");
+    card.className = "stored-memory-card";
+    const category = document.createElement("span");
+    category.className = "stored-memory-category";
+    category.textContent = readableStatus(memory.category);
+    const summary = document.createElement("p");
+    summary.textContent = memory.summary;
+    const actions = document.createElement("div");
+    actions.className = "stored-memory-actions";
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.textContent = "Edit";
+    edit.addEventListener("click", async () => {
+        const updated = window.prompt("Edit this memory", memory.summary);
+        if (updated === null || !updated.trim() || updated.trim() === memory.summary) return;
+        try {
+            const result = await window.WaffleBerryApi.editStoredMemory(
+                storedLegacyId, memory.memory_id, memory.updated_at, updated.trim()
+            );
+            memory.summary = result.summary;
+            memory.updated_at = result.updated_at;
+            summary.textContent = result.summary;
+            elements.storedMemoriesStatus.textContent = "Memory updated.";
+        } catch { elements.storedMemoriesStatus.textContent = "We couldnâ€™t update that memory. Please refresh and try again."; }
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Delete";
+    remove.addEventListener("click", async () => {
+        if (!window.confirm("Delete this memory?")) return;
+        try {
+            await window.WaffleBerryApi.deleteStoredMemory(storedLegacyId, memory.memory_id);
+            card.remove();
+            if (!elements.storedMemoriesList.children.length) {
+                elements.storedMemoriesStatus.textContent = "No stored memories yet. Berry will remember important things as you talk.";
+            }
+        } catch { elements.storedMemoriesStatus.textContent = "We couldnâ€™t delete that memory. Please try again."; }
+    });
+    actions.append(edit, remove);
+    card.append(category, summary, actions);
+    return card;
+}
+
+async function loadStoredMemories(reset = false) {
+    if (!storedLegacyId) return;
+    if (reset) {
+        storedMemoryOffset = 0;
+        elements.storedMemoriesList.replaceChildren();
+    }
+    try {
+        const page = await window.WaffleBerryApi.listStoredMemories(
+            storedLegacyId, storedMemoryOffset, STORED_MEMORY_PAGE_SIZE
+        );
+        elements.storedMemoriesList.append(...page.items.map(storedMemoryCard));
+        storedMemoryOffset += page.items.length;
+        elements.storedMemoriesMore.hidden = storedMemoryOffset >= page.total;
+        elements.storedMemoriesStatus.textContent = page.total
+            ? `${page.total} stored ${page.total === 1 ? "memory" : "memories"}.`
+            : "No stored memories yet. Berry will remember important things as you talk.";
+    } catch { elements.storedMemoriesStatus.textContent = "Stored memories couldnâ€™t be loaded. Your saved information is unchanged."; }
+}
 
 
 function selectLegacy() {
@@ -604,6 +674,7 @@ async function loadDashboard() {
             showError("not-found");
             return;
         }
+        storedLegacyId = persisted.backendLegacyId;
 
         const dashboard =
             await window.WaffleBerryApi
@@ -611,6 +682,7 @@ async function loadDashboard() {
                     persisted.backendLegacyId
                 );
         renderDashboard(dashboard);
+        await loadStoredMemories(true);
     } catch (error) {
         if (
             error instanceof window.WaffleBerryApi.ApiError &&
@@ -632,6 +704,7 @@ async function loadDashboard() {
 
 
 elements.retry?.addEventListener("click", loadDashboard);
+elements.storedMemoriesMore?.addEventListener("click", () => loadStoredMemories(false));
 elements.helpButton?.addEventListener("click", () => {
     elements.helpDialog?.showModal();
     elements.helpClose?.focus();

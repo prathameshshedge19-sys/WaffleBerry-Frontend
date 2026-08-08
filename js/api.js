@@ -665,6 +665,7 @@ async function streamSseRequest(
     const decoder = new TextDecoder();
     let buffer = "";
     let finished = false;
+    let terminalReceived = false;
 
     async function emitFrames(final = false) {
         let boundary =
@@ -685,6 +686,7 @@ async function streamSseRequest(
             );
             if (parsed) {
                 await onEvent(parsed);
+                if (parsed.event === "complete") terminalReceived = true;
             }
 
             boundary =
@@ -699,6 +701,7 @@ async function streamSseRequest(
 
             if (parsed) {
                 await onEvent(parsed);
+                if (parsed.event === "complete") terminalReceived = true;
             }
         }
     }
@@ -721,6 +724,19 @@ async function streamSseRequest(
             );
             await emitFrames();
         }
+    } catch (error) {
+        if (!terminalReceived) {
+            if (error?.name === "AbortError" || signal?.aborted) {
+                throw new ApiError(
+                    "The response stream was interrupted.",
+                    { kind: "aborted" }
+                );
+            }
+            throw error;
+        }
+        // EOF/read cancellation after an accepted terminal frame cannot
+        // revoke a successfully persisted response.
+        finished = true;
     } finally {
         if (!finished) {
             try {
@@ -920,6 +936,26 @@ function retryStoryExtraction(
     );
 }
 
+function listStoredMemories(legacyId, offset = 0, limit = 30) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/review?review_status=approved&offset=${offset}&limit=${limit}`
+    );
+}
+
+function editStoredMemory(legacyId, memoryId, expectedUpdatedAt, summary) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}`,
+        { method: "PATCH", body: { expected_updated_at: expectedUpdatedAt, summary, edit_reason: "user_correction" } }
+    );
+}
+
+function deleteStoredMemory(legacyId, memoryId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}`,
+        { method: "DELETE" }
+    );
+}
+
 function createLiveCallSession(legacyId, engine = "auto") {
     return apiRequest("/live-call/session", {
         method: "POST",
@@ -930,6 +966,12 @@ function createLiveCallSession(legacyId, engine = "auto") {
 function createRealtimeBootstrap(sessionId) {
     return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/bootstrap`, {
         method: "POST"
+    });
+}
+
+function learnRealtimeMemoryTurn(sessionId, turnId, text) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/memory-turn`, {
+        method: "POST", body: { turn_id: turnId, text }
     });
 }
 
@@ -956,6 +998,13 @@ function endLiveCallSession(sessionId) {
     return apiRequest(
         `/live-call/session/${encodeURIComponent(sessionId)}`,
         { method: "DELETE" }
+    );
+}
+
+function reportLiveCallOperationalEvent(sessionId, event) {
+    return apiRequest(
+        `/live-call/session/${encodeURIComponent(sessionId)}/operational-event`,
+        { method: "POST", body: event }
     );
 }
 
@@ -993,11 +1042,16 @@ window.WaffleBerryApi = Object.freeze({
     completeStorySession,
     getStoryExtractionRun,
     retryStoryExtraction,
+    listStoredMemories,
+    editStoredMemory,
+    deleteStoredMemory,
     createLiveCallSession,
     createRealtimeBootstrap,
+    learnRealtimeMemoryTurn,
     executeRealtimeTool,
     renderRealtimeSpeech,
     endLiveCallSession,
+    reportLiveCallOperationalEvent,
     liveCallWebSocketUrl,
     transcribeAudio,
     getMessageSpeech,

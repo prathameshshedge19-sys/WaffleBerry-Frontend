@@ -9216,6 +9216,21 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
     cursor: not-allowed;
 }
 
+.stored-memories { margin-top: 1.5rem; padding: 1.5rem; }
+.stored-memories-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: end; }
+.stored-memories-heading p { margin: 0; }
+.stored-memories-list { display: grid; gap: 0.8rem; margin: 1rem 0; }
+.stored-memory-card { padding: 1rem; border: 1px solid rgba(128, 93, 135, 0.2); border-radius: 16px; }
+.stored-memory-card p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.stored-memory-category { font-size: 0.78rem; opacity: 0.72; }
+.stored-memory-actions { display: flex; gap: 0.65rem; justify-content: flex-end; }
+.stored-memory-actions button { min-height: 44px; padding: 0.55rem 0.9rem; border-radius: 999px; cursor: pointer; }
+body.dark-mode .stored-memory-card { border-color: rgba(255, 255, 255, 0.16); }
+@media (max-width: 640px) {
+    .stored-memories-heading { align-items: start; flex-direction: column; }
+    .stored-memory-actions button { flex: 1; }
+}
+
 .legacy-dashboard-help-button {
     width: 2.4rem;
     height: 2.4rem;

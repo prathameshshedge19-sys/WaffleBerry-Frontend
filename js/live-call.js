@@ -139,6 +139,40 @@ class LiveCallController {
         this.frontendStartupStage = "not_started";
         this.frontendFailureCategory = "none";
         this.frontendMessageCode = "none";
+        this.operationalStarted = false;
+        this.operationalEnded = false;
+        this.operational = {
+            turn_started_count: 0, turn_completed_count: 0,
+            turn_failed_count: 0, turn_recovered_count: 0,
+            recovery_count: 0, response_failure_count: 0,
+            external_tts_failure_count: 0, memory_route_count: 0,
+            memory_supported_count: 0, memory_unsupported_count: 0,
+            memory_error_count: 0, memory_timeout_count: 0
+        };
+    }
+
+    reportOperational(event, outcome, failureCategory = "none") {
+        if (!this.session?.session_id
+                || typeof this.api.reportLiveCallOperationalEvent !== "function") return Promise.resolve();
+        if (event === "call_started") {
+            if (this.operationalStarted) return Promise.resolve();
+            this.operationalStarted = true;
+        }
+        if (event === "call_ended") {
+            if (this.operationalEnded) return Promise.resolve();
+            this.operationalEnded = true;
+        }
+        const durationMs = this.connectedAt ? Math.max(0, Date.now() - this.connectedAt) : 0;
+        return this.api.reportLiveCallOperationalEvent(this.session.session_id, {
+            event, outcome, failure_category: failureCategory,
+            duration_ms: durationMs, ...this.operational
+        }).catch(() => {});
+    }
+
+    countOperational(name, amount = 1) {
+        if (Object.prototype.hasOwnProperty.call(this.operational, name)) {
+            this.operational[name] = Math.max(0, this.operational[name] + amount);
+        }
     }
 
     recordFrontendStartup(stage, failureCategory = "none", error = null, messageCode = "none") {
@@ -592,6 +626,8 @@ class LiveCallController {
                     if (this.session.realtime_strict) {
                         this.session.fallback_reason = fallbackReason;
                         const failedSessionId = this.session.session_id;
+                        await this.reportOperational("call_ended", "startup_failed",
+                            this.operationalFailureCategory(error));
                         try { await this.api.endLiveCallSession(failedSessionId); } catch { /* best effort */ }
                         this.renderDebugPanel();
                         this.recordEngineDecision(fallbackReason);
@@ -599,11 +635,15 @@ class LiveCallController {
                     }
                     this.realtimeController = null;
                     const failedSessionId = this.session.session_id;
+                    await this.reportOperational("call_ended", "startup_failed",
+                        this.operationalFailureCategory(error));
                     try { await this.api.endLiveCallSession(failedSessionId); } catch { /* best effort */ }
                     this.session = await this.api.createLiveCallSession(
                         this.legacy.backendLegacyId, "cascade"
                     );
                     this.session.fallback_reason = fallbackReason;
+                    this.operationalStarted = false;
+                    this.operationalEnded = false;
                 }
             }
             if (!this.WebSocketClass || !this.MediaRecorderClass) {
@@ -649,6 +689,20 @@ class LiveCallController {
             return "data_channel_failed";
         }
         return "frontend_capability_failed";
+    }
+
+    operationalFailureCategory(error) {
+        const provider = this.realtimeController?.lastProviderFailureCategory;
+        if (["provider_rate_limited", "provider_quota_exhausted"].includes(provider)) return provider;
+        if (provider === "provider_transient") return "provider_transient_failure";
+        const stage = error?.realtimeStage || this.realtimeController?.startupStage
+            || this.frontendStartupStage || "unknown";
+        if (stage.includes("bootstrap")) return "bootstrap";
+        if (stage.includes("peer") || stage.includes("local_track") || stage.includes("offer")) return "peer_connection";
+        if (stage.includes("sdp") || stage.includes("description")) return "sdp_exchange";
+        if (stage.includes("data_channel")) return "data_channel";
+        if (stage.includes("microphone")) return "microphone";
+        return "unknown";
     }
 
     recoverRealtimeTransport(reason) {
@@ -1044,6 +1098,7 @@ class LiveCallController {
         this.speechStartedAt = now;
         this.lastSpeechAt = now;
         this.recordingTurnId = this.turnId++;
+        this.countOperational("turn_started_count");
         this.turnTimings.set(this.recordingTurnId, {
             marks: { vad_last_voice_detected: this.lastVoiceDetectedAt },
             streaming_stt_active: false,
@@ -1281,6 +1336,7 @@ class LiveCallController {
         this.elements.microphoneStatus.textContent = "Microphone on";
         if (Number.isInteger(message.next_turn_id)) this.turnId = Math.max(this.turnId, message.next_turn_id);
         this.startHeartbeat();
+        this.reportOperational("call_started", "started");
         if (!resumed && this.state === "connecting") {
             this.pendingInitialReady = message;
             this.completeInitialConnection();
@@ -2036,6 +2092,7 @@ class LiveCallController {
                 && this.pendingPlaybackConfirmation?.turnId === turnId) return;
         this.markTurnTiming(turnId, "response_audio_completed");
         this.reportClientLatency(turnId);
+        this.countOperational("turn_completed_count");
         this.activeTurnId = null;
         this.clearFirstAudioWatchdog();
         this.playbackConfirmedTurnId = null;
@@ -2048,6 +2105,8 @@ class LiveCallController {
     }
 
     recoverTurn(code) {
+        this.countOperational("turn_failed_count");
+        this.countOperational("turn_recovered_count");
         this.clearFirstAudioWatchdog();
         this.activeTurnId = null;
         this.playbackConfirmedTurnId = null;
@@ -2093,6 +2152,7 @@ class LiveCallController {
         await this.requestTransportEnd();
         this.socket?.close();
         if (this.session?.session_id) {
+            await this.reportOperational("call_ended", "user_ended");
             try { await this.api.endLiveCallSession(this.session.session_id); } catch { /* cleanup remains local */ }
         }
         this.finishEnded();
@@ -2171,6 +2231,9 @@ class LiveCallController {
     }
 
     fail(message) {
+        const outcome = this.operationalStarted ? "transport_failed" : "startup_failed";
+        this.reportOperational("call_ended", outcome,
+            outcome === "transport_failed" ? "transport" : "unknown");
         this.intentionalEnd = true;
         this.stopRingback();
         this.clearReconnectTimer();
