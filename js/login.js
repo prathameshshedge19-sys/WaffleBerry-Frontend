@@ -5,9 +5,7 @@ const {
     ApiError,
     apiRequest,
     authenticateUser,
-    clearStoredSession,
-    getPendingVerificationCredentials,
-    storePendingVerificationCredentials
+    clearStoredSession
 } = window.WaffleBerryApi;
 
 const loginForm =
@@ -24,6 +22,7 @@ const emailInput =
 
 const passwordInput =
     document.getElementById("passwordInput");
+const passwordGroup = document.getElementById("passwordGroup");
 
 const confirmPasswordGroup =
     document.getElementById("confirmPasswordGroup");
@@ -41,6 +40,8 @@ const createAccountButton =
 
 const forgotPasswordButton =
     document.getElementById("forgotPasswordButton");
+const rememberMeGroup =
+    document.getElementById("rememberMeGroup");
 
 const authTitle =
     document.getElementById("authTitle");
@@ -102,17 +103,21 @@ function setAuthMode(mode) {
     }
 
     if (confirmPasswordGroup) {
-        confirmPasswordGroup.hidden =
-            !isRegisterMode;
+        confirmPasswordGroup.hidden = true;
     }
 
     if (confirmPasswordInput) {
         confirmPasswordInput.required =
-            isRegisterMode;
+            false;
     }
 
     if (forgotPasswordButton) {
         forgotPasswordButton.hidden =
+            isRegisterMode;
+    }
+
+    if (rememberMeGroup) {
+        rememberMeGroup.hidden =
             isRegisterMode;
     }
 
@@ -133,7 +138,7 @@ function setAuthMode(mode) {
     if (authSubmitText) {
         authSubmitText.textContent =
             isRegisterMode
-                ? "Create Account"
+                ? "Continue"
                 : "Sign in";
     }
 
@@ -152,10 +157,14 @@ function setAuthMode(mode) {
     }
 
     if (passwordInput) {
+        passwordInput.required = !isRegisterMode;
         passwordInput.autocomplete =
             isRegisterMode
                 ? "new-password"
                 : "current-password";
+    }
+    if (passwordGroup) {
+        passwordGroup.hidden = isRegisterMode;
     }
 
     setLoginMessage("");
@@ -226,25 +235,13 @@ if (
 
             if (
                 !email ||
-                !password ||
-                (isRegisterMode &&
-                    (!fullName || !confirmPassword))
+                (!isRegisterMode && !password) ||
+                (isRegisterMode && !fullName)
             ) {
                 setLoginMessage(
                     isRegisterMode
-                        ? "Please enter your full name, email, password and password confirmation."
+                        ? "Please enter your full name and email."
                         : "Please enter your email and password.",
-                    "error"
-                );
-                return;
-            }
-
-            if (
-                isRegisterMode &&
-                password !== confirmPassword
-            ) {
-                setLoginMessage(
-                    "Passwords do not match.",
                     "error"
                 );
                 return;
@@ -262,7 +259,7 @@ if (
                     console.info(
                         "[signup] Sending POST /api/v1/users."
                     );
-                    const signupResponse = await apiRequest(
+                    await apiRequest(
                         "/users",
                         {
                             method: "POST",
@@ -270,8 +267,7 @@ if (
                             body: {
                                 full_name:
                                     fullName,
-                                email,
-                                password
+                                email
                             }
                         }
                     );
@@ -280,29 +276,8 @@ if (
                         "[signup] Account creation response received."
                     );
 
-                    const pendingCredentials =
-                        getPendingVerificationCredentials();
-
-                    if (
-                        !signupResponse?.verification_resent ||
-                        !pendingCredentials ||
-                        pendingCredentials.email !== email
-                    ) {
-                        storePendingVerificationCredentials(
-                            email,
-                            password
-                        );
-                    }
-
                     const verificationParameters =
                         new URLSearchParams({ email });
-
-                    if (signupResponse?.verification_resent) {
-                        verificationParameters.set(
-                            "resent",
-                            "true"
-                        );
-                    }
 
                     window.location.href =
                         `verify-email.html?${verificationParameters}`;

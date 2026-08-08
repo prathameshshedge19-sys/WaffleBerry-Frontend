@@ -125,7 +125,7 @@ if (verificationForm && otpInput) {
             setVerificationMessage("Verifying reset code...");
 
             try {
-                await apiRequest("/verify-reset-otp", {
+                const response = await apiRequest("/verify-reset-otp", {
                     method: "POST",
                     authenticated: false,
                     body: { email, otp }
@@ -138,6 +138,7 @@ if (verificationForm && otpInput) {
                 window.setTimeout(resolve, 500);
             });
 
+            sessionStorage.setItem("passwordResetAuthorization", response.authorization);
             window.location.href =
                 `reset-password.html?email=${encodeURIComponent(email)}`;    
             } catch (error) {
@@ -169,7 +170,7 @@ if (resendOtpButton) {
                     {
                         method: "POST",
                         authenticated: false,
-                        body: { email }
+                        body: { email, purpose: "password_reset" }
                     }
                 );
 

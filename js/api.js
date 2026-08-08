@@ -85,39 +85,6 @@ function clearStoredSession() {
 }
 
 
-function storePendingVerificationCredentials(
-    email,
-    password
-) {
-    sessionStorage.setItem(
-        "pendingVerificationCredentials",
-        JSON.stringify({ email, password })
-    );
-}
-
-
-function getPendingVerificationCredentials() {
-    try {
-        const credentials = sessionStorage.getItem(
-            "pendingVerificationCredentials"
-        );
-
-        return credentials
-            ? JSON.parse(credentials)
-            : null;
-    } catch {
-        return null;
-    }
-}
-
-
-function clearPendingVerificationCredentials() {
-    sessionStorage.removeItem(
-        "pendingVerificationCredentials"
-    );
-}
-
-
 function getValidationMessage(details) {
     if (!Array.isArray(details)) {
         return "Please check the information you entered.";
@@ -375,6 +342,10 @@ async function authenticateUser(email, password) {
         response.access_token,
         response.user
     );
+    return response;
+}
+
+
 function audioFilename(blob) {
     const contentType = String(
         blob?.type || ""
@@ -1116,9 +1087,6 @@ window.WaffleBerryApi = Object.freeze({
     getMessageSpeech,
     supportsResponseStreaming,
     clearStoredSession,
-    storePendingVerificationCredentials,
-    getPendingVerificationCredentials,
-    clearPendingVerificationCredentials,
     getStoredAccessToken,
     getStoredUser,
     storeSession

@@ -96,6 +96,20 @@
                 </button>
             </form>
 
+            <form id="passwordCreationForm" hidden>
+                <div class="form-group">
+                    <label for="passwordInput">Password</label>
+                    <input id="passwordInput" type="password" autocomplete="new-password" minlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPasswordInput">Confirm Password</label>
+                    <input id="confirmPasswordInput" type="password" autocomplete="new-password" minlength="8" required>
+                </div>
+                <button id="createAccountSubmit" class="login-button" type="submit">
+                    <span>Create Account</span><span class="login-arrow">&rarr;</span>
+                </button>
+            </form>
+
             <p class="signup-message">
                 Didn't receive the code?
 

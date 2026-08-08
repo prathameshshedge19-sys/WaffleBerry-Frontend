@@ -3,8 +3,7 @@
 (function initializeResetPassword() {
 const {
     ApiError,
-    apiRequest,
-    authenticateUser
+    apiRequest
 } = window.WaffleBerryApi;
 
 const form =
@@ -28,6 +27,7 @@ const backButton =
 const email = new URLSearchParams(
     window.location.search
 ).get("email")?.trim();
+const resetToken = sessionStorage.getItem("passwordResetAuthorization");
 
 let isSubmitting = false;
 
@@ -59,9 +59,9 @@ function getErrorMessage(error) {
     return error.message;
 }
 
-if (!email) {
+if (!email || !resetToken) {
     setMessage(
-        "Missing email address.",
+        "Your password reset authorization is missing or expired. Request a new code.",
         "error"
     );
 
@@ -115,22 +115,15 @@ if (form) {
                         authenticated: false,
                         body: {
                             email,
-                            password
+                            password,
+                            reset_token: resetToken
                         }
                     }
                 );
 
-                setMessage(
-                    "Password reset successfully! Signing you in..."
-                );
-
-                await authenticateUser(
-                    email,
-                    password
-                );
-
-                window.location.href =
-                    "experience.html";
+                sessionStorage.removeItem("passwordResetAuthorization");
+                setMessage("Password reset successfully! Redirecting to login...");
+                window.location.href = "login.html";
 
             } catch (error) {
 
