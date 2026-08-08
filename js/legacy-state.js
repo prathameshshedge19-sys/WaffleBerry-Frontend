@@ -7,6 +7,8 @@ const DRAFT_STORAGE_KEY =
     "waffleBerryLegacyDraftId";
 const ACTIVE_STORAGE_KEY =
     "waffleBerryActiveLegacyId";
+const HIDDEN_LEGACIES_KEY =
+    "waffleBerryHiddenPersistedLegacies";
 
 
 function storageKey(baseKey) {
@@ -62,6 +64,16 @@ function normalizeLegacy(value) {
         )
             ? value.createdAt
             : "";
+    const backendLegacyId =
+        Number.isInteger(
+            Number(value?.backendLegacyId)
+        ) &&
+        Number(value?.backendLegacyId) > 0
+            ? Number(value.backendLegacyId)
+            : null;
+    const status = value?.status === "archived"
+        ? "archived"
+        : "active";
 
     if (
         !id ||
@@ -76,7 +88,9 @@ function normalizeLegacy(value) {
         id,
         relationship,
         displayName,
-        createdAt
+        createdAt,
+        backendLegacyId,
+        status
     };
 }
 
@@ -98,18 +112,26 @@ function list() {
         }
 
         const seenIds = new Set();
+        const seenBackendIds = new Set();
 
         return parsed
             .map(normalizeLegacy)
             .filter((legacy) => {
                 if (
                     !legacy ||
-                    seenIds.has(legacy.id)
+                    seenIds.has(legacy.id) ||
+                    (
+                        legacy.backendLegacyId &&
+                        seenBackendIds.has(legacy.backendLegacyId)
+                    )
                 ) {
                     return false;
                 }
 
                 seenIds.add(legacy.id);
+                if (legacy.backendLegacyId) {
+                    seenBackendIds.add(legacy.backendLegacyId);
+                }
                 return true;
             });
     } catch {
@@ -125,6 +147,105 @@ function store(legacies) {
         ),
         JSON.stringify(legacies)
     );
+}
+
+function hiddenPersistedIds() {
+    try {
+        const parsed = JSON.parse(
+            localStorage.getItem(
+                storageKey(HIDDEN_LEGACIES_KEY)
+            ) || "[]"
+        );
+        return new Set(
+            Array.isArray(parsed)
+                ? parsed.map(String)
+                : []
+        );
+    } catch {
+        return new Set();
+    }
+}
+
+async function hydratePersisted(status = "active") {
+    const listPersisted =
+        window.WaffleBerryApi.listOwnedLegaciesByStatus
+        || window.WaffleBerryApi.listOwnedLegacies;
+    const persisted =
+        await listPersisted.call(
+            window.WaffleBerryApi,
+            status
+        );
+    const hidden = hiddenPersistedIds();
+    const returnedIds = new Set(
+        persisted.map((item) => item.legacy_id)
+    );
+    const current = list().filter(
+        (item) => !(
+            item.backendLegacyId &&
+            item.status === status &&
+            !returnedIds.has(item.backendLegacyId)
+        )
+    );
+    const byBackendId = new Map(
+        current
+            .filter((item) =>
+                item.backendLegacyId
+            )
+            .map((item) => [
+                item.backendLegacyId,
+                item
+            ])
+    );
+    persisted.forEach((item) => {
+        if (
+            hidden.has(
+                String(item.legacy_id)
+            )
+        ) {
+            return;
+        }
+        const existing =
+            byBackendId.get(item.legacy_id);
+        if (existing) {
+            existing.displayName =
+                item.display_name;
+            existing.relationship =
+                item.relationship;
+            existing.status = item.status || status;
+            return;
+        }
+        const correlation =
+            item.client_correlation_id;
+        const localMatch = current.find(
+            (legacy) =>
+                legacy.id === correlation
+        );
+        if (localMatch) {
+            localMatch.backendLegacyId =
+                item.legacy_id;
+            localMatch.displayName =
+                item.display_name;
+            localMatch.relationship =
+                item.relationship;
+            localMatch.status = item.status || status;
+            return;
+        }
+        current.push({
+            id: correlation ||
+                `persisted-${item.legacy_id}`,
+            relationship:
+                item.relationship,
+            displayName:
+                item.display_name,
+            createdAt:
+                item.created_at,
+            backendLegacyId:
+                item.legacy_id,
+            status: item.status || status
+        });
+    });
+    store(current);
+    return current;
 }
 
 
@@ -174,11 +295,17 @@ function create(details) {
         id,
         relationship,
         displayName,
+        backendLegacyId:
+            existingIndex >= 0
+                ? legacies[existingIndex]
+                    .backendLegacyId
+                : null,
         createdAt:
             existingIndex >= 0
                 ? legacies[existingIndex]
                     .createdAt
-                : new Date().toISOString()
+                : new Date().toISOString(),
+        status: "active"
     };
 
     if (existingIndex >= 0) {
@@ -189,6 +316,41 @@ function create(details) {
 
     store(legacies);
     return legacy;
+}
+
+async function ensurePersisted(id) {
+    const legacy = get(id);
+    if (!legacy) {
+        return null;
+    }
+    if (legacy.backendLegacyId) {
+        return legacy;
+    }
+    const persisted =
+        await window.WaffleBerryApi
+            .synchronizeLegacy({
+                display_name:
+                    legacy.displayName,
+                relationship:
+                    legacy.relationship,
+                client_correlation_id:
+                    legacy.id
+            });
+    const legacies = list();
+    const index = legacies.findIndex(
+        (item) => item.id === legacy.id
+    );
+    if (index < 0) {
+        return null;
+    }
+    legacies[index] = {
+        ...legacies[index],
+        backendLegacyId:
+            persisted.legacy_id,
+        status: persisted.status || "active"
+    };
+    store(legacies);
+    return legacies[index];
 }
 
 
@@ -230,7 +392,46 @@ function getActive() {
     return id ? get(id) : null;
 }
 
-function remove(id) {
+function updatePersisted(backendLegacyId, details) {
+    const numericId = Number(backendLegacyId);
+    const displayName =
+        typeof details?.display_name === "string"
+            ? details.display_name.trim()
+            : "";
+    const relationship =
+        typeof details?.relationship === "string"
+            ? details.relationship.trim()
+            : "";
+    if (
+        !Number.isInteger(numericId) ||
+        numericId <= 0 ||
+        !displayName ||
+        !relationship
+    ) {
+        return null;
+    }
+    const legacies = list();
+    const index = legacies.findIndex(
+        (legacy) => legacy.backendLegacyId === numericId
+    );
+    if (index < 0) {
+        return null;
+    }
+    legacies[index] = {
+        ...legacies[index],
+        displayName,
+        relationship,
+        status: details.status === "archived"
+            ? "archived"
+            : details.status === "active"
+                ? "active"
+                : legacies[index].status
+    };
+    store(legacies);
+    return legacies[index];
+}
+
+function remove(id, options = {}) {
     if (typeof id !== "string") {
         return false;
     }
@@ -246,6 +447,23 @@ function remove(id) {
         legacies.length
     ) {
         return false;
+    }
+
+    const removed = legacies.find(
+        (legacy) => legacy.id === id
+    );
+    if (removed?.backendLegacyId) {
+        const hidden = hiddenPersistedIds();
+        const backendId = String(removed.backendLegacyId);
+        if (options.backendDeleted === true) {
+            hidden.delete(backendId);
+        } else {
+            hidden.add(backendId);
+        }
+        localStorage.setItem(
+            storageKey(HIDDEN_LEGACIES_KEY),
+            JSON.stringify([...hidden])
+        );
     }
 
     store(remainingLegacies);
@@ -270,11 +488,14 @@ function remove(id) {
 window.WaffleBerryLegacyState =
     Object.freeze({
         create,
+        ensurePersisted,
         get,
         getActive,
+        hydratePersisted,
         list,
         remove,
         select,
-        startDraft
+        startDraft,
+        updatePersisted
     });
 })();

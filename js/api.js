@@ -1,12 +1,21 @@
 "use strict";
 
 (function initializeWaffleBerryApi() {
-const DEFAULT_API_BASE_URL =
-    "http://127.0.0.1:8000/api/v1";
 const API_BASE_URL = (
     window.WAFFLEBERRY_API_BASE_URL ||
-    DEFAULT_API_BASE_URL
+    (!window.location ||
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+        ? "http://127.0.0.1:8000/api/v1"
+        : "")
 ).replace(/\/+$/, "");
+
+if (!API_BASE_URL) {
+    throw new Error(
+        "WaffleBerry API URL is not configured. Set " +
+        "window.WAFFLEBERRY_API_BASE_URL in js/config.js."
+    );
+}
 
 const STORAGE_KEYS = Object.freeze({
     ACCESS_TOKEN: "accessToken",
@@ -366,6 +375,202 @@ async function authenticateUser(email, password) {
         response.access_token,
         response.user
     );
+function audioFilename(blob) {
+    const contentType = String(
+        blob?.type || ""
+    ).split(";", 1)[0].toLowerCase();
+    const extensions = {
+        "audio/webm": "webm",
+        "audio/mp4": "mp4",
+        "audio/ogg": "ogg",
+        "audio/wav": "wav",
+        "audio/mpeg": "mp3",
+        "audio/mp3": "mp3",
+        "audio/x-m4a": "m4a",
+        "audio/m4a": "m4a",
+        "audio/flac": "flac"
+    };
+    return `voice-message.${
+        extensions[contentType] || "audio"
+    }`;
+}
+
+
+async function transcribeAudio(
+    blob,
+    filename = audioFilename(blob),
+    { signal } = {}
+) {
+    if (
+        !(blob instanceof Blob) ||
+        blob.size === 0
+    ) {
+        throw new ApiError(
+            "The recording is empty.",
+            {
+                status: 422,
+                kind: "audio_empty"
+            }
+        );
+    }
+
+    const accessToken =
+        getStoredAccessToken();
+
+    if (!accessToken) {
+        throw new ApiError(
+            "Your session has expired. Please sign in again.",
+            {
+                status: 401,
+                kind: "authentication"
+            }
+        );
+    }
+
+    const formData = new FormData();
+    formData.append(
+        "file",
+        blob,
+        filename
+    );
+
+    let response;
+    try {
+        response = await fetch(
+            `${API_BASE_URL}/audio/transcribe`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization:
+                        `Bearer ${accessToken}`
+                },
+                body: formData,
+                signal
+            }
+        );
+    } catch (error) {
+        if (error?.name === "AbortError") {
+            throw new ApiError(
+                "Transcription was cancelled.",
+                { kind: "aborted" }
+            );
+        }
+        throw new ApiError(
+            "Unable to reach the Waffle Berry server. Please try again.",
+            { kind: "network" }
+        );
+    }
+
+    const data = await parseResponse(response);
+    if (!response.ok) {
+        throw new ApiError(
+            getApiErrorMessage(
+                response.status,
+                data
+            ),
+            {
+                status: response.status,
+                kind: getErrorKind(
+                    response.status,
+                    data
+                ),
+                details: data
+            }
+        );
+    }
+
+    if (
+        typeof data?.text !== "string" ||
+        !data.text.trim()
+    ) {
+        throw new ApiError(
+            "The recording could not be transcribed. Please try again.",
+            { kind: "transcription_failed" }
+        );
+    }
+
+    return { text: data.text.trim() };
+}
+
+
+async function getMessageSpeech(
+    conversationId,
+    messageId,
+    {
+        responseFormat = "mp3",
+        signal
+    } = {}
+) {
+    const normalizedConversationId =
+        Number(conversationId);
+    const normalizedMessageId = Number(messageId);
+    if (
+        !Number.isInteger(normalizedConversationId) ||
+        !Number.isInteger(normalizedMessageId)
+    ) {
+        throw new ApiError(
+            "This message is not available for speech.",
+            { kind: "message_not_found" }
+        );
+    }
+
+    const accessToken = getStoredAccessToken();
+    if (!accessToken) {
+        throw new ApiError(
+            "Your session has expired. Please sign in again.",
+            { status: 401, kind: "authentication" }
+        );
+    }
+
+    let response;
+    try {
+        response = await fetch(
+            `${API_BASE_URL}/conversations/${normalizedConversationId}/messages/${normalizedMessageId}/speech`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    response_format: responseFormat
+                }),
+                signal
+            }
+        );
+    } catch (error) {
+        if (error?.name === "AbortError") {
+            throw new ApiError(
+                "Speech generation was cancelled.",
+                { kind: "aborted" }
+            );
+        }
+        throw new ApiError(
+            "Unable to reach the Waffle Berry server. Please try again.",
+            { kind: "network" }
+        );
+    }
+
+    if (!response.ok) {
+        const data = await parseResponse(response);
+        throw new ApiError(
+            getApiErrorMessage(response.status, data),
+            {
+                status: response.status,
+                kind: getErrorKind(response.status, data),
+                details: data
+            }
+        );
+    }
+
+    const blob = await response.blob();
+    if (!(blob instanceof Blob) || blob.size === 0) {
+        throw new ApiError(
+            "Berry's voice could not be generated. Please try again.",
+            { kind: "speech_generation_failed" }
+        );
+    }
+    return blob;
 }
 
 
@@ -433,9 +638,9 @@ function parseSseFrame(frame) {
 }
 
 
-async function streamChatMessage(
-    conversationId,
-    content,
+async function streamSseRequest(
+    path,
+    body,
     options = {}
 ) {
     const {
@@ -458,7 +663,7 @@ async function streamChatMessage(
 
     try {
         response = await fetch(
-            `${API_BASE_URL}/conversations/${conversationId}/messages/stream`,
+            `${API_BASE_URL}${path}`,
             {
                 method: "POST",
                 headers: {
@@ -468,9 +673,7 @@ async function streamChatMessage(
                     Authorization:
                         `Bearer ${accessToken}`
                 },
-                body: JSON.stringify({
-                    content
-                }),
+                body: JSON.stringify(body),
                 signal
             }
         );
@@ -520,6 +723,7 @@ async function streamChatMessage(
     const decoder = new TextDecoder();
     let buffer = "";
     let finished = false;
+    let terminalReceived = false;
 
     async function emitFrames(final = false) {
         let boundary =
@@ -540,6 +744,7 @@ async function streamChatMessage(
             );
             if (parsed) {
                 await onEvent(parsed);
+                if (parsed.event === "complete") terminalReceived = true;
             }
 
             boundary =
@@ -554,6 +759,7 @@ async function streamChatMessage(
 
             if (parsed) {
                 await onEvent(parsed);
+                if (parsed.event === "complete") terminalReceived = true;
             }
         }
     }
@@ -576,6 +782,19 @@ async function streamChatMessage(
             );
             await emitFrames();
         }
+    } catch (error) {
+        if (!terminalReceived) {
+            if (error?.name === "AbortError" || signal?.aborted) {
+                throw new ApiError(
+                    "The response stream was interrupted.",
+                    { kind: "aborted" }
+                );
+            }
+            throw error;
+        }
+        // EOF/read cancellation after an accepted terminal frame cannot
+        // revoke a successfully persisted response.
+        finished = true;
     } finally {
         if (!finished) {
             try {
@@ -588,6 +807,274 @@ async function streamChatMessage(
     }
 }
 
+function streamChatMessage(
+    conversationId,
+    content,
+    options = {}
+) {
+    return streamSseRequest(
+        `/conversations/${conversationId}/messages/stream`,
+        { content },
+        options
+    );
+}
+
+
+function streamStoryGuide(
+    context,
+    options = {}
+) {
+    return streamSseRequest(
+        "/stories/stream",
+        context,
+        options
+    );
+}
+
+function synchronizeLegacy(legacy) {
+    return apiRequest(
+        "/legacies",
+        { method: "POST", body: legacy }
+    );
+}
+
+function listOwnedLegacies() {
+    return apiRequest("/legacies");
+}
+
+function listOwnedLegaciesByStatus(status = "active") {
+    return apiRequest(
+        `/legacies?status=${encodeURIComponent(status)}`
+    );
+}
+
+function archiveLegacy(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/archive`,
+        { method: "POST" }
+    );
+}
+
+function restoreLegacy(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/restore`,
+        { method: "POST" }
+    );
+}
+
+function deleteLegacy(legacyId, confirmationText) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}`,
+        {
+            method: "DELETE",
+            body: {
+                confirmation_text: confirmationText
+            }
+        }
+    );
+}
+
+async function exportLegacy(legacyId) {
+    const accessToken = getStoredAccessToken();
+    if (!accessToken) {
+        throw new ApiError(
+            "Please sign in to continue.",
+            { status: 401, kind: "authentication" }
+        );
+    }
+    let response;
+    try {
+        response = await fetch(
+            `${API_BASE_URL}/legacies/${encodeURIComponent(legacyId)}/export`,
+            {
+                headers: {
+                    Accept: "application/json",
+                    Authorization: `Bearer ${accessToken}`
+                }
+            }
+        );
+    } catch {
+        throw new ApiError(
+            "Unable to reach the Waffle Berry server. Please try again.",
+            { kind: "network" }
+        );
+    }
+    if (!response.ok) {
+        const data = await parseResponse(response);
+        throw new ApiError(
+            getApiErrorMessage(response.status, data),
+            {
+                status: response.status,
+                kind: getErrorKind(response.status, data),
+                details: data
+            }
+        );
+    }
+    const disposition = response.headers.get("Content-Disposition") || "";
+    const filenameMatch = disposition.match(/filename="([^"\\/]+)"/i);
+    return {
+        blob: await response.blob(),
+        filename: filenameMatch?.[1] || "waffleberry-legacy-export.json"
+    };
+}
+
+function getOwnedLegacy(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}`
+    );
+}
+
+function updateLegacySettings(legacyId, changes) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}`,
+        { method: "PATCH", body: changes }
+    );
+}
+
+function getLegacyDashboard(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/dashboard`
+    );
+}
+
+function createStorySession(legacyId, chapter) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions`,
+        { method: "POST", body: chapter }
+    );
+}
+
+function listStorySessions(legacyId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions`
+    );
+}
+
+function streamPersistedStory(
+    legacyId,
+    storySessionId,
+    payload,
+    options = {}
+) {
+    return streamSseRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions/${encodeURIComponent(storySessionId)}/messages/stream`,
+        payload,
+        options
+    );
+}
+
+function completeStorySession(
+    legacyId,
+    storySessionId
+) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions/${encodeURIComponent(storySessionId)}/complete`,
+        { method: "POST" }
+    );
+}
+
+function getStoryExtractionRun(
+    legacyId,
+    storySessionId,
+    runId
+) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions/${encodeURIComponent(storySessionId)}/extraction-runs/${encodeURIComponent(runId)}`
+    );
+}
+
+function retryStoryExtraction(
+    legacyId,
+    storySessionId,
+    runId
+) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/story-sessions/${encodeURIComponent(storySessionId)}/extraction-runs/${encodeURIComponent(runId)}/retry`,
+        { method: "POST" }
+    );
+}
+
+function listStoredMemories(legacyId, offset = 0, limit = 30) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/review?review_status=approved&offset=${offset}&limit=${limit}`
+    );
+}
+
+function editStoredMemory(legacyId, memoryId, expectedUpdatedAt, summary) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}`,
+        { method: "PATCH", body: { expected_updated_at: expectedUpdatedAt, summary, edit_reason: "user_correction" } }
+    );
+}
+
+function deleteStoredMemory(legacyId, memoryId) {
+    return apiRequest(
+        `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}`,
+        { method: "DELETE" }
+    );
+}
+
+function createLiveCallSession(legacyId, engine = "auto") {
+    return apiRequest("/live-call/session", {
+        method: "POST",
+        body: { legacy_id: Number(legacyId), engine }
+    });
+}
+
+function createRealtimeBootstrap(sessionId) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/bootstrap`, {
+        method: "POST"
+    });
+}
+
+function learnRealtimeMemoryTurn(sessionId, turnId, text) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/memory-turn`, {
+        method: "POST", body: { turn_id: turnId, text }
+    });
+}
+
+function executeRealtimeTool(sessionId, callId, name, argumentsValue) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/tool`, {
+        method: "POST",
+        body: { call_id: callId, name, arguments: argumentsValue }
+    });
+}
+
+function renderRealtimeSpeech(sessionId, responseId, generationId, userInputTurnId, text) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/speech`, {
+        method: "POST",
+        body: {
+            response_id: responseId,
+            generation_id: generationId,
+            user_input_turn_id: userInputTurnId,
+            text
+        }
+    });
+}
+
+function endLiveCallSession(sessionId) {
+    return apiRequest(
+        `/live-call/session/${encodeURIComponent(sessionId)}`,
+        { method: "DELETE" }
+    );
+}
+
+function reportLiveCallOperationalEvent(sessionId, event) {
+    return apiRequest(
+        `/live-call/session/${encodeURIComponent(sessionId)}/operational-event`,
+        { method: "POST", body: event }
+    );
+}
+
+function liveCallWebSocketUrl(sessionId) {
+    const base = new URL(API_BASE_URL, window.location?.href);
+    base.protocol = base.protocol === "https:" ? "wss:" : "ws:";
+    base.pathname = `${base.pathname.replace(/\/+$/, "")}/live-call/ws/${encodeURIComponent(sessionId)}`;
+    base.search = "";
+    base.hash = "";
+    return base.toString();
+}
+
 
 window.WaffleBerryApi = Object.freeze({
     API_BASE_URL,
@@ -597,6 +1084,36 @@ window.WaffleBerryApi = Object.freeze({
     authenticateUser,
     getFriendlyChatError,
     streamChatMessage,
+    streamStoryGuide,
+    synchronizeLegacy,
+    listOwnedLegacies,
+    listOwnedLegaciesByStatus,
+    archiveLegacy,
+    restoreLegacy,
+    deleteLegacy,
+    exportLegacy,
+    getOwnedLegacy,
+    updateLegacySettings,
+    getLegacyDashboard,
+    createStorySession,
+    listStorySessions,
+    streamPersistedStory,
+    completeStorySession,
+    getStoryExtractionRun,
+    retryStoryExtraction,
+    listStoredMemories,
+    editStoredMemory,
+    deleteStoredMemory,
+    createLiveCallSession,
+    createRealtimeBootstrap,
+    learnRealtimeMemoryTurn,
+    executeRealtimeTool,
+    renderRealtimeSpeech,
+    endLiveCallSession,
+    reportLiveCallOperationalEvent,
+    liveCallWebSocketUrl,
+    transcribeAudio,
+    getMessageSpeech,
     supportsResponseStreaming,
     clearStoredSession,
     storePendingVerificationCredentials,

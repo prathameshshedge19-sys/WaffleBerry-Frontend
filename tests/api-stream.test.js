@@ -115,6 +115,46 @@ test("parses several SSE events in one chunk", async () => {
     ]);
 });
 
+test("Story Guide reuses the shared SSE parser", async () => {
+    let requestUrl = "";
+    let requestBody = null;
+    global.fetch = async (url, options) => {
+        requestUrl = url;
+        requestBody =
+            JSON.parse(options.body);
+        return streamingResponse([
+            "event: delta\ndata: {\"text\":\"Tell me more.\"}\n\n"
+        ]);
+    };
+    const events = [];
+    const context = {
+        current_chapter: "Childhood",
+        relationship: "Father",
+        display_name: "Dad",
+        history: []
+    };
+
+    await window.WaffleBerryApi
+        .streamStoryGuide(context, {
+            onEvent(event) {
+                events.push(event);
+            }
+        });
+
+    assert.match(
+        requestUrl,
+        /\/stories\/stream$/
+    );
+    assert.deepEqual(
+        requestBody,
+        context
+    );
+    assert.equal(
+        events[0].data.text,
+        "Tell me more."
+    );
+});
+
 test("preserves JSON-encoded newlines and special characters", async () => {
     const text = "Line one\nLine \"two\" ☺";
     global.fetch = async () =>
@@ -155,6 +195,70 @@ test("parses the final SSE frame without a trailing blank line", async () => {
             }
         }
     ]);
+});
+
+function responseWithLateReadFailure(chunksBeforeFailure, error) {
+    const encoder = new TextEncoder();
+    let index = 0;
+    return {
+        ok: true,
+        status: 200,
+        body: {
+            getReader() {
+                return {
+                    async read() {
+                        if (index < chunksBeforeFailure.length) {
+                            return { value: encoder.encode(chunksBeforeFailure[index++]), done: false };
+                        }
+                        throw error;
+                    },
+                    async cancel() {},
+                    releaseLock() {}
+                };
+            }
+        }
+    };
+}
+
+test("late stream cleanup cannot revoke terminal Chat success", async () => {
+    const lateAbort = Object.assign(new Error("late cleanup"), { name: "AbortError" });
+    global.fetch = async () => responseWithLateReadFailure([
+        "event: complete\ndata: {\"message\":{\"message_id\":9}}\n\n"
+    ], lateAbort);
+    const events = [];
+    await window.WaffleBerryApi.streamChatMessage(4, "Hi", {
+        onEvent(value) { events.push(value); }
+    });
+    assert.equal(events.at(-1).event, "complete");
+    assert.equal(events.at(-1).data.message.message_id, 9);
+});
+
+test("premature stream failure remains an interruption", async () => {
+    const abort = Object.assign(new Error("cancelled"), { name: "AbortError" });
+    global.fetch = async () => responseWithLateReadFailure([
+        "event: delta\ndata: {\"text\":\"Partial\"}\n\n"
+    ], abort);
+    await assert.rejects(
+        window.WaffleBerryApi.streamChatMessage(4, "Hi"),
+        (error) => error.kind === "aborted"
+    );
+});
+
+test("intentional cancellation before terminal success remains interrupted", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const abort = Object.assign(new Error("cancelled"), { name: "AbortError" });
+    global.fetch = async () => responseWithLateReadFailure([], abort);
+    await assert.rejects(
+        window.WaffleBerryApi.streamChatMessage(4, "Hi", { signal: controller.signal }),
+        (error) => error.kind === "aborted"
+    );
+});
+
+test("Chat owns terminal success before late UI cleanup", () => {
+    const chat = fs.readFileSync(path.join(__dirname, "..", "js", "chat.js"), "utf8");
+    assert.match(chat, /eventType === "complete"[\s\S]*?streamCompleted = true;[\s\S]*?finalizeStreamingMessage/);
+    assert.match(chat, /catch \(error\)[\s\S]*?if \(streamCompleted\) \{[\s\S]*?return;/);
 });
 
 test("maps structured non-streaming AI errors to safe categories", async () => {

@@ -42,7 +42,23 @@ function applyTheme(themeName) {
         "waffleBerryTheme",
         themeName
     );
+
+    document.dispatchEvent(
+        new CustomEvent(
+            "waffleberry:themechange",
+            { detail: { theme: themeName } }
+        )
+    );
 }
+
+window.WaffleBerryTheme = Object.freeze({
+    applyTheme,
+    isDark() {
+        return document.body.classList.contains(
+            "dark-mode"
+        );
+    }
+});
 
 
 /* ==================================================

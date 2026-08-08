@@ -16,13 +16,20 @@
 
     <title>Chat | Waffle Berry</title>
 
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
 
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body class="chat-page">
 
     <main id="website" class="website-unlocked">
 
@@ -38,13 +45,19 @@
             <span class="particle particle-8">●</span>
         </div>
 
+        <nav
+            data-back-navigation
+            data-back-href="companion-home.html"
+            data-back-param="legacyId"
+        ></nav>
+
         <!-- Navigation -->
         <header class="navbar">
 
-            <a href="home.html" class="brand">
-                <span class="brand-icon">🧇</span>
+            <a href="home.html" class="brand wb-brand">
+                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
 
-                <span class="brand-text">
+                <span class="brand-text wb-brand__name">
                     Waffle Berry
                 </span>
             </a>
@@ -76,9 +89,18 @@
 
             <div class="navbar-actions">
 
+                <button
+                    class="chat-settings-button"
+                    type="button"
+                    data-open-voice-settings
+                    aria-label="Open conversation settings"
+                >
+                    Settings
+                </button>
+
                 <a
                     class="logout-button"
-                    href="login.html"
+                    href="/"
                     title="Sign out"
                 >
                     Sign out
@@ -97,6 +119,46 @@
 
         </header>
 
+        <header class="mobile-chat-topbar">
+            <button
+                id="mobileDrawerOpenButton"
+                class="mobile-topbar-button"
+                type="button"
+                aria-label="Open conversations"
+                aria-expanded="false"
+                aria-controls="conversationDrawer"
+            >
+                <span aria-hidden="true">☰</span>
+            </button>
+
+            <h1 id="mobileConversationTitle">
+                Your conversation
+            </h1>
+
+            <a
+                id="mobileLiveCallButton"
+                class="mobile-live-call-button"
+                href="live-call.html"
+                data-live-call-entry
+                aria-label="Start Live Call"
+            ><span aria-hidden="true">&#9742;</span><span>Call</span></a>
+
+            <button
+                id="mobileNewChatButton"
+                class="mobile-new-chat-button"
+                type="button"
+                aria-label="Start a new chat"
+            >
+                New
+            </button>
+        </header>
+
+        <div
+            id="conversationDrawerBackdrop"
+            class="conversation-drawer-backdrop"
+            hidden
+        ></div>
+
         <!-- Chat section -->
         <section
             id="chatSection"
@@ -105,7 +167,30 @@
 
             <div class="chat-layout">
 
-                <aside class="assistant-panel glass-panel">
+                <aside
+                    id="conversationDrawer"
+                    class="assistant-panel glass-panel conversation-drawer"
+                    aria-label="Conversation navigation"
+                >
+
+                    <div class="conversation-drawer-header">
+                        <a
+                            class="conversation-drawer-brand wb-brand wb-brand--compact"
+                            href="home.html"
+                        >
+                            <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
+                            <span class="wb-brand__name">Waffle Berry</span>
+                        </a>
+
+                        <button
+                            id="mobileDrawerCloseButton"
+                            class="conversation-drawer-close"
+                            type="button"
+                            aria-label="Close conversations"
+                        >
+                            <span aria-hidden="true">×</span>
+                        </button>
+                    </div>
 
                     <img
                         src="assets/waffle-berry-mascot.png"
@@ -144,12 +229,37 @@
                         ></div>
                     </div>
 
-                    <a
-                        class="secondary-button"
-                        href="home.html"
+                    <nav
+                        class="conversation-drawer-navigation"
+                        aria-label="WaffleBerry navigation"
                     >
-                        ← Back Home
-                    </a>
+                        <a href="home.html">Home</a>
+                        <a href="mission.html">Mission</a>
+                        <button
+                            id="mobileThemeButton"
+                            type="button"
+                        >
+                            Theme
+                        </button>
+                        <button
+                            type="button"
+                            data-open-voice-settings
+                        >
+                            Conversation settings
+                        </button>
+                        <button
+                            id="mobileDeleteChatButton"
+                            type="button"
+                        >
+                            Delete conversation
+                        </button>
+                        <a
+                            class="logout-button drawer-logout-button"
+                            href="/"
+                        >
+                            Sign out
+                        </a>
+                    </nav>
 
                 </aside>
 
@@ -173,14 +283,24 @@
                             </p>
                         </div>
 
-                        <button
-                            id="clearChatButton"
-                            class="icon-button"
-                            type="button"
-                            aria-label="Delete conversation"
-                        >
-                            🗑️
-                        </button>
+                        <div class="chat-header-actions">
+                            <a
+                                id="liveCallButton"
+                                class="live-call-entry"
+                                href="live-call.html"
+                                data-legacy-link="live-call.html"
+                                data-live-call-entry
+                                aria-label="Start a Live Call"
+                            ><span aria-hidden="true">&#9742;</span> Live Call</a>
+                            <button
+                                id="clearChatButton"
+                                class="icon-button"
+                                type="button"
+                                aria-label="Delete conversation"
+                            >
+                                🗑️
+                            </button>
+                        </div>
 
                     </header>
 
@@ -190,16 +310,170 @@
                         aria-live="polite"
                     ></div>
 
+                    <p
+                        id="messageSpeechStatus"
+                        class="message-speech-status sr-only"
+                        role="status"
+                        aria-live="polite"
+                    ></p>
+
                     <form
                         id="chatForm"
                         class="chat-input-area"
                     >
 
+                        <div
+                            id="voiceRecorderPanel"
+                            class="voice-recorder-panel"
+                            hidden
+                        >
+                            <div
+                                id="voiceRecordingActive"
+                                class="voice-recording-active"
+                                hidden
+                            >
+                                <span
+                                    class="voice-recording-pulse"
+                                    aria-hidden="true"
+                                ></span>
+
+                                <span
+                                    id="voiceRecordingStatus"
+                                    role="status"
+                                    aria-live="polite"
+                                >
+                                    Preparing microphone...
+                                </span>
+
+                                <span
+                                    class="voice-recording-bars"
+                                    aria-hidden="true"
+                                >
+                                    <i></i><i></i><i></i><i></i>
+                                </span>
+
+                                <span
+                                    id="voiceRecordingTimer"
+                                    class="voice-recording-timer"
+                                    role="timer"
+                                >
+                                    00:00 / 01:00
+                                </span>
+
+                                <div class="voice-recording-actions">
+                                    <button
+                                        id="voiceStopButton"
+                                        class="voice-stop-button"
+                                        type="button"
+                                        aria-label="Stop voice recording"
+                                    >
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <rect x="7" y="7" width="10" height="10" rx="2"/>
+                                        </svg>
+                                        <span>Stop</span>
+                                    </button>
+
+                                    <button
+                                        id="voiceCancelButton"
+                                        class="voice-cancel-button"
+                                        type="button"
+                                        aria-label="Cancel voice recording"
+                                    >
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="m7.05 5.64 4.95 4.95 4.95-4.95 1.41 1.41L13.41 12l4.95 4.95-1.41 1.41L12 13.41l-4.95 4.95-1.41-1.41L10.59 12 5.64 7.05l1.41-1.41Z"/>
+                                        </svg>
+                                        <span>Cancel</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div
+                                id="voiceRecordingPreview"
+                                class="voice-recording-preview"
+                                hidden
+                            >
+                                <audio
+                                    id="voicePreviewAudio"
+                                    controls
+                                    preload="metadata"
+                                    aria-label="Play voice message preview"
+                                ></audio>
+
+                                <div class="voice-preview-details">
+                                    <span id="voicePreviewDuration">
+                                        Recording ready · 00:00
+                                    </span>
+
+                                    <button
+                                        id="voiceTranscribeButton"
+                                        type="button"
+                                        aria-label="Transcribe voice recording"
+                                    >
+                                        Transcribe
+                                    </button>
+
+                                    <button
+                                        id="voiceDeleteButton"
+                                        type="button"
+                                        aria-label="Delete voice recording"
+                                    >
+                                        Delete recording
+                                    </button>
+                                </div>
+
+                                <p class="voice-recording-privacy">
+                                    Audio stays on this device during this recording step and is not uploaded yet.
+                                </p>
+
+                                <p
+                                    id="voiceTranscriptionStatus"
+                                    class="voice-transcription-status"
+                                    role="status"
+                                    aria-live="polite"
+                                ></p>
+                            </div>
+
+                            <p
+                                id="voiceRecordingError"
+                                class="voice-recording-error"
+                                role="alert"
+                                hidden
+                            ></p>
+                        </div>
+
+                        <span
+                            id="voiceLiveStatus"
+                            class="sr-only"
+                            role="status"
+                            aria-live="polite"
+                        ></span>
+
                         <button
+                            id="moreOptionsButton"
                             class="input-icon-button"
                             type="button"
+                            aria-label="More options coming soon"
+                            title="More options coming soon"
+                            disabled
                         >
                             ＋
+                        </button>
+
+                        <button
+                            id="voiceRecordButton"
+                            class="voice-record-button"
+                            type="button"
+                            aria-label="Start voice recording"
+                            aria-pressed="false"
+                            title="Start voice recording"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                focusable="false"
+                            >
+                                <path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Zm-5.5-4a1 1 0 0 1 2 0V12a3.5 3.5 0 0 0 7 0v-.5a1 1 0 1 1 2 0V12a5.5 5.5 0 0 1-4.5 5.41V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.59A5.5 5.5 0 0 1 6.5 12v-.5Z"/>
+                            </svg>
                         </button>
 
                         <textarea
@@ -231,11 +505,167 @@
         </section>
 
     </main>
+
+    <section id="liveCallOverlay" class="live-call-overlay" aria-labelledby="liveCallTitle" hidden>
+        <div class="live-call-shell">
+            <header class="live-call-brand">
+                <span class="brand wb-brand">
+                    <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
+                    <span class="brand-text wb-brand__name">Waffle Berry</span>
+                </span>
+            </header>
+            <div class="live-call-card">
+                <p class="live-call-eyebrow">Live Call</p>
+                <div class="live-call-ambient" aria-hidden="true">
+                    <span class="live-call-orbit live-call-orbit-one"></span>
+                    <span class="live-call-orbit live-call-orbit-two"></span>
+                    <span class="live-call-voice-bars"><i></i><i></i><i></i><i></i><i></i></span>
+                    <div class="live-call-avatar"><img src="assets/waffle-berry-mascot.png" alt="" width="132" height="132"></div>
+                </div>
+                <h1 id="liveCallTitle" data-companion-name>Berry</h1>
+                <p id="liveCallRelationship" class="live-call-relationship">Your Companion</p>
+                <p id="liveCallTimer" class="live-call-timer" role="timer" aria-label="Call duration">00:00</p>
+                <div class="live-call-state-line"><p id="liveCallStatus" class="live-call-status" role="status" aria-live="polite" aria-atomic="true">Connecting&hellip;</p></div>
+                <p id="liveCallMicrophoneStatus" class="live-call-microphone-status sr-only" aria-live="polite">Preparing microphone&hellip;</p>
+                <audio id="liveCallOutput" autoplay playsinline aria-label="Live Call audio"></audio>
+                <audio id="liveCallRealtimeOutput" autoplay playsinline aria-label="Live Call realtime audio"></audio>
+                <details id="liveCallDebugPanel" class="live-call-debug" hidden>
+                    <summary>Realtime diagnostics</summary>
+                    <pre id="liveCallDebugValues" aria-live="polite"></pre>
+                </details>
+                <div id="liveCallControls" class="live-call-controls">
+                    <button id="liveCallMuteButton" class="live-call-control" type="button" aria-label="Mute microphone" aria-pressed="false" disabled><span class="live-call-control-icon" aria-hidden="true">&#128263;</span><span>Mute</span></button>
+                    <button id="liveCallSpeakerButton" class="live-call-control" type="button" aria-label="Turn speaker off" aria-pressed="true" disabled><span class="live-call-control-icon" aria-hidden="true">&#128266;</span><span>Speaker on</span></button>
+                    <button id="liveCallEndButton" class="live-call-control live-call-end" type="button" aria-label="End call"><span class="live-call-control-icon" aria-hidden="true">&#9742;</span><span>End call</span></button>
+                </div>
+                <div id="liveCallEnded" class="live-call-ended" role="status" aria-live="assertive" hidden>
+                    <strong id="liveCallEndedTitle">Call ended</strong>
+                    <p>Your conversation remains private and was not recorded.</p>
+                    <button id="liveCallReturnToChat" class="primary-button" type="button">Return to chat</button>
+                </div>
+            </div>
+        </div>
+    </section>
+    <dialog
+        id="voiceSettingsDialog"
+        class="voice-settings-dialog"
+        aria-modal="true"
+        aria-labelledby="voiceSettingsTitle"
+        aria-describedby="voiceSettingsDescription"
+    >
+        <form id="voiceSettingsForm" class="voice-settings-card">
+            <button
+                id="voiceSettingsClose"
+                class="voice-settings-close"
+                type="button"
+                aria-label="Close voice settings"
+            >&times;</button>
+
+            <p class="voice-settings-eyebrow">Conversation</p>
+            <h2 id="voiceSettingsTitle">Conversation settings</h2>
+            <p id="voiceSettingsDescription">
+                These preferences apply to Chat and future Live Calls.
+            </p>
+
+            <div
+                id="voiceSettingsOptions"
+                class="voice-settings-options"
+                aria-busy="true"
+            >
+                <p class="voice-settings-loading">Loading voice choices&hellip;</p>
+            </div>
+
+            <fieldset class="conversation-preference-group">
+                <legend>Style</legend>
+                <label><input type="radio" name="conversationStyle" value="natural" checked> Natural</label>
+                <label><input type="radio" name="conversationStyle" value="gentle"> Gentle</label>
+                <label><input type="radio" name="conversationStyle" value="expressive"> Expressive</label>
+            </fieldset>
+            <fieldset class="conversation-preference-group">
+                <legend>Response length</legend>
+                <label><input type="radio" name="responseLength" value="short"> Short</label>
+                <label><input type="radio" name="responseLength" value="balanced" checked> Balanced</label>
+                <label><input type="radio" name="responseLength" value="detailed"> Detailed</label>
+            </fieldset>
+
+            <p
+                id="voiceSettingsStatus"
+                class="voice-settings-status"
+                role="status"
+                aria-live="polite"
+            ></p>
+
+            <div class="voice-settings-actions">
+                <button
+                    id="voiceSettingsCancel"
+                    class="secondary-button"
+                    type="button"
+                >Cancel</button>
+                <button
+                    id="voiceSettingsSave"
+                    class="primary-button"
+                    type="submit"
+                    disabled
+                >Save settings</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog
+        id="nightModeDiscoveryDialog"
+        class="night-mode-discovery-dialog"
+        aria-modal="true"
+        aria-labelledby="nightModeDiscoveryTitle"
+        aria-describedby="nightModeDiscoveryDescription"
+    >
+        <div class="night-mode-discovery-card">
+            <button
+                id="nightModeDiscoveryClose"
+                class="night-mode-discovery-close"
+                type="button"
+                aria-label="Close Night Mode discovery"
+            >
+                <span aria-hidden="true">&times;</span>
+            </button>
+
+            <div class="night-mode-discovery-icon" aria-hidden="true">&#9790;</div>
+            <p class="night-mode-discovery-eyebrow">A quieter way to connect</p>
+            <h2 id="nightModeDiscoveryTitle">Conversations feel different after dark</h2>
+            <p id="nightModeDiscoveryDescription">
+                Switch to Night Mode for a calmer, softer space designed for late-night memories and meaningful conversations.
+            </p>
+
+            <label class="night-mode-discovery-preference">
+                <input id="nightModeDiscoveryDismissed" type="checkbox">
+                <span>Don&rsquo;t show this again</span>
+            </label>
+
+            <div class="night-mode-discovery-actions">
+                <button
+                    id="nightModeDiscoveryLater"
+                    class="secondary-button"
+                    type="button"
+                >Maybe later</button>
+                <button
+                    id="nightModeDiscoveryEnter"
+                    class="primary-button"
+                    type="button"
+                >Enter Night Mode</button>
+            </div>
+        </div>
+    </dialog>
+
     <script src="js/theme.js"></script>
+    <script src="js/night-mode-discovery.js"></script>
+    <script src="js/voice-settings.js"></script>
+    <script src="js/back-navigation.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.3.3/dist/purify.min.js"></script>
     <script src="js/legacy-state.js"></script>
+    <script src="js/legacy-context-ui.js"></script>
     <script src="js/companion-identity.js"></script>
+    <script src="js/live-call-realtime.js"></script>
+    <script src="js/live-call.js"></script>
     <script src="js/chat.js"></script>
 </body>
 

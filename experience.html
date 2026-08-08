@@ -16,13 +16,14 @@
 
     <title>Choose Your Experience | Waffle Berry</title>
 
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
 
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body data-night-mode-discovery-auto>
 
     <main
         id="website"
@@ -44,12 +45,12 @@
 
             <a
                 href="experience.html"
-                class="brand"
+                class="brand wb-brand"
                 aria-label="Waffle Berry experiences"
             >
-                <span class="brand-icon">🧇</span>
+                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
 
-                <span class="brand-text">
+                <span class="brand-text wb-brand__name">
                     Waffle Berry
                 </span>
             </a>
@@ -164,7 +165,52 @@
 
     </main>
 
+    <dialog
+        id="nightModeDiscoveryDialog"
+        class="night-mode-discovery-dialog"
+        aria-modal="true"
+        aria-labelledby="nightModeDiscoveryTitle"
+        aria-describedby="nightModeDiscoveryDescription"
+    >
+        <div class="night-mode-discovery-card">
+            <button
+                id="nightModeDiscoveryClose"
+                class="night-mode-discovery-close"
+                type="button"
+                aria-label="Close Night Mode discovery"
+            >
+                <span aria-hidden="true">&times;</span>
+            </button>
+
+            <div class="night-mode-discovery-icon" aria-hidden="true">&#9790;</div>
+            <p class="night-mode-discovery-eyebrow">A quieter way to connect</p>
+            <h2 id="nightModeDiscoveryTitle">Conversations feel different after dark</h2>
+            <p id="nightModeDiscoveryDescription">
+                Switch to Night Mode for a calmer, softer space designed for late-night memories and meaningful conversations.
+            </p>
+
+            <label class="night-mode-discovery-preference">
+                <input id="nightModeDiscoveryDismissed" type="checkbox">
+                <span>Don&rsquo;t show this again</span>
+            </label>
+
+            <div class="night-mode-discovery-actions">
+                <button
+                    id="nightModeDiscoveryLater"
+                    class="secondary-button"
+                    type="button"
+                >Maybe later</button>
+                <button
+                    id="nightModeDiscoveryEnter"
+                    class="primary-button"
+                    type="button"
+                >Enter Night Mode</button>
+            </div>
+        </div>
+    </dialog>
+
     <script src="js/theme.js"></script>
+    <script src="js/night-mode-discovery.js"></script>
 
 </body>
 

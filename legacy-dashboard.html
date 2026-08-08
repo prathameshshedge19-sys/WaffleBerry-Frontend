@@ -16,6 +16,7 @@
 
     <title>Your Legacies | Waffle Berry</title>
 
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
 
@@ -40,14 +41,19 @@
             <span class="particle particle-8">●</span>
         </div>
 
+        <nav
+            data-back-navigation
+            data-back-href="experience.html"
+        ></nav>
+
         <header class="navbar">
             <a
                 href="experience.html"
-                class="brand"
+                class="brand wb-brand"
                 aria-label="Waffle Berry experiences"
             >
-                <span class="brand-icon">🧇</span>
-                <span class="brand-text">Waffle Berry</span>
+                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
+                <span class="brand-text wb-brand__name">Waffle Berry</span>
             </a>
 
             <div class="navbar-actions">
@@ -97,7 +103,7 @@
                         href="begin-legacy.html"
                         data-begin-legacy
                     >
-                        <span>Begin a Legacy</span>
+                        <span>Begin New Legacy</span>
                         <span class="button-arrow">→</span>
                     </a>
                 </header>
@@ -115,7 +121,7 @@
                     </span>
 
                     <span class="legacy-begin-copy">
-                        <strong>Begin a Legacy</strong>
+                        <strong>Begin New Legacy</strong>
                         <span>
                             Preserve the stories, memories, and personality
                             of someone important to you.
@@ -131,6 +137,7 @@
                 </a>
 
                 <section
+                    id="legacyCollectionPanel"
                     class="legacy-collection"
                     aria-labelledby="legacyCollectionTitle"
                 >
@@ -143,6 +150,58 @@
                             id="legacyCount"
                             class="legacy-count"
                         ></span>
+                    </div>
+
+                    <div
+                        class="legacy-management-tabs"
+                        role="tablist"
+                        aria-label="Legacy status"
+                    >
+                        <button
+                            class="legacy-management-tab"
+                            type="button"
+                            role="tab"
+                            aria-controls="legacyCollectionPanel"
+                            aria-selected="true"
+                            data-legacy-status-tab="active"
+                        >Active</button>
+                        <button
+                            class="legacy-management-tab"
+                            type="button"
+                            role="tab"
+                            aria-controls="legacyCollectionPanel"
+                            aria-selected="false"
+                            tabindex="-1"
+                            data-legacy-status-tab="archived"
+                        >Archived</button>
+                    </div>
+
+                    <p
+                        id="legacyManagementFeedback"
+                        class="legacy-management-feedback"
+                        role="status"
+                        aria-live="polite"
+                    ></p>
+
+                    <div
+                        id="legacyManagementLoading"
+                        class="glass-card legacy-management-state"
+                        role="status"
+                        aria-live="polite"
+                    >Loading Legacies…</div>
+
+                    <div
+                        id="legacyManagementError"
+                        class="glass-card legacy-management-state"
+                        role="alert"
+                        hidden
+                    >
+                        <p id="legacyManagementErrorMessage"></p>
+                        <button
+                            id="legacyManagementRetry"
+                            class="secondary-button"
+                            type="button"
+                        >Try again</button>
                     </div>
 
                     <div
@@ -162,11 +221,11 @@
                             ♡
                         </span>
 
-                        <h3>
+                        <h3 id="legacyEmptyTitle">
                             You haven’t begun a legacy yet.
                         </h3>
 
-                        <p>
+                        <p id="legacyEmptyMessage">
                             Begin your first legacy and preserve the stories
                             that matter most.
                         </p>
@@ -185,63 +244,12 @@
             </div>
         </section>
 
-        <dialog
-            id="deleteLegacyDialog"
-            class="legacy-delete-dialog"
-            aria-labelledby="deleteLegacyTitle"
-            aria-describedby="deleteLegacyMessage deleteLegacyConsequences"
-        >
-            <form
-                class="glass-card legacy-delete-dialog-card"
-                method="dialog"
-            >
-                <span
-                    class="legacy-delete-dialog-icon"
-                    aria-hidden="true"
-                >
-                    !
-                </span>
-
-                <h2 id="deleteLegacyTitle">
-                    Delete Legacy?
-                </h2>
-
-                <p id="deleteLegacyMessage"></p>
-
-                <p id="deleteLegacyConsequences">
-                    Everything preserved for this companion will be
-                    permanently removed.
-                </p>
-
-                <p class="legacy-delete-warning">
-                    This action cannot be undone.
-                </p>
-
-                <div class="legacy-delete-dialog-actions">
-                    <button
-                        id="cancelLegacyDelete"
-                        class="secondary-button"
-                        type="submit"
-                        value="cancel"
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        id="confirmLegacyDelete"
-                        class="legacy-destructive-button"
-                        type="button"
-                    >
-                        Delete Legacy
-                    </button>
-                </div>
-            </form>
-        </dialog>
-
     </main>
 
     <script src="js/theme.js"></script>
+    <script src="js/back-navigation.js"></script>
     <script src="js/legacy-state.js"></script>
+    <script src="js/legacy-delete-dialog.js"></script>
     <script src="js/legacy-dashboard.js"></script>
 
 </body>

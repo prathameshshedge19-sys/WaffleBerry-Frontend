@@ -16,6 +16,7 @@
 
     <title>Begin a Legacy | Waffle Berry</title>
 
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
 
@@ -40,15 +41,20 @@
             <span class="particle particle-8">●</span>
         </div>
 
+        <nav
+            data-back-navigation
+            data-back-href="legacy-dashboard.html"
+        ></nav>
+
         <header class="navbar">
 
             <a
                 href="experience.html"
-                class="brand"
+                class="brand wb-brand"
                 aria-label="Back to Waffle Berry experiences"
             >
-                <span class="brand-icon">🧇</span>
-                <span class="brand-text">Waffle Berry</span>
+                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
+                <span class="brand-text wb-brand__name">Waffle Berry</span>
             </a>
 
             <div class="navbar-actions">
@@ -231,6 +237,13 @@
                         </p>
                     </section>
 
+                    <p
+                        id="beginLegacyFeedback"
+                        class="legacy-management-feedback"
+                        role="status"
+                        aria-live="polite"
+                    ></p>
+
                     <button
                         id="legacyContinueButton"
                         class="primary-button legacy-continue"
@@ -250,6 +263,7 @@
     </main>
 
     <script src="js/theme.js"></script>
+    <script src="js/back-navigation.js"></script>
     <script src="js/legacy-state.js"></script>
     <script src="js/begin-legacy.js"></script>
 

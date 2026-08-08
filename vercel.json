@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "waffle-berry-frontend.vercel.app"
+        }
+      ],
+      "destination": "https://www.waffleberry.app/$1",
+      "permanent": true
+    }
+  ]
+}

@@ -11,10 +11,18 @@
 
     <meta
         name="description"
-        content="Sign in to Waffle Berry."
+        content="Sign in to WaffleBerry."
     >
 
-    <title>Sign In | Waffle Berry</title>
+    <meta name="robots" content="noindex, follow">
+
+    <title>Sign In | WaffleBerry</title>
+
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
 
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -58,12 +66,20 @@
         <!-- Login card -->
         <div class="auth-card">
 
-            <div class="auth-brand">
-                <span class="auth-brand-icon">🧇</span>
+            <a
+                class="auth-home-link"
+                href="/"
+            >
+                <span aria-hidden="true">←</span>
+                Back to Home
+            </a>
+
+            <div class="auth-brand wb-brand wb-brand--static">
+                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
 
                 <div>
-                    <h1>Waffle Berry</h1>
-                    <p>We make people live forever.</p>
+                    <h1 class="wb-brand__name">Waffle Berry</h1>
+                    <p>No one is truly gone while their story can still be told.</p>
                 </div>
             </div>
 
@@ -273,6 +289,8 @@
 
     </section>
     <script src="js/api.js?v=otp-auth-2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/login.js"></script>
 </body>
 

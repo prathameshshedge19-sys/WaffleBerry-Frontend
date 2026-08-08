@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <meta
+        name="description"
+        content="Build and preserve a meaningful Waffle Berry legacy."
+    >
+    <title>Legacy Studio | Waffle Berry</title>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <main
+        id="website"
+        class="website-unlocked legacy-studio-page"
+    >
+        <div class="particles" aria-hidden="true">
+            <span class="particle particle-1">✦</span>
+            <span class="particle particle-2">●</span>
+            <span class="particle particle-3">♥</span>
+            <span class="particle particle-4">✦</span>
+            <span class="particle particle-5">●</span>
+            <span class="particle particle-6">♥</span>
+        </div>
+
+        <nav
+            data-back-navigation
+            data-back-href="companion-home.html"
+            data-back-param="legacyId"
+        ></nav>
+
+        <header class="navbar">
+            <a
+                href="experience.html"
+                class="brand wb-brand"
+                aria-label="Waffle Berry experiences"
+            >
+                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
+                <span class="brand-text wb-brand__name">Waffle Berry</span>
+            </a>
+
+            <div class="navbar-actions">
+                <a class="logout-button" href="login.html">Sign out</a>
+                <button
+                    id="themeToggle"
+                    class="theme-toggle"
+                    type="button"
+                    aria-label="Switch to dark mode"
+                >
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <section
+            class="legacy-studio-section"
+            aria-labelledby="legacyStudioTitle"
+        >
+            <div class="legacy-studio-shell">
+                <header class="legacy-studio-header">
+                    <p class="eyebrow">Legacy Studio</p>
+                    <h1 id="legacyStudioTitle"></h1>
+                    <p>
+                        Preserve memories, voice, personality and everything
+                        that makes this person unique.
+                    </p>
+                </header>
+
+                <div class="legacy-studio-grid">
+                    <a
+                        id="studioStoryAction"
+                        class="glass-card legacy-studio-card"
+                        href="guided-stories.html"
+                    >
+                        <span class="legacy-studio-icon" aria-hidden="true">📖</span>
+                        <span class="legacy-studio-card-copy">
+                            <strong>Continue Story</strong>
+                            <span>
+                                Continue preserving life stories through
+                                Guided Stories.
+                            </span>
+                        </span>
+                        <span class="legacy-studio-arrow" aria-hidden="true">→</span>
+                    </a>
+
+                    <a
+                        id="studioVoiceAction"
+                        class="glass-card legacy-studio-card"
+                        href="voice-presence.html"
+                    >
+                        <span class="legacy-studio-icon" aria-hidden="true">🎙️</span>
+                        <span class="legacy-studio-badge">Coming Soon</span>
+                        <span class="legacy-studio-card-copy">
+                            <strong>Voice &amp; Presence</strong>
+                            <span>
+                                Preserve voice, accent, speaking style and
+                                personal expressions.
+                            </span>
+                        </span>
+                        <span class="legacy-studio-arrow" aria-hidden="true">→</span>
+                    </a>
+
+                    <button
+                        class="glass-card legacy-studio-card legacy-studio-card-coming"
+                        type="button"
+                        data-studio-coming-soon
+                    >
+                        <span class="legacy-studio-icon" aria-hidden="true">📷</span>
+                        <span class="legacy-studio-badge">Coming Soon</span>
+                        <span class="legacy-studio-card-copy">
+                            <strong>Photos &amp; Albums</strong>
+                            <span>
+                                Preserve memories through family photographs.
+                            </span>
+                        </span>
+                    </button>
+
+                    <button
+                        class="glass-card legacy-studio-card legacy-studio-card-coming"
+                        type="button"
+                        data-studio-coming-soon
+                    >
+                        <span class="legacy-studio-icon" aria-hidden="true">🎞️</span>
+                        <span class="legacy-studio-badge">Coming Soon</span>
+                        <span class="legacy-studio-card-copy">
+                            <strong>Videos</strong>
+                            <span>
+                                Capture stories and moments from videos.
+                            </span>
+                        </span>
+                    </button>
+
+                    <button
+                        class="glass-card legacy-studio-card legacy-studio-card-coming"
+                        type="button"
+                        data-studio-coming-soon
+                    >
+                        <span class="legacy-studio-icon" aria-hidden="true">✉️</span>
+                        <span class="legacy-studio-badge">Coming Soon</span>
+                        <span class="legacy-studio-card-copy">
+                            <strong>Letters &amp; Documents</strong>
+                            <span>
+                                Import recipes, letters, journals and important
+                                documents.
+                            </span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <dialog
+            id="legacyStudioDialog"
+            class="companion-placeholder-dialog"
+            aria-labelledby="legacyStudioDialogTitle"
+        >
+            <form
+                class="glass-card companion-placeholder-card"
+                method="dialog"
+            >
+                <span class="companion-placeholder-icon" aria-hidden="true">✦</span>
+                <h2 id="legacyStudioDialogTitle">
+                    This feature will arrive in a future WaffleBerry phase.
+                </h2>
+                <button class="secondary-button" type="submit">
+                    Back
+                </button>
+            </form>
+        </dialog>
+    </main>
+
+    <script src="js/theme.js"></script>
+    <script src="js/back-navigation.js"></script>
+    <script src="js/legacy-state.js"></script>
+    <script src="js/legacy-studio.js"></script>
+</body>
+
+</html>

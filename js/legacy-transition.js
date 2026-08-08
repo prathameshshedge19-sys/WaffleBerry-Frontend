@@ -71,19 +71,28 @@ function createProgressItems() {
 }
 
 
-function chatDestination(selectedLegacy) {
+function companionHomeDestination(
+    selectedLegacy
+) {
     const parameters =
         new URLSearchParams({
             legacyId:
                 selectedLegacy.id
         });
 
-    return `chat.html?${parameters}`;
+    return `companion-home.html?${parameters}`;
 }
 
 
 if (!legacy) {
     returnToDashboard();
+    return;
+}
+
+if (legacy.status === "archived") {
+    window.location.replace(
+        `legacy-details.html?id=${encodeURIComponent(legacy.id)}`
+    );
     return;
 }
 
@@ -113,7 +122,9 @@ progressItems.forEach(
 window.setTimeout(
     () => {
         window.location.replace(
-            chatDestination(legacy)
+            companionHomeDestination(
+                legacy
+            )
         );
     },
     NAVIGATION_DELAY_MS

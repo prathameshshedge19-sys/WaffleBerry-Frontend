@@ -16,6 +16,13 @@
 
     <title>Mission | Waffle Berry</title>
 
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
 
@@ -41,10 +48,10 @@
         <!-- Navigation -->
         <header class="navbar">
 
-            <a href="home.html" class="brand">
-                <span class="brand-icon">🧇</span>
+            <a href="home.html" class="brand wb-brand">
+                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
 
-                <span class="brand-text">
+                <span class="brand-text wb-brand__name">
                     Waffle Berry
                 </span>
             </a>
@@ -78,7 +85,7 @@
 
                 <a
                     class="logout-button"
-                    href="login.html"
+                    href="/"
                     title="Sign out"
                 >
                     Sign out
@@ -110,20 +117,17 @@
                 </p>
 
                 <h1>
-                    We make people live forever.
+                    No one is truly gone while their story can still be told.
                 </h1>
 
                 <p>
-                    Waffle Berry preserves the stories, personalities,
-                    memories and conversations that make every person
-                    unique.
+                    WaffleBerry preserves the stories, memories, personality
+                    and experiences that make every person unique.
                 </p>
 
                 <p>
-                    Our vision is not literal immortality. It is the
-                    preservation of human experiences so future generations
-                    can remain emotionally connected to the people who
-                    shaped their lives.
+                    By preserving those stories, future generations can stay
+                    connected to the people who shaped their lives.
                 </p>
 
                 <a
@@ -131,7 +135,7 @@
                     class="primary-button"
                     href="chat.html"
                 >
-                    <span>Talk to Berry</span>
+                    <span data-legacy-cta data-generic-label="Talk to Berry">Talk to Berry</span>
                     <span class="button-arrow">→</span>
                 </a>
 
@@ -141,6 +145,9 @@
 
     </main>
     <script src="js/theme.js"></script>
+    <script src="js/legacy-state.js"></script>
+    <script src="js/legacy-context-ui.js"></script>
+    <script src="js/mission.js"></script>
 </body>
 
 </html>

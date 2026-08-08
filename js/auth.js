@@ -16,6 +16,11 @@ function redirectToLogin() {
 }
 
 
+function redirectToLandingPage() {
+    window.location.replace("/");
+}
+
+
 function clearInvalidSession() {
     clearStoredSession();
     redirectToLogin();
@@ -85,8 +90,33 @@ window.currentUserPromise =
 
 
 function logout() {
+    document.dispatchEvent(
+        new CustomEvent(
+            "waffleberry:signout"
+        )
+    );
+    sessionStorage.removeItem(
+        "waffleberryNightModeDiscoveryShownSession"
+    );
     clearStoredSession();
-    redirectToLogin();
+
+    const toast =
+        document.createElement("div");
+    toast.className =
+        "logout-success-toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute(
+        "aria-live",
+        "polite"
+    );
+    toast.textContent =
+        "Signed out successfully.";
+    document.body.appendChild(toast);
+
+    window.setTimeout(
+        redirectToLandingPage,
+        1000
+    );
 }
 
 

@@ -54,22 +54,19 @@ http://127.0.0.1:8000/api/v1
 
 ## Configure the backend API URL
 
-All API requests use the single configuration point in `js/api.js`.
-Development falls back to `http://127.0.0.1:8000/api/v1`.
+All API requests use the public runtime setting in `js/config.js`.
+Localhost development defaults to `http://127.0.0.1:8000/api/v1`.
 
-For deployment, define `window.WAFFLEBERRY_API_BASE_URL` before `js/api.js`
-loads. For example, a hosting environment can inject:
+For deployment, set `window.WAFFLEBERRY_API_BASE_URL` in `js/config.js`:
 
-```html
-<script>
-    window.WAFFLEBERRY_API_BASE_URL =
-        "https://api.example.com/api/v1";
-</script>
-<script src="js/api.js"></script>
+```javascript
+window.WAFFLEBERRY_API_BASE_URL =
+    "https://api.example.com/api/v1";
 ```
 
 The value should include `/api/v1`. A trailing slash is accepted and removed
-automatically. Never place API secrets in frontend JavaScript; the browser
+automatically. Production pages fail clearly if this public URL is omitted,
+rather than silently contacting localhost. Never place API secrets in frontend JavaScript; the browser
 stores only the authenticated user's bearer token and basic session data.
 
 ## Project structure
@@ -77,7 +74,8 @@ stores only the authenticated user's bearer token and basic session data.
 ```text
 assets/          Images and other static assets
 css/style.css    Shared application styling
-js/api.js        API configuration, requests, errors, and session storage
+js/config.js     Public backend URL configuration
+js/api.js        API requests, errors, and session storage
 js/auth.js       Protected-page guard and logout
 js/login.js      Registration and login
 js/home.js       Homepage greeting and animation
