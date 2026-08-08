@@ -16,6 +16,11 @@ const VAD_SPEECH_THRESHOLD = 0.035;
 const RINGBACK_GAIN = 0.025;
 const MINIMUM_CONNECTING_MS = 2700;
 const RINGBACK_FADE_OUT_MS = 150;
+const FIRST_AUDIO_PLAYBACK_TIMEOUT_MS = 2500;
+const OUTPUT_ENERGY_SAMPLE_MS = 25;
+const OUTPUT_ENERGY_CONFIRM_MS = 75;
+const OUTPUT_ENERGY_THRESHOLD = 0.003;
+const DECODED_SILENCE_THRESHOLD = 0.0005;
 const VAD_BARGE_IN_THRESHOLD = 0.09;
 const VAD_SPEECH_START_MS = 150;
 const VAD_BARGE_IN_START_MS = 250;
@@ -61,6 +66,9 @@ class LiveCallController {
         this.pcmPlaybackTurn = null;
         this.pcmPlaybackReported = false;
         this.pcmPlaybackChain = Promise.resolve();
+        this.firstAudioWatchdog = null;
+        this.playbackConfirmedTurnId = null;
+        this.outputRepairAttemptedTurnId = null;
         this.pendingVadSilenceMs = null;
         this.lastVoiceDetectedAt = null;
         this.turnTimings = new Map();
@@ -83,6 +91,12 @@ class LiveCallController {
         this.audioContext = null;
         this.outputDestination = null;
         this.outputGain = null;
+        this.outputAnalyser = null;
+        this.outputContext = null;
+        this.outputEnergyTimer = null;
+        this.outputEnergyCandidateAt = null;
+        this.outputEnergyRms = 0;
+        this.pendingPlaybackConfirmation = null;
         this.decodedSources = new Set();
         this.decodedPlaybackActive = false;
         this.audioResumePromise = null;
@@ -111,8 +125,53 @@ class LiveCallController {
         this.startupTransitioning = false;
         this.ringbackFadeTimer = null;
         this.ringbackFadeResolver = null;
+        this.ringbackStartCount = 0;
+        this.ringbackStopCount = 0;
+        this.ringbackCreatedCount = 0;
+        this.ringbackRestartCount = 0;
+        this.debugLiveCall = new URLSearchParams(window.location.search).get("debugLiveCall") === "1";
         this.navigate = options.navigate || ((url) => window.location.assign(url));
         this.onEnded = options.onEnded || null;
+        this.realtimeController = null;
+        this.realtimeRecoveryPromise = null;
+        this.realtimeReconnectCount = 0;
+        this.realtimeRecoveryGeneration = 0;
+        this.frontendStartupStage = "not_started";
+        this.frontendFailureCategory = "none";
+        this.frontendMessageCode = "none";
+    }
+
+    recordFrontendStartup(stage, failureCategory = "none", error = null, messageCode = "none") {
+        this.frontendStartupStage = stage;
+        this.frontendFailureCategory = failureCategory;
+        this.frontendMessageCode = messageCode;
+        if (!this.debugLiveCall) return;
+        console.debug("REALTIME_FRONTEND_STARTUP", {
+            stage,
+            failure_category: failureCategory,
+            exception_name: error?.name || "na",
+            message_code: messageCode
+        });
+        this.renderDebugPanel();
+    }
+
+    validateRealtimeSession(session) {
+        const validEngine = session?.engine === "realtime" || session?.engine === "cascade";
+        const validTransport = session?.transport === "webrtc" || session?.transport === "websocket";
+        const validRealtime = session?.engine !== "realtime" || (
+            session.transport === "webrtc"
+            && session.realtime_capable === true
+            && ["realtime_native", "external_streaming_tts", "external_nonstreaming_tts"].includes(session.speech_renderer)
+            && typeof session.realtime_strict === "boolean"
+            && session.engine_reason === "none"
+            && Boolean(session.session_id)
+        );
+        if (!validEngine || !validTransport || !validRealtime) {
+            const error = new TypeError("Invalid Live Call session response.");
+            error.frontendCategory = "invalid_session_response";
+            error.messageCode = "session_contract_invalid";
+            throw error;
+        }
     }
 
     readElements() {
@@ -127,13 +186,68 @@ class LiveCallController {
             ended: document.getElementById("liveCallEnded"),
             relationship: document.getElementById("liveCallRelationship"),
             endedTitle: document.getElementById("liveCallEndedTitle"),
-            outputAudio: document.getElementById("liveCallOutput")
+            outputAudio: document.getElementById("liveCallOutput"),
+            realtimeOutput: document.getElementById("liveCallRealtimeOutput"),
+            debugPanel: document.getElementById("liveCallDebugPanel"),
+            debugValues: document.getElementById("liveCallDebugValues")
         };
     }
 
+    renderDebugPanel() {
+        if (!this.debugLiveCall || !this.elements.debugPanel || !this.elements.debugValues) return;
+        this.elements.debugPanel.hidden = false;
+        if (this.session?.engine === "realtime") {
+            this.elements.debugValues.textContent = `ENGINE: ${this.session.engine.toUpperCase()}\n`
+                + `RENDERER: ${this.session.speech_renderer === "realtime_native" ? "NATIVE" : "EXTERNAL"}\n`
+                + `VOICE: ${String(this.session.effective_voice || "unknown").toUpperCase()}\n`
+                + `STRICT: ${String(this.session.realtime_strict === true)}\n`
+                + `STARTUP STAGE: ${this.frontendStartupStage}\n`
+                + `LAST FAILURE: ${this.frontendFailureCategory}\n`
+                + `FALLBACK REASON: ${this.session.fallback_reason || this.session.engine_reason || "none"}\n`
+                + `FAILED STAGE: ${this.realtimeController?.startupStage || "none"}\n`
+                + `REASON: ${this.realtimeController?.startupFailureCategory || this.frontendFailureCategory}\n`
+                + `STATUS: ${this.realtimeController?.startupStatusCode ?? "na"}\n`
+                + `LAST TOOL: ${this.realtimeController?.memoryDiagnostics?.last_tool || "none"}\n`
+                + `TOOL STATUS: ${this.realtimeController?.memoryDiagnostics?.status || "unsupported"}\n`
+                + `MEMORIES USED: ${this.realtimeController?.memoryDiagnostics?.memories_used || 0}\n`
+                + `IDENTITIES USED: ${this.realtimeController?.memoryDiagnostics?.identities_used || 0}\n`
+                + `TOOL LATENCY: ${this.realtimeController?.memoryDiagnostics?.tool_latency_ms ?? "na"} ms\n`
+                + `FOLLOW-UP CONTEXT: ${this.realtimeController?.memoryDiagnostics?.followup_context || "none"}\n`
+                + JSON.stringify(this.realtimeController?.diagnostics?.() || {}, null, 2);
+            return;
+        }
+        const track = this.outputDestination?.stream?.getAudioTracks?.()[0];
+        const output = this.elements.outputAudio;
+        const lastFailure = [...this.audioDiagnostics].reverse()
+            .find((entry) => entry.field === "last_failure_stage")?.value || "none";
+        this.elements.debugValues.textContent = `ENGINE: ${(this.session?.engine || "pending").toUpperCase()}\n`
+            + `FALLBACK REASON: ${this.session?.fallback_reason || this.session?.engine_reason || "none"}\n`
+            + JSON.stringify({
+            effective_voice: this.session?.effective_voice || "pending",
+            base_delivery_profile: this.session?.base_delivery_profile || "identity_neutral_v1",
+            audio_context_state: this.audioContext?.state || "missing",
+            destination_track_state: track?.readyState || "missing",
+            output_element_playing: output?.paused === false,
+            speaker_enabled: this.speakerEnabled,
+            output_gain: this.outputGain?.gain?.value ?? null,
+            measured_rms: Number(this.outputEnergyRms.toFixed(6)),
+            ringback: {
+                created_count: this.ringbackCreatedCount,
+                start_count: this.ringbackStartCount,
+                stop_count: this.ringbackStopCount,
+                restart_count: this.ringbackRestartCount,
+            },
+            last_failure_stage: lastFailure,
+        }, null, 2);
+    }
+
     recordAudioDiagnostic(field, value) {
-        if (!this.debugAudio) return;
+        if (!this.debugAudio && !this.debugLiveCall) return;
         this.audioDiagnostics.push({ field, value, at: Math.round(this.performance.now()) });
+        if (this.debugLiveCall) {
+            console.debug("LIVE_CALL_AUDIO", { field, value });
+            this.renderDebugPanel();
+        }
     }
 
     getAudioContext() {
@@ -409,31 +523,106 @@ class LiveCallController {
         if (!this.legacy?.backendLegacyId) {
             return this.fail("This Companion is not available for Live Call.");
         }
-        if (!this.mediaDevices?.getUserMedia || !this.WebSocketClass
-                || !this.MediaRecorderClass || !this.AudioContextClass) {
+        if (!this.mediaDevices?.getUserMedia || !this.AudioContextClass) {
             return this.fail("Live Call is not supported in this browser.");
         }
         this.elements.relationship.textContent = this.legacy.relationship;
         try {
+            this.recordFrontendStartup("microphone_request_started");
             this.stream = await this.mediaDevices.getUserMedia({
                 audio: { echoCancellation: true, noiseSuppression: true },
                 video: false
             });
+            this.recordFrontendStartup("microphone_acquired");
             if (this.intentionalEnd) return this.releaseMicrophone();
             this.elements.microphoneStatus.textContent = "Microphone ready";
-            await this.initializeCallAudioOutput();
+            await this.resumeAudioContext();
             this.startRingback();
-            await this.initializeVad();
             if (this.intentionalEnd) return this.releaseMicrophone();
+            const requestedEngine = new URLSearchParams(window.location.search).get("engine") || "auto";
             this.session = await this.api.createLiveCallSession(
-                this.legacy.backendLegacyId
+                this.legacy.backendLegacyId, requestedEngine
             );
+            this.recordFrontendStartup("session_response_received");
+            this.validateRealtimeSession(this.session);
+            this.recordFrontendStartup("engine_validated");
             if (this.intentionalEnd) {
                 try { await this.api.endLiveCallSession(this.session.session_id); } catch { /* local cleanup won */ }
                 return;
             }
+            if (this.session.engine === "realtime") {
+                try {
+                    const RealtimeController = window.WaffleBerryRealtimeLiveCall?.RealtimeLiveCallController;
+                    if (!window.WaffleBerryRealtimeLiveCall) {
+                        const error = new Error("Realtime module unavailable.");
+                        error.frontendCategory = "realtime_module_missing";
+                        error.messageCode = "realtime_module_missing";
+                        throw error;
+                    }
+                    this.recordFrontendStartup("realtime_module_available");
+                    if (!RealtimeController) {
+                        const error = new Error("Realtime controller unavailable.");
+                        error.frontendCategory = "realtime_controller_missing";
+                        error.messageCode = "realtime_export_missing";
+                        throw error;
+                    }
+                    this.recordFrontendStartup("realtime_controller_constructing");
+                    try {
+                        this.realtimeController = new RealtimeController(this);
+                    } catch (error) {
+                        error.frontendCategory = "controller_constructor_failed";
+                        error.messageCode = "realtime_constructor_failed";
+                        throw error;
+                    }
+                    this.recordFrontendStartup("realtime_controller_constructed");
+                    this.recordFrontendStartup("realtime_start_entered");
+                    await this.realtimeController.start();
+                    this.recordEngineDecision("none");
+                    return;
+                } catch (error) {
+                    this.recordFrontendStartup(
+                        this.frontendStartupStage,
+                        error?.frontendCategory || this.realtimeController?.startupFailureCategory
+                            || "unknown_frontend_startup",
+                        error,
+                        error?.messageCode || "realtime_start_failed"
+                    );
+                    const fallbackReason = this.realtimeStartupFailureReason(error);
+                    this.realtimeController?.close();
+                    if (this.session.realtime_strict) {
+                        this.session.fallback_reason = fallbackReason;
+                        const failedSessionId = this.session.session_id;
+                        try { await this.api.endLiveCallSession(failedSessionId); } catch { /* best effort */ }
+                        this.renderDebugPanel();
+                        this.recordEngineDecision(fallbackReason);
+                        throw error;
+                    }
+                    this.realtimeController = null;
+                    const failedSessionId = this.session.session_id;
+                    try { await this.api.endLiveCallSession(failedSessionId); } catch { /* best effort */ }
+                    this.session = await this.api.createLiveCallSession(
+                        this.legacy.backendLegacyId, "cascade"
+                    );
+                    this.session.fallback_reason = fallbackReason;
+                }
+            }
+            if (!this.WebSocketClass || !this.MediaRecorderClass) {
+                throw new Error("Cascade Live Call is unavailable.");
+            }
+            await this.initializeCallAudioOutput();
+            await this.initializeVad();
+            this.recordEngineDecision(this.session.fallback_reason || this.session.engine_reason || "none");
             this.connectTransport();
         } catch (error) {
+            if (this.session?.engine === "realtime") {
+                this.recordFrontendStartup(
+                    this.frontendStartupStage,
+                    error?.frontendCategory || this.frontendFailureCategory
+                        || "unknown_frontend_startup",
+                    error,
+                    error?.messageCode || this.frontendMessageCode || "startup_failed"
+                );
+            }
             this.releaseMicrophone();
             if (error?.name === "NotAllowedError" || error?.name === "SecurityError") {
                 return this.fail("Microphone access is needed for Live Call.");
@@ -445,6 +634,83 @@ class LiveCallController {
         }
     }
 
+    realtimeStartupFailureReason(error) {
+        const stage = error?.realtimeStage || this.realtimeController?.startupStage || "unknown";
+        if (stage === "bootstrap_failed") return "bootstrap_failed";
+        if (["peer_connection_created", "peer_connection_failed", "local_track_added",
+            "offer_created", "local_description_set"].includes(stage)) {
+            return "webrtc_setup_failed";
+        }
+        if (["sdp_exchange_started", "sdp_exchange_failed", "sdp_exchange_completed",
+            "remote_description_failed", "remote_description_set"].includes(stage)) {
+            return "webrtc_setup_failed";
+        }
+        if (["data_channel_failed", "data_channel_timeout"].includes(stage)) {
+            return "data_channel_failed";
+        }
+        return "frontend_capability_failed";
+    }
+
+    recoverRealtimeTransport(reason) {
+        if (this.session?.engine !== "realtime" || this.intentionalEnd
+                || ["ending", "ended", "error"].includes(this.state)) return Promise.resolve(false);
+        if (this.realtimeRecoveryPromise) return this.realtimeRecoveryPromise;
+        if (this.realtimeReconnectCount >= 2) {
+            this.realtimeController?.close();
+            this.fail("We couldn’t continue the call.");
+            return Promise.resolve(false);
+        }
+        const recoveryGeneration = ++this.realtimeRecoveryGeneration;
+        this.realtimeReconnectCount += 1;
+        this.setTransportState("reconnecting", "Reconnecting…");
+        this.stopRingback();
+        const oldController = this.realtimeController;
+        oldController?.invalidateForRecovery?.(reason);
+        oldController?.close();
+        this.realtimeRecoveryPromise = Promise.resolve().then(async () => {
+            if (this.intentionalEnd || recoveryGeneration !== this.realtimeRecoveryGeneration) return false;
+            const RealtimeController = window.WaffleBerryRealtimeLiveCall?.RealtimeLiveCallController;
+            if (!RealtimeController) throw new Error("Realtime recovery unavailable.");
+            const replacement = new RealtimeController(this);
+            replacement.greetingSent = true;
+            replacement.reconnectCount = this.realtimeReconnectCount;
+            replacement.lastRecoveryReason = reason;
+            this.realtimeController = replacement;
+            await replacement.start();
+            if (this.intentionalEnd || recoveryGeneration !== this.realtimeRecoveryGeneration) {
+                replacement.close();
+                return false;
+            }
+            this.setTransportState("connected");
+            this.setState("listening", this.muted ? "Muted" : "Listening");
+            replacement.metric("successful_recovery_count", 1);
+            return true;
+        }).catch(() => {
+            if (!this.intentionalEnd && recoveryGeneration === this.realtimeRecoveryGeneration) {
+                this.realtimeController?.metric("failed_recovery_count", 1);
+                this.fail("We couldn’t continue the call.");
+            }
+            return false;
+        }).finally(() => {
+            if (recoveryGeneration === this.realtimeRecoveryGeneration) this.realtimeRecoveryPromise = null;
+        });
+        return this.realtimeRecoveryPromise;
+    }
+
+    recordEngineDecision(fallbackReason) {
+        if (!this.debugLiveCall) return;
+        console.debug("LIVE_CALL_ENGINE", {
+            session_id_safe: this.session?.session_id?.slice(-8) || "none",
+            effective_voice: this.session?.effective_voice || "unknown",
+            feature_enabled: this.session?.engine === "realtime"
+                || this.session?.engine_reason !== "feature_flag_disabled",
+            voice_realtime_capable: this.session?.realtime_capable ?? false,
+            selected_engine: this.session?.engine || "unknown",
+            fallback_reason: fallbackReason || "none"
+        });
+        this.renderDebugPanel();
+    }
+
     async initializeCallAudioOutput() {
         if (this.outputDestination) return;
         const microphoneTrack = this.stream?.getAudioTracks?.()[0];
@@ -454,9 +720,14 @@ class LiveCallController {
         await this.resumeAudioContext();
         this.recordAudioDiagnostic("audio_context_state", context.state);
         this.outputDestination = context.createMediaStreamDestination();
+        this.outputContext = context;
         this.outputGain = context.createGain();
+        this.outputAnalyser = context.createAnalyser();
+        this.outputAnalyser.fftSize = 1024;
+        this.outputAnalyser.smoothingTimeConstant = 0.1;
         this.outputGain.gain.value = this.speakerEnabled ? 1 : 0;
-        this.outputGain.connect(this.outputDestination);
+        this.outputGain.connect(this.outputAnalyser);
+        this.outputAnalyser.connect(this.outputDestination);
         this.recordAudioDiagnostic("output_media_stream_created", true);
         const output = this.elements.outputAudio;
         output.autoplay = true;
@@ -473,6 +744,167 @@ class LiveCallController {
         } catch {
             this.recordAudioDiagnostic("output_audio_play_rejected", true);
         }
+        if (this.outputEnergyTimer === null) {
+            this.outputEnergyTimer = this.clock.setInterval(
+                () => this.sampleOutputEnergy(), OUTPUT_ENERGY_SAMPLE_MS
+            );
+        }
+    }
+
+    async ensureOutputRouteHealthy(turnId = null) {
+        if (!this.speakerEnabled || !this.outputDestination || !this.outputGain
+                || !this.outputAnalyser) return false;
+        const context = this.getAudioContext();
+        const output = this.elements.outputAudio;
+        const track = this.outputDestination.stream?.getAudioTracks?.()[0];
+        const inspect = () => context.state === "running"
+            && track?.readyState === "live"
+            && output?.srcObject === this.outputDestination.stream
+            && output?.paused !== true
+            && this.outputGain.gain.value > 0;
+        if (inspect()) return true;
+        if (turnId !== null && this.outputRepairAttemptedTurnId === turnId) return false;
+        this.outputRepairAttemptedTurnId = turnId;
+        await this.resumeAudioContext();
+        if (output && output.srcObject !== this.outputDestination.stream) {
+            output.srcObject = this.outputDestination.stream;
+        }
+        try { await Promise.resolve(output?.play?.()); } catch { /* bounded repair failed */ }
+        const healthy = inspect();
+        this.recordAudioDiagnostic("output_route_repaired", healthy);
+        return healthy;
+    }
+
+    decodedSignal(buffer) {
+        let peak = 0;
+        let squared = 0;
+        let count = 0;
+        for (let channel = 0; channel < (buffer.numberOfChannels || 0); channel += 1) {
+            const samples = buffer.getChannelData(channel);
+            count += samples.length;
+            for (const sample of samples) {
+                const amplitude = Math.abs(sample);
+                peak = Math.max(peak, amplitude);
+                squared += sample * sample;
+            }
+        }
+        const signal = {
+            durationMs: Math.round((buffer.duration || 0) * 1000),
+            channels: buffer.numberOfChannels || 0,
+            samples: count,
+            peak,
+            rms: count ? Math.sqrt(squared / count) : 0,
+        };
+        this.recordAudioDiagnostic("decoded_duration_ms", signal.durationMs);
+        this.recordAudioDiagnostic("decoded_peak", Number(signal.peak.toFixed(6)));
+        return signal;
+    }
+
+    sampleOutputEnergy() {
+        if (!this.outputAnalyser) return;
+        const samples = new Float32Array(this.outputAnalyser.fftSize);
+        this.outputAnalyser.getFloatTimeDomainData(samples);
+        this.outputEnergyRms = Math.sqrt(
+            samples.reduce((sum, sample) => sum + sample * sample, 0) / samples.length
+        );
+        if (!this.pendingPlaybackConfirmation || !this.speakerEnabled
+                || this.outputEnergyRms < OUTPUT_ENERGY_THRESHOLD) {
+            this.outputEnergyCandidateAt = null;
+            return;
+        }
+        const now = this.performance.now();
+        this.outputEnergyCandidateAt ??= now;
+        if (now - this.outputEnergyCandidateAt < OUTPUT_ENERGY_CONFIRM_MS) return;
+        const pending = this.pendingPlaybackConfirmation;
+        this.pendingPlaybackConfirmation = null;
+        this.outputEnergyCandidateAt = null;
+        this.recordAudioDiagnostic("energy_detected", true);
+        this.recordAudioDiagnostic("energy_first_ms", Math.round(now - pending.startedAt));
+        this.clearFirstAudioWatchdog();
+        if (pending.greeting) {
+            this.setState("greeting", "Speaking");
+            this.sendEvent("latency.greeting_playback_started");
+            return;
+        }
+        if (pending.turnId !== this.activeTurnId) return;
+        this.playbackConfirmedTurnId = pending.turnId;
+        this.setState("speaking", "Speaking");
+        this.markTurnTiming(pending.turnId, "first_audible_playback");
+        this.sendEvent("latency.playback_started", { turn_id: pending.turnId });
+    }
+
+    armFirstAudioWatchdog(turnId, greeting = false) {
+        if ((!greeting && this.playbackConfirmedTurnId === turnId)
+                || this.firstAudioWatchdog !== null) return;
+        this.firstAudioWatchdog = this.clock.setTimeout(async () => {
+            this.firstAudioWatchdog = null;
+            if ((!greeting && turnId !== this.activeTurnId)
+                    || (!greeting && this.playbackConfirmedTurnId === turnId)) return;
+            this.recordAudioDiagnostic("watchdog_fired", true);
+            if ((!greeting && turnId !== this.activeTurnId)
+                    || (!greeting && this.playbackConfirmedTurnId === turnId)) return;
+            const pending = this.pendingPlaybackConfirmation;
+            this.pendingPlaybackConfirmation = null;
+            this.clearPcmPlayback();
+            this.clearDecodedPlayback();
+            const retried = pending?.retry === 0 && await this.repairOutputRoute(turnId);
+            if (retried) return this.replayPendingPlayback(pending);
+            this.recoverTurn("playback_energy_timeout");
+        }, FIRST_AUDIO_PLAYBACK_TIMEOUT_MS);
+    }
+
+    clearFirstAudioWatchdog() {
+        if (this.firstAudioWatchdog !== null) this.clock.clearTimeout(this.firstAudioWatchdog);
+        this.firstAudioWatchdog = null;
+    }
+
+    async confirmPlayback(turnId, greeting = false) {
+        if (!greeting && turnId !== this.activeTurnId) return false;
+        if (!await this.ensureOutputRouteHealthy(turnId)) return false;
+        this.pendingPlaybackConfirmation = {
+            ...(this.pendingPlaybackConfirmation || {}),
+            turnId, greeting, startedAt: this.performance.now(),
+        };
+        this.armFirstAudioWatchdog(turnId, greeting);
+        return true;
+    }
+
+    async repairOutputRoute(turnId) {
+        this.recordAudioDiagnostic("route_repair_attempted", true);
+        const context = this.getAudioContext();
+        const track = this.outputDestination?.stream?.getAudioTracks?.()[0];
+        if (!this.outputDestination || !this.outputAnalyser || this.outputContext !== context
+                || context.state === "closed"
+                || track?.readyState !== "live") {
+            this.outputDestination = null;
+            this.outputGain = null;
+            this.outputAnalyser = null;
+            this.outputContext = null;
+            await this.initializeCallAudioOutput();
+        }
+        const healthy = await this.ensureOutputRouteHealthy(turnId);
+        this.recordAudioDiagnostic("route_repair_success", healthy);
+        return healthy;
+    }
+
+    replayPendingPlayback(pending) {
+        if (!pending) return this.recoverTurn("output_route_failed");
+        pending.retry = 1;
+        if (pending.kind === "decoded") {
+            pending.chunk.retry = 1;
+            this.responseAudio.unshift(pending.chunk);
+            return this.playResponse(pending.turnId);
+        }
+        if (pending.kind === "pcm") {
+            pending.message._playbackRetry = 1;
+            return this.queuePcmChunk(pending.message);
+        }
+        if (pending.kind === "greeting") {
+            pending.message._playbackRetry = 1;
+            this.greetingPlayback = false;
+            return this.playGreeting(pending.message);
+        }
+        this.recoverTurn("output_route_failed");
     }
 
     startRingback() {
@@ -481,6 +913,8 @@ class LiveCallController {
         if (context.state !== "running") return;
         this.ringbackStarted = true;
         this.ringbackActive = true;
+        this.ringbackStartCount += 1;
+        this.recordAudioDiagnostic("ringback_start_count", this.ringbackStartCount);
         this.ringbackMinimumTimer = this.clock.setTimeout(() => {
             this.ringbackMinimumTimer = null;
             this.ringbackMinimumElapsed = true;
@@ -491,14 +925,13 @@ class LiveCallController {
             this.ringbackGain = gain;
             gain.gain.value = RINGBACK_GAIN;
             gain.connect(this.outputGain || context.destination);
-            this.ringbackOscillators = [440, 480].map((frequency) => {
-                const oscillator = context.createOscillator();
-                oscillator.type = "sine";
-                oscillator.frequency.value = frequency;
-                oscillator.connect(gain);
-                oscillator.start();
-                return oscillator;
-            });
+            const oscillator = context.createOscillator();
+            oscillator.type = "sine";
+            oscillator.frequency.value = 460;
+            oscillator.connect(gain);
+            this.ringbackCreatedCount += 1;
+            oscillator.start();
+            this.ringbackOscillators = [oscillator];
             this.recordAudioDiagnostic("ringback_started", true);
             this.recordAudioDiagnostic("ringback_source_started", true);
         } catch {
@@ -521,6 +954,10 @@ class LiveCallController {
     }
 
     stopRingback(discardPendingGreeting = true, fadeOut = false) {
+        if (this.ringbackActive) {
+            this.ringbackStopCount += 1;
+            this.recordAudioDiagnostic("ringback_stop_count", this.ringbackStopCount);
+        }
         this.ringbackActive = false;
         if (this.ringbackMinimumTimer !== null) this.clock.clearTimeout(this.ringbackMinimumTimer);
         this.ringbackMinimumTimer = null;
@@ -668,6 +1105,8 @@ class LiveCallController {
         this.vadTurnTimer = null;
         this.stopStreamingTranscription();
         this.activeTurnId = this.recordingTurnId;
+        this.playbackConfirmedTurnId = null;
+        this.outputRepairAttemptedTurnId = null;
         this.markTurnTiming(this.recordingTurnId, "realtime_commit_sent");
         this.sendEvent("transcription.commit", {
             turn_id: this.recordingTurnId,
@@ -699,9 +1138,15 @@ class LiveCallController {
         const context = this.audioContext;
         this.clearDecodedPlayback();
         this.outputGain?.disconnect?.();
+        this.outputAnalyser?.disconnect?.();
         this.outputDestination?.disconnect?.();
         this.outputGain = null;
+        this.outputAnalyser = null;
+        this.outputContext = null;
         this.outputDestination = null;
+        if (this.outputEnergyTimer !== null) this.clock.clearInterval(this.outputEnergyTimer);
+        this.outputEnergyTimer = null;
+        this.pendingPlaybackConfirmation = null;
         if (this.elements.outputAudio) {
             this.elements.outputAudio.pause?.();
             this.elements.outputAudio.srcObject = null;
@@ -884,17 +1329,26 @@ class LiveCallController {
         this.greetingPlayback = true;
         try {
             const buffer = await this.decodeAudioData(message.data);
+            const signal = this.decodedSignal(buffer);
+            if (!signal.samples || signal.peak < DECODED_SILENCE_THRESHOLD) {
+                this.greetingPlayback = false;
+                this.recordAudioDiagnostic("last_failure_stage", "decoded_audio_silent");
+                return this.finishGreeting();
+            }
             if (["ending", "ended", "error"].includes(this.state)) {
                 this.greetingPlayback = false;
                 return;
             }
             this.startDecodedSource(buffer, () => {
                 this.greetingPlayback = false;
+                if (this.pendingPlaybackConfirmation?.greeting) return;
                 this.finishGreeting();
             }, "greeting_source_started");
             this.startTimer();
-            this.setState("greeting", "Speaking");
-            this.sendEvent("latency.greeting_playback_started");
+            this.pendingPlaybackConfirmation = {
+                kind: "greeting", message, retry: message._playbackRetry || 0,
+            };
+            this.clock.setTimeout(() => this.confirmPlayback(null, true), 0);
         } catch {
             this.greetingPlayback = false;
             this.finishGreeting();
@@ -956,7 +1410,7 @@ class LiveCallController {
         if (resumed && this.activeTurnId) {
             this.activeTurnId = null;
             this.responseAudio = [];
-            return this.setState("listening", "I’m having trouble responding. Please try again.");
+            return this.setState("listening", "The connection returned. Please repeat your last response.");
         }
         this.setState("listening", this.muted ? "Muted" : "Listening");
     }
@@ -993,6 +1447,10 @@ class LiveCallController {
 
     handleOffline() {
         if (["ending", "ended", "error"].includes(this.state)) return;
+        if (this.session?.engine === "realtime") {
+            this.realtimeController?.handleOfflineHint?.();
+            return;
+        }
         this.clearReconnectTimer();
         this.setTransportState("offline", "Connection lost…");
         this.boundRecordingDuringDisconnect();
@@ -1000,6 +1458,10 @@ class LiveCallController {
     }
 
     handleOnline() {
+        if (this.session?.engine === "realtime") {
+            this.realtimeController?.handleOnlineHint?.();
+            return;
+        }
         if (this.transportState !== "offline" || this.intentionalEnd) return;
         this.reconnectAttempt = 0;
         this.scheduleReconnect();
@@ -1100,12 +1562,16 @@ class LiveCallController {
     async toggleSpeaker() {
         if (["ending", "ended", "error"].includes(this.state)) return;
         this.speakerEnabled = !this.speakerEnabled;
+        this.realtimeController?.setSpeaker(this.speakerEnabled);
         if (this.outputGain) this.outputGain.gain.value = this.speakerEnabled ? 1 : 0;
         if (this.speakerEnabled && this.audioContext?.state !== "running") {
             await this.resumeAudioContext();
             await Promise.resolve(this.elements.outputAudio?.play?.()).catch(() => {});
         }
-        if (this.playback) this.playback.muted = !this.speakerEnabled;
+        const gainMatchesSpeaker = !this.outputGain || (
+            this.speakerEnabled ? this.outputGain.gain.value > 0 : this.outputGain.gain.value === 0
+        );
+        this.recordAudioDiagnostic("speaker_gain_invariant", gainMatchesSpeaker);
         this.elements.speaker.setAttribute("aria-pressed", String(this.speakerEnabled));
         this.elements.speaker.setAttribute(
             "aria-label", this.speakerEnabled ? "Turn speaker off" : "Turn speaker on"
@@ -1115,6 +1581,9 @@ class LiveCallController {
     }
 
     async recoverAudioAfterVisibility() {
+        if (document.visibilityState === "visible" && this.session?.engine === "realtime") {
+            this.realtimeController?.verifyAfterForeground?.();
+        }
         if (document.visibilityState !== "visible" || this.intentionalEnd
                 || !this.speakerEnabled || !this.audioContext
                 || ["running", "closed"].includes(this.audioContext.state)) return;
@@ -1310,6 +1779,8 @@ class LiveCallController {
         }
         if (!turnId || !this.audioChunkStarted) return this.recoverTurn("audio_empty");
         this.activeTurnId = turnId;
+        this.playbackConfirmedTurnId = null;
+        this.outputRepairAttemptedTurnId = null;
         this.recordedChunks = [];
         if (["ending", "ended", "error"].includes(this.state)) return;
         this.markTurnTiming(turnId, "fallback_commit_sent");
@@ -1419,6 +1890,7 @@ class LiveCallController {
             const key = `${message.turn_id}:${message.chunk_index ?? 0}`;
             if (this.receivedAudioChunks.has(key)) return;
             this.receivedAudioChunks.add(key);
+            this.armFirstAudioWatchdog(message.turn_id);
             if (message.streaming && message.mime_type === "audio/L16") {
                 this.queuePcmChunk(message);
             } else {
@@ -1442,7 +1914,7 @@ class LiveCallController {
                 this.finishResponse(message.turn_id);
             }
         }
-        if (message.type === "error") this.recoverTurn(message.code);
+        if (message.type === "error") this.recoverTurn(message.failure_stage || message.code);
     }
 
     async playResponse(turnId) {
@@ -1456,6 +1928,12 @@ class LiveCallController {
                 this.decodedPlaybackActive = false;
                 return;
             }
+            const signal = this.decodedSignal(buffer);
+            if (!signal.samples || signal.peak < DECODED_SILENCE_THRESHOLD) {
+                this.decodedPlaybackActive = false;
+                this.recordAudioDiagnostic("last_failure_stage", "decoded_audio_silent");
+                return this.recoverTurn("decoded_audio_silent");
+            }
             this.markTurnTiming(turnId, "first_audio_chunk_decodable");
             this.startDecodedSource(buffer, () => {
                 this.decodedPlaybackActive = false;
@@ -1463,10 +1941,11 @@ class LiveCallController {
                 if (this.responseAudio.length) return this.playResponse(turnId);
                 if (this.responseCompleted) this.finishResponse(turnId);
             }, "nonstreaming_buffer_source_started");
-            this.setState("speaking", "Speaking");
             this.markTurnTiming(turnId, "audio_scheduled");
-            this.markTurnTiming(turnId, "first_audible_playback");
-            this.sendEvent("latency.playback_started", { turn_id: turnId });
+            this.pendingPlaybackConfirmation = {
+                kind: "decoded", turnId, chunk, retry: chunk.retry || 0,
+            };
+            this.clock.setTimeout(() => this.confirmPlayback(turnId), 0);
         } catch {
             this.decodedPlaybackActive = false;
             if (turnId === this.activeTurnId) this.recoverTurn("audio_unavailable");
@@ -1523,7 +2002,10 @@ class LiveCallController {
         source.start(startAt);
         this.recordAudioDiagnostic("pcm_source_started", true);
         this.markTurnTiming(message.turn_id, "audio_scheduled");
-        this.setState("speaking", "Speaking");
+        this.pendingPlaybackConfirmation = {
+            kind: "pcm", turnId: message.turn_id, message,
+            retry: message._playbackRetry || 0,
+        };
         if (!this.pcmPlaybackReported) {
             this.pcmPlaybackReported = true;
             this.sendEvent("latency.frontend_first_playable_chunk", { turn_id: message.turn_id });
@@ -1531,8 +2013,7 @@ class LiveCallController {
             this.clock.setTimeout(() => {
                 if (message.turn_id === this.activeTurnId) {
                     this.markTurnTiming(message.turn_id, "webaudio_source_started");
-                    this.markTurnTiming(message.turn_id, "first_audible_playback");
-                    this.sendEvent("latency.playback_started", { turn_id: message.turn_id });
+                    this.confirmPlayback(message.turn_id);
                 }
             }, delayMs);
         }
@@ -1551,9 +2032,14 @@ class LiveCallController {
 
     finishResponse(turnId) {
         if (turnId !== this.activeTurnId || ["ending", "ended"].includes(this.state)) return;
+        if (this.playbackConfirmedTurnId !== turnId
+                && this.pendingPlaybackConfirmation?.turnId === turnId) return;
         this.markTurnTiming(turnId, "response_audio_completed");
         this.reportClientLatency(turnId);
         this.activeTurnId = null;
+        this.clearFirstAudioWatchdog();
+        this.playbackConfirmedTurnId = null;
+        this.outputRepairAttemptedTurnId = null;
         this.responseCompleted = false;
         this.receivedAudioChunks.clear();
         this.clearPcmPlayback();
@@ -1562,15 +2048,24 @@ class LiveCallController {
     }
 
     recoverTurn(code) {
+        this.clearFirstAudioWatchdog();
         this.activeTurnId = null;
+        this.playbackConfirmedTurnId = null;
+        this.outputRepairAttemptedTurnId = null;
+        this.pendingPlaybackConfirmation = null;
+        this.outputEnergyCandidateAt = null;
         this.responseAudio = [];
         this.responseCompleted = false;
         this.receivedAudioChunks.clear();
         this.clearPcmPlayback();
         this.clearDecodedPlayback();
-        const message = ["audio_empty", "transcription_empty"].includes(code)
+        this.recordAudioDiagnostic("last_failure_stage", code);
+        const message = ["audio_empty", "transcription_empty", "stt_failed"].includes(code)
             ? "I didn\u2019t catch that. Could you say it again?"
-            : "I\u2019m having trouble responding right now. Please try again.";
+            : ["decoded_audio_silent", "output_route_failed", "playback_energy_timeout",
+                "audio_delivery_failed", "audio_unavailable", "audio_invalid", "tts_failed"].includes(code)
+                ? "I couldn\u2019t play that response. Please try speaking again."
+                : "I\u2019m having trouble responding right now. Please try again.";
         this.setState("listening", message);
     }
 
@@ -1583,6 +2078,8 @@ class LiveCallController {
     async performEnd() {
         if (this.state === "ended") return;
         this.intentionalEnd = true;
+        this.realtimeRecoveryGeneration += 1;
+        this.realtimeController?.close();
         this.stopRingback();
         this.clearReconnectTimer();
         this.stopHeartbeat();
@@ -1704,6 +2201,8 @@ class LiveCallController {
     cleanupForNavigation() {
         if (this.state === "ended") return;
         this.intentionalEnd = true;
+        this.realtimeRecoveryGeneration += 1;
+        this.realtimeController?.close();
         this.stopRingback();
         this.clearReconnectTimer();
         this.stopHeartbeat();

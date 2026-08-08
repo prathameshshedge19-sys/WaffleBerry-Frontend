@@ -8112,6 +8112,21 @@ body[data-recording="true"] .live-call-talk {
     font-size: 0.88rem;
 }
 
+.live-call-debug {
+    width: min(100%, 560px);
+    margin: 14px auto 0;
+    padding: 10px 12px;
+    border: 1px solid rgba(101, 52, 75, 0.22);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--text-color);
+    text-align: left;
+}
+
+.live-call-debug summary { cursor: pointer; font-weight: 700; }
+.live-call-debug pre { margin: 10px 0 0; overflow: auto; font-size: 0.75rem; white-space: pre-wrap; }
+body.dark-mode .live-call-debug { background: rgba(35, 24, 31, 0.92); border-color: rgba(255, 195, 218, 0.2); }
+
 body[data-call-state="listening"] .live-call-orbit-one {
     animation: liveCallBreathe 3.4s ease-in-out infinite;
 }

@@ -57,7 +57,9 @@ function elements() {
         currentVoice: { textContent: "" }, voiceOptions: {},
         audioUnlock: { hidden: true, focus() {} },
         outputAudio: { autoplay: false, playsInline: false, muted: false, volume: 1,
-            srcObject: null, playCalls: 0, play() { this.playCalls += 1; return Promise.resolve(); }, pause() {} }
+            srcObject: null, paused: true, playCalls: 0,
+            play() { this.playCalls += 1; this.paused = false; return Promise.resolve(); },
+            pause() { this.paused = true; } }
     };
 }
 
@@ -80,11 +82,18 @@ function audioContext(initialState = "running") {
         createMediaStreamDestination() {
             return { stream: { getAudioTracks: () => [{ readyState: "live" }] }, disconnect() {} };
         },
-        async decodeAudioData() { return { duration: 0.1 }; },
+        async decodeAudioData() {
+            return { duration: 0.1, numberOfChannels: 1,
+                getChannelData: () => Float32Array.from([0.1, -0.1]) };
+        },
         createOscillator() {
             return { type: "", frequency: { value: 0 }, connect() {}, disconnect() {}, start() { sourceStarts += 1; }, stop() {} };
         },
-        createAnalyser() { return { fftSize: 0, smoothingTimeConstant: 0, getFloatTimeDomainData() {} }; },
+        createAnalyser() {
+            return { fftSize: 0, smoothingTimeConstant: 0, connectedTo: null,
+                connect(node) { this.connectedTo = node; }, disconnect() {},
+                getFloatTimeDomainData(samples) { samples.fill(0); } };
+        },
         createMediaStreamSource() { return { connect() {}, disconnect() {} }; },
         createBuffer(_channels, length, rate) { return { duration: length / rate, copyToChannel() {} }; },
         createBufferSource() {
@@ -124,7 +133,7 @@ test("automatic desktop audio remains seamless and uses one authoritative contex
     await fixture.controller.initializeVad();
     assert.equal(fixture.contexts(), 1);
     assert.equal(fixture.controller.elements.audioUnlock.hidden, true);
-    assert.equal(context.starts(), 2);
+    assert.equal(context.starts(), 1);
 });
 
 test("suspended mobile audio resumes without exposing a second-tap control", async () => {
@@ -135,7 +144,7 @@ test("suspended mobile audio resumes without exposing a second-tap control", asy
     assert.equal(context.state, "running");
     assert.equal(fixture.controller.elements.audioUnlock.hidden, true);
     fixture.controller.startRingback();
-    assert.equal(context.starts(), 2);
+    assert.equal(context.starts(), 1);
 });
 
 test("call startup captures a live microphone before attaching persistent output", async () => {
@@ -152,7 +161,10 @@ test("call startup captures a live microphone before attaching persistent output
         }
     };
     fixture.controller.api = {
-        async createLiveCallSession() { sessions += 1; return { session_id: 1 }; },
+        async createLiveCallSession() {
+            sessions += 1;
+            return { session_id: 1, engine: "cascade", transport: "websocket" };
+        },
         async endLiveCallSession() {}
     };
     fixture.controller.initializeVad = async () => {};
@@ -184,7 +196,8 @@ test("WebKit output uses one persistent autoplay MediaStream element after live 
     assert.equal(output.playsInline, true);
     assert.equal(output.srcObject, destination.stream);
     assert.equal(output.playCalls, 1);
-    assert.equal(fixture.controller.outputGain.connectedTo, destination);
+    assert.equal(fixture.controller.outputGain.connectedTo, fixture.controller.outputAnalyser);
+    assert.equal(fixture.controller.outputAnalyser.connectedTo, destination);
     await fixture.controller.initializeCallAudioOutput();
     assert.equal(output.playCalls, 1);
     assert.match(markup, /<audio id="liveCallOutput" autoplay playsinline aria-label="Live Call audio"><\/audio>/);
@@ -204,6 +217,39 @@ test("Speaker changes shared gain without destroying the persistent output route
     await fixture.controller.toggleSpeaker();
     assert.equal(fixture.controller.outputGain.gain.value, 1);
     assert.equal(fixture.controller.outputDestination, destination);
+});
+
+test("Speaking is confirmed only by sustained analyser energy", async () => {
+    const context = audioContext("running");
+    const fixture = makeController(context);
+    fixture.controller.stream = { getAudioTracks: () => [{ readyState: "live" }] };
+    await fixture.controller.initializeCallAudioOutput();
+    fixture.controller.activeTurnId = 4;
+    fixture.controller.pendingPlaybackConfirmation = {
+        turnId: 4, greeting: false, startedAt: 0
+    };
+    fixture.controller.sampleOutputEnergy();
+    assert.notEqual(fixture.controller.state, "speaking");
+    fixture.controller.outputAnalyser.getFloatTimeDomainData = (samples) => samples.fill(0.05);
+    fixture.controller.outputEnergyCandidateAt = -100;
+    fixture.controller.sampleOutputEnergy();
+    assert.equal(fixture.controller.state, "speaking");
+    assert.equal(fixture.controller.playbackConfirmedTurnId, 4);
+});
+
+test("decoded silence is distinguished from valid speech without retaining content", () => {
+    const fixture = makeController(audioContext("running"));
+    const silent = fixture.controller.decodedSignal({
+        duration: 0.2, numberOfChannels: 1,
+        getChannelData: () => new Float32Array(32),
+    });
+    const audible = fixture.controller.decodedSignal({
+        duration: 0.2, numberOfChannels: 1,
+        getChannelData: () => Float32Array.from([0, 0.02, -0.01]),
+    });
+    assert.equal(silent.peak, 0);
+    assert.ok(audible.peak > 0);
+    assert.equal("content" in silent, false);
 });
 
 test("normal call entry contains no pointer or silent-media priming", () => {

@@ -920,10 +920,35 @@ function retryStoryExtraction(
     );
 }
 
-function createLiveCallSession(legacyId) {
+function createLiveCallSession(legacyId, engine = "auto") {
     return apiRequest("/live-call/session", {
         method: "POST",
-        body: { legacy_id: Number(legacyId) }
+        body: { legacy_id: Number(legacyId), engine }
+    });
+}
+
+function createRealtimeBootstrap(sessionId) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/bootstrap`, {
+        method: "POST"
+    });
+}
+
+function executeRealtimeTool(sessionId, callId, name, argumentsValue) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/tool`, {
+        method: "POST",
+        body: { call_id: callId, name, arguments: argumentsValue }
+    });
+}
+
+function renderRealtimeSpeech(sessionId, responseId, generationId, userInputTurnId, text) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/speech`, {
+        method: "POST",
+        body: {
+            response_id: responseId,
+            generation_id: generationId,
+            user_input_turn_id: userInputTurnId,
+            text
+        }
     });
 }
 
@@ -969,6 +994,9 @@ window.WaffleBerryApi = Object.freeze({
     getStoryExtractionRun,
     retryStoryExtraction,
     createLiveCallSession,
+    createRealtimeBootstrap,
+    executeRealtimeTool,
+    renderRealtimeSpeech,
     endLiveCallSession,
     liveCallWebSocketUrl,
     transcribeAudio,

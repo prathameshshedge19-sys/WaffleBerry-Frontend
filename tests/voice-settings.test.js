@@ -42,6 +42,14 @@ test("catalogue remains in server-provided male and female order", () => {
     assert.match(script, /"Female voices"[\s\S]*preference\.available_voices\.female/);
 });
 
+test("desktop and mobile settings render the shared server voice descriptions", () => {
+    assert.match(script, /detail\.textContent = recommendation/);
+    assert.match(script, /preference\.available_voices\.male/);
+    assert.match(script, /preference\.available_voices\.female/);
+    assert.doesNotMatch(script + chat, /Best suited for natural English/);
+    assert.match(styles, /@media \(max-width: 480px\)[\s\S]*\.voice-settings-actions/);
+});
+
 test("frontend contains no infrastructure metadata or playback override", () => {
     for (const forbidden of ["provider", "model ID", "API key", "Bulbul"]) {
         assert.doesNotMatch(chat + script, new RegExp(forbidden, "i"));
