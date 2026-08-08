@@ -58,7 +58,7 @@ function resetLiveCallView() {
     document.getElementById("liveCallControls").hidden = false;
     document.getElementById("liveCallEnded").hidden = true;
     document.getElementById("liveCallTimer").textContent = "00:00";
-    document.getElementById("liveCallStatus").textContent = "Connecting";
+    document.getElementById("liveCallStatus").textContent = "Connecting…";
     document.getElementById("liveCallMicrophoneStatus").textContent = "Preparing microphone…";
     const mute = document.getElementById("liveCallMuteButton");
     const speaker = document.getElementById("liveCallSpeakerButton");

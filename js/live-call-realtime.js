@@ -270,6 +270,12 @@ class ExternalNonStreamingRenderer {
             this._playing = false;
             this.controller.assistantSpeaking = false;
             this.controller.responseHasAudio = false;
+            if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+            this.objectUrl = null;
+            if (this.controller.ownsMedia(this.audio)) {
+                this.audio.src = "";
+                this.controller.releaseMedia(this.audio);
+            }
         }
     }
 
@@ -750,7 +756,7 @@ class RealtimeLiveCallController {
         this.owner.startTimer();
         this.owner.elements.mute.disabled = false;
         this.owner.elements.speaker.disabled = false;
-        this.owner.setState("greeting", "Starting call");
+        this.owner.setState("greeting", "Connecting…");
         if (!this.greetingSent) {
             this.greetingSent = true;
             this.send({
@@ -923,7 +929,7 @@ class RealtimeLiveCallController {
         this.speechStartedLocalMicRms = this.micRms;
         this.speechStartedLocalMicPeak = this.micPeak;
         this.clearResponseWatchdog();
-        this.owner.setState("user_speaking", "Listening to you");
+        this.owner.setState("user_speaking", "Listening");
         this.interruptionDiagnostics = {
             speech_started_received: true,
             user_speech_started_received: true,

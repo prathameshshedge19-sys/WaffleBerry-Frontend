@@ -59,7 +59,7 @@ test("dedicated call screen is branded and accessible", () => {
     assert.match(call, /Waffle Berry/);
     assert.match(call, /data-companion-name/);
     assert.match(call, /id="liveCallRelationship"/);
-    assert.match(call, /role="status" aria-live="assertive"/);
+    assert.match(call, /id="liveCallStatus"[^>]*role="status" aria-live="polite" aria-atomic="true"/);
     assert.match(call, /role="timer"/);
     assert.match(call, /aria-label="Mute microphone" aria-pressed="false"/);
     assert.doesNotMatch(call, /id="liveCallTalkButton"|>Speak<|>Finish</);
@@ -193,7 +193,7 @@ test("turn recovery prevents duplicates and bounds disconnected recording", () =
 });
 
 test("network status is user-facing and accessibility announcements remain active", () => {
-    assert.match(script, /"Reconnecting"/);
+    assert.match(script, /"Reconnecting…"/);
     assert.match(script, /"Connection unstable"/);
     assert.match(script, /"Connection lost…"/);
     assert.match(script, /"The call connection was lost\. Please start a new call\."/);
@@ -389,7 +389,7 @@ test("greeting is automatic once and failure returns to listening", () => {
 
 test("initial startup uses a quiet local ringback without delaying session work", () => {
     assert.match(script, /RINGBACK_GAIN = 0\.025/);
-    assert.match(script, /this\.setState\("connecting", "Connecting"\)[\s\S]*getUserMedia[\s\S]*startRingback\(\)[\s\S]*createLiveCallSession/);
+    assert.match(script, /this\.setState\("connecting", "Connecting…"\)[\s\S]*getUserMedia[\s\S]*startRingback\(\)[\s\S]*createLiveCallSession/);
     assert.match(script, /initializeCallAudioOutput\(\)[\s\S]*createMediaStreamDestination\(\)[\s\S]*outputAudio\.srcObject/);
     assert.match(script, /createOscillator\(\)/);
     assert.match(script, /oscillator\.frequency\.value = 460/);
@@ -406,7 +406,7 @@ test("Connecting has an overlapping minimum before silent greeting preparation",
 });
 
 test("slow greeting starts immediately after arrival without an added delay", () => {
-    assert.match(script, /completeInitialConnection\(\)[\s\S]*this\.setState\("greeting", "Starting call"\)[\s\S]*this\.playGreeting\(pendingGreeting\)/);
+    assert.match(script, /completeInitialConnection\(\)[\s\S]*this\.setState\("greeting", "Connecting…"\)[\s\S]*this\.playGreeting\(pendingGreeting\)/);
     assert.doesNotMatch(script, /playGreeting\(message\)[\s\S]{0,900}MINIMUM_CONNECTING_MS/);
 });
 
@@ -424,7 +424,7 @@ test("ringback is initial-only, speaker-aware, and never used for reconnect", ()
 });
 
 test("ringback stops before greeting playback and on every terminal startup path", () => {
-    assert.match(script, /completeInitialConnection\(\)[\s\S]*await this\.stopRingback\(false, true\)[\s\S]*setState\("greeting", "Starting call"\)/);
+    assert.match(script, /completeInitialConnection\(\)[\s\S]*await this\.stopRingback\(false, true\)[\s\S]*setState\("greeting", "Connecting…"\)/);
     assert.match(script, /stopRingback\(discardPendingGreeting = true, fadeOut = false\)[\s\S]*linearRampToValueAtTime[\s\S]*RINGBACK_FADE_OUT_MS/);
     assert.match(script, /finishGreeting\(\)[\s\S]*this\.stopRingback\(\)[\s\S]*setState\("listening"/);
     assert.match(script, /performEnd\(\)[\s\S]*this\.stopRingback\(\)/);
@@ -435,15 +435,15 @@ test("ringback stops before greeting playback and on every terminal startup path
 });
 
 test("startup preparation remains truthful and accessible without Thinking", () => {
-    assert.match(script, /beginGreeting\(\)[\s\S]*setState\("greeting", "Starting call"\)/);
+    assert.match(script, /beginGreeting\(\)[\s\S]*setState\("greeting", "Connecting…"\)/);
     assert.match(script, /playGreeting\(message\)[\s\S]*confirmPlayback\(null, true\)/);
     assert.match(script, /finishGreeting\(\)[\s\S]*setState\("listening", this\.muted \? "Muted" : "Listening"\)/);
     assert.doesNotMatch(script, /beginGreeting\(\)[\s\S]{0,180}Thinking/);
-    assert.match(call, /id="liveCallStatus"[\s\S]*role="status" aria-live="assertive"/);
-    assert.match(script, /await this\.stopRingback\(false, true\)[\s\S]*setState\("greeting", "Starting call"\)/);
+    assert.match(call, /id="liveCallStatus"[^>]*role="status" aria-live="polite" aria-atomic="true"/);
+    assert.match(script, /await this\.stopRingback\(false, true\)[\s\S]*setState\("greeting", "Connecting…"\)/);
 });
 
-test("call timer remains zero through Connecting and silent Starting call", () => {
+test("call timer remains zero through Connecting and silent greeting preparation", () => {
     assert.match(call, /id="liveCallTimer"[\s\S]*>00:00</);
     assert.doesNotMatch(script, /startRingback\(\)[\s\S]{0,500}startTimer\(\)/);
     assert.doesNotMatch(script, /connected\(message = \{\}, resumed = false\)[\s\S]{0,700}this\.connectedAt = Date\.now\(\)/);
@@ -493,28 +493,47 @@ test("Live Call styles cover touch, focus, mobile, Night Mode and reduced motion
     assert.match(styles, /@media \(max-height: 650px\) and \(orientation: landscape\)/);
 });
 
-test("premium call status removes the generic pink bullet and technical ellipses", () => {
+test("premium call status removes the generic pink bullet and technical copy", () => {
     assert.doesNotMatch(call, /live-call-state-dot/);
     assert.doesNotMatch(styles, /\.live-call-state-dot/);
-    assert.doesNotMatch(script, /Berry is speaking|Listening…|Thinking…|Connecting…/);
+    assert.doesNotMatch(script, /Berry is speaking|Listening to you|Processing|Realtime connected|Transport recovering/);
     assert.match(styles, /\.live-call-status[\s\S]*text-align: center/);
     assert.match(styles, /color: var\(--text-soft/);
 });
 
 test("authoritative states drive calm visible call labels", () => {
-    assert.match(script, /setState\("connecting", "Connecting"\)/);
+    assert.match(script, /setState\("connecting", "Connecting…"\)/);
     assert.match(script, /setState\("listening", this\.muted \? "Muted" : "Listening"\)/);
-    assert.match(script, /setState\("user_speaking", "Listening to you"\)/);
+    assert.match(script, /setState\("user_speaking", "Listening"\)/);
     assert.match(script, /setState\("processing", "Thinking"\)/);
     assert.match(script, /setState\("speaking", "Speaking"\)/);
-    assert.match(script, /setTransportState\("reconnecting", "Reconnecting"\)/);
+    assert.match(script, /setTransportState\("reconnecting", "Reconnecting…"\)/);
     assert.match(script, /setState\("ended", "Call ended"\)/);
     assert.match(styles, /body\[data-call-state="processing"\] \.live-call-status::after/);
     assert.match(styles, /body\[data-call-state="user_speaking"\] \.live-call-orbit-one/);
 });
 
 test("status remains accessible and motion-safe", () => {
-    assert.match(call, /id="liveCallStatus"[\s\S]*role="status" aria-live="assertive"/);
+    assert.match(call, /id="liveCallStatus"[^>]*role="status" aria-live="polite" aria-atomic="true"/);
     assert.match(call, /role="timer" aria-label="Call duration"/);
     assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.live-call-status[\s\S]*animation: none !important/);
+});
+
+test("polished call UI keeps identity prominent and controls focused", () => {
+    assert.match(call, /class="live-call-eyebrow">Live Call</);
+    assert.match(call, /data-companion-name>Berry</);
+    assert.match(script, /element\.textContent = legacy\.displayName/);
+    assert.match(call, /id="liveCallMuteButton"[^>]*aria-label="Mute microphone"[^>]*aria-pressed="false"/);
+    assert.match(call, /id="liveCallSpeakerButton"[^>]*aria-label="Turn speaker off"[^>]*aria-pressed="true"/);
+    assert.match(call, /id="liveCallEndButton"[^>]*aria-label="End call"[\s\S]*<span>End call<\/span>/);
+    assert.doesNotMatch(call, /live-call-settings|settings gear|voice selector|response length/i);
+});
+
+test("responsive call controls remain reachable without wrapping or fake output activity", () => {
+    assert.match(styles, /@media \(max-width: 650px\)[\s\S]*\.live-call-controls[\s\S]*flex-wrap: nowrap/);
+    assert.match(styles, /\.live-call-control[\s\S]*min-height: 62px/);
+    assert.match(styles, /\.live-call-shell[\s\S]*min-height: 100dvh/);
+    assert.match(styles, /\.live-call-overlay[\s\S]*env\(safe-area-inset-top\)[\s\S]*env\(safe-area-inset-bottom\)/);
+    assert.match(styles, /body\[data-call-state="speaking"\] \.live-call-voice-bars/);
+    assert.doesNotMatch(styles, /body\[data-call-state="(?:greeting|user_speaking)"\] \.live-call-voice-bars/);
 });

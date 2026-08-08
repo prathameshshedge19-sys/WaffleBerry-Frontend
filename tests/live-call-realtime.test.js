@@ -147,6 +147,22 @@ test("native realtime uses WebRTC microphone and one persistent remote audio ele
     assert.match(realtime, /if \(!this\.owner\.debugLiveCall[\s\S]*startMicDiagnostic/);
 });
 
+test("Live Call provider credentials and private payloads remain transient and out of storage and logs", () => {
+    const liveCallSources = `${realtime}\n${cascade}`;
+    for (const storage of ["localStorage", "sessionStorage", "indexedDB", "document.cookie"]) {
+        assert.doesNotMatch(liveCallSources, new RegExp(storage.replace(".", "\\."), "i"));
+    }
+    assert.doesNotMatch(liveCallSources + api, /OPENAI_API_KEY|SARVAM_API_KEY/);
+    assert.match(realtime, /Authorization: `Bearer \$\{bootstrap\.client_secret\}`/);
+    assert.doesNotMatch(realtime, /console\.(?:log|debug|warn|error)\([^\n]*(?:client_secret|event\.arguments|result\.memories|result\.identity)/);
+    assert.doesNotMatch(cascade, /console\.(?:log|debug|warn|error)\([^\n]*(?:transcript|response\.text|audio\.data)/);
+    assert.match(realtime, /this\.micTrack\?\.removeEventListener/);
+    assert.match(realtime, /this\.channel\?\.close\(\)/);
+    assert.match(realtime, /this\.peer\?\.close\(\)/);
+    assert.match(realtime, /await new Promise[\s\S]*URL\.revokeObjectURL\(this\.objectUrl\)[\s\S]*this\.objectUrl = null/);
+    assert.match(cascade, /this\.stream\?\.getTracks\(\)\.forEach\(\(track\) => track\.stop\(\)\)/);
+});
+
 test("the production Chat shell loads Realtime before Live Call and contains shared required DOM", () => {
     const realtimeScript = chatHtml.indexOf('<script src="js/live-call-realtime.js"></script>');
     const liveCallScript = chatHtml.indexOf('<script src="js/live-call.js"></script>');

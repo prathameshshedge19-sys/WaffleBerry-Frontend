@@ -7737,6 +7737,7 @@ body.live-call-overlay-open {
 .live-call-shell {
     width: min(100% - 32px, 920px);
     min-height: 100vh;
+    min-height: 100dvh;
     margin: 0 auto;
     padding: 22px 0 max(34px, env(safe-area-inset-bottom));
 }
@@ -8144,16 +8145,12 @@ body[data-call-state="processing"] .live-call-orbit-two {
     animation: liveCallThink 2.2s linear infinite;
 }
 
-body[data-call-state="speaking"] .live-call-voice-bars,
-body[data-call-state="greeting"] .live-call-voice-bars,
-body[data-call-state="user_speaking"] .live-call-voice-bars {
+body[data-call-state="speaking"] .live-call-voice-bars {
     opacity: 1;
     transform: translateY(0);
 }
 
-body[data-call-state="speaking"] .live-call-voice-bars i,
-body[data-call-state="greeting"] .live-call-voice-bars i,
-body[data-call-state="user_speaking"] .live-call-voice-bars i {
+body[data-call-state="speaking"] .live-call-voice-bars i {
     animation: liveCallVoice 820ms ease-in-out infinite alternate;
 }
 
@@ -8258,13 +8255,14 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
 
     .live-call-controls {
         width: 100%;
+        flex-wrap: nowrap;
         gap: 10px;
     }
 
     .live-call-control {
         min-width: 0;
         min-height: 66px;
-        flex: 1 1 calc(25% - 10px);
+        flex: 1 1 0;
         padding: 8px 5px;
         font-size: 0.76rem;
     }
@@ -8274,7 +8272,7 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
         min-height: 48px;
     }
 
-    .live-call-end { flex-grow: 0.82; }
+    .live-call-end { flex-grow: 1; }
 
     .live-call-settings-dialog {
         width: 100%;

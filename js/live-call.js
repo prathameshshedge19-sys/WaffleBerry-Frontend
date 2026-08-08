@@ -519,7 +519,7 @@ class LiveCallController {
 
     async start() {
         if (this.state !== "idle") return;
-        this.setState("connecting", "Connecting");
+        this.setState("connecting", "Connecting…");
         if (!this.legacy?.backendLegacyId) {
             return this.fail("This Companion is not available for Live Call.");
         }
@@ -1084,7 +1084,7 @@ class LiveCallController {
         timing.streaming_stt_fallback_reason = streamingSttStarted ? "none" : "unsupported";
         this.recorder.start(250);
         document.body.dataset.recording = "true";
-        this.setState("user_speaking", "Listening to you");
+        this.setState("user_speaking", "Listening");
         this.elements.microphoneStatus.textContent = "You are speaking";
         this.vadTurnTimer = this.clock.setTimeout(
             () => this.finishAutomaticTurn(Date.now(), true), VAD_MAXIMUM_TURN_MS
@@ -1286,9 +1286,9 @@ class LiveCallController {
             this.completeInitialConnection();
             return;
         }
-        this.setState("connected", "Connected");
+        this.setState("connected", "Listening");
         if (!message.greeting_completed) {
-            this.setState("greeting", "Starting call");
+            this.setState("greeting", "Connecting…");
         } else {
             this.reconcileTurn(message, resumed);
         }
@@ -1303,7 +1303,7 @@ class LiveCallController {
         if (this.state !== "connecting" || this.intentionalEnd) return;
         const message = this.pendingInitialReady;
         this.pendingInitialReady = null;
-        this.setState("greeting", "Starting call");
+        this.setState("greeting", "Connecting…");
         const pendingGreeting = this.pendingGreeting;
         this.pendingGreeting = null;
         if (message.greeting_completed && !pendingGreeting) {
@@ -1316,7 +1316,7 @@ class LiveCallController {
     beginGreeting() {
         if (["ending", "ended", "error"].includes(this.state)) return;
         if (this.state === "connecting" || this.startupTransitioning) return;
-        this.setState("greeting", "Starting call");
+        this.setState("greeting", "Connecting…");
     }
 
     async playGreeting(message) {
@@ -1430,7 +1430,7 @@ class LiveCallController {
             return;
         }
         if (this.reconnectAttempt >= RECONNECT_DELAYS_MS.length) return this.failUnavailable(true);
-        this.setTransportState("reconnecting", "Reconnecting");
+        this.setTransportState("reconnecting", "Reconnecting…");
         this.boundRecordingDuringDisconnect();
         const base = RECONNECT_DELAYS_MS[this.reconnectAttempt++];
         const delay = Math.round(base * (0.85 + this.random() * 0.3));

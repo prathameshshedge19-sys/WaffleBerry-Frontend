@@ -303,7 +303,7 @@ test("visibility recovery is bounded and navigation cleanup closes the shared co
 test("persistent output has no second-tap UI and existing controls remain accessible", () => {
     assert.doesNotMatch(markup, /liveCallAudioUnlock|Tap for sound|Tap to start call/);
     assert.doesNotMatch(markup, /Tap to start call/);
-    assert.match(markup, /id="liveCallStatus"[^>]*role="status"[^>]*aria-live="assertive"/);
+    assert.match(markup, /id="liveCallStatus"[^>]*role="status"[^>]*aria-live="polite"[^>]*aria-atomic="true"/);
     assert.match(styles, /\.live-call-audio-unlock[\s\S]*min-height:\s*48px/);
     assert.match(styles, /\.live-call-audio-unlock:focus-visible/);
     assert.match(styles, /@media \(max-width: 650px\)[\s\S]*\.live-call-audio-unlock[\s\S]*min-height:\s*48px/);
