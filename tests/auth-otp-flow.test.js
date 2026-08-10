@@ -21,6 +21,9 @@ test("registration collects password only after OTP verification", () => {
     assert.match(verify, /\/complete-registration/);
     assert.match(verify, /Passwords do not match/);
     assert.match(verify, /verification_token:\s*authorization/);
+    assert.match(verify, /storeAuthenticatedSession\(result\)/);
+    assert.match(verify, /window\.location\.href = "experience\.html"/);
+    assert.doesNotMatch(verify, /window\.location\.href = "login\.html"/);
 });
 
 test("login loads runtime config before one API utility", () => {
@@ -41,4 +44,13 @@ test("password reset carries OTP authorization and explicit resend purpose", () 
 
 test("API helper never stores pending plaintext registration credentials", () => {
     assert.doesNotMatch(read("js/api.js"), /pendingVerificationCredentials/);
+});
+
+test("login and completed registration share canonical session storage", () => {
+    const api = read("js/api.js");
+    const verify = read("js/verify-email.js");
+    assert.match(api, /function storeAuthenticatedSession\(response\)/);
+    assert.match(api, /async function authenticateUser[\s\S]*storeAuthenticatedSession\(response\)/);
+    assert.match(api, /storeSession\(\s*response\.access_token,\s*response\.user\s*\)/);
+    assert.equal((verify.match(/storeAuthenticatedSession\(/g) || []).length, 1);
 });

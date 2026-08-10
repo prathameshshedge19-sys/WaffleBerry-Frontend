@@ -1,6 +1,6 @@
 "use strict";
 (function () {
-const { ApiError, apiRequest } = window.WaffleBerryApi;
+const { ApiError, apiRequest, storeAuthenticatedSession } = window.WaffleBerryApi;
 const email = new URLSearchParams(window.location.search).get("email")?.trim();
 const otpForm = document.getElementById("verificationForm");
 const passwordForm = document.getElementById("passwordCreationForm");
@@ -47,12 +47,13 @@ passwordForm.addEventListener("submit", async (event) => {
     }
     submitting = true;
     try {
-        await apiRequest("/complete-registration", {
+        const result = await apiRequest("/complete-registration", {
             method: "POST", authenticated: false,
             body: { verification_token: authorization, password: password.value }
         });
+        storeAuthenticatedSession(result);
         authorization = null;
-        window.location.href = "login.html";
+        window.location.href = "experience.html";
     } catch (error) { failure(error, "Unable to create your account."); }
     finally { submitting = false; }
 });

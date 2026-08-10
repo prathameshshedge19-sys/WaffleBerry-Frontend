@@ -327,13 +327,19 @@ async function authenticateUser(email, password) {
         }
     );
 
+    storeAuthenticatedSession(response);
+    return response;
+}
+
+
+function storeAuthenticatedSession(response) {
     if (
         !response?.access_token ||
         response.token_type !== "bearer" ||
         !response.user
     ) {
         throw new ApiError(
-            "The server returned an invalid login response.",
+            "The server returned an invalid authentication response.",
             { kind: "server" }
         );
     }
@@ -342,7 +348,6 @@ async function authenticateUser(email, password) {
         response.access_token,
         response.user
     );
-    return response;
 }
 
 
@@ -1053,6 +1058,7 @@ window.WaffleBerryApi = Object.freeze({
     ApiError,
     apiRequest,
     authenticateUser,
+    storeAuthenticatedSession,
     getFriendlyChatError,
     streamChatMessage,
     streamStoryGuide,
