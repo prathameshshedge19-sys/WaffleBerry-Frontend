@@ -64,7 +64,7 @@ test("Who's There displays selected identity and two distinct choices", () => {
     assert.match(decisionHtml, /id="companionHomeTitle"/);
     assert.match(decisionHtml, /id="companionHomeRelationship"/);
     assert.match(decisionHtml, /Chat with Companion/);
-    assert.match(decisionHtml, /Add More to Legacy/);
+    assert.match(decisionHtml, /Add Memories/);
     assert.match(decision, /elements\.title\.textContent = persisted\.displayName/);
     assert.match(decision, /elements\.relationship\.textContent = persisted\.relationship/);
 });
@@ -84,7 +84,7 @@ test("selected Legacy repaired flow contains no mojibake literals", () => {
     assert.match(decisionHtml, /assets\/waffle-berry-mascot\.png/);
     assert.match(decisionHtml, /<svg viewBox="0 0 24 24" focusable="false">/);
     assert.match(decisionHtml, /Chat with Companion/);
-    assert.match(decisionHtml, /Add More to Legacy/);
+    assert.match(decisionHtml, /Add Memories/);
 });
 
 test("decision choices preserve selected persisted Legacy", () => {
