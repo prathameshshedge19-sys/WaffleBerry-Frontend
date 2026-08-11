@@ -6,6 +6,23 @@ const path = require("node:path");
 const vm = require("node:vm");
 const root = path.resolve(__dirname, "..");
 const read = (name) => fs.readFileSync(path.join(root, name), "utf8");
+const createElements = (ids) => Object.fromEntries(ids.map((id) => [id, {
+    value: "",
+    disabled: false,
+    classList: { toggle() {} },
+    addEventListener(type, handler) { this[type] = handler; }
+}]));
+const authPageContext = (elements, apiRequest, search = "") => ({
+    window: {
+        location: { search, href: "" },
+        WaffleBerryApi: {
+            ApiError: class ApiError extends Error {},
+            apiRequest
+        }
+    },
+    document: { getElementById: (id) => elements[id] },
+    URLSearchParams
+});
 
 test("registration collects password only after OTP verification", () => {
     const login = read("js/login.js");
@@ -34,8 +51,13 @@ test("login loads runtime config before one API utility", () => {
 });
 
 test("password reset carries OTP authorization and explicit resend purpose", () => {
+    const html = read("verify-reset-otp.html");
     const verify = read("js/verify-reset-otp.js");
     const reset = read("js/reset-password.js");
+    assert.match(html, /<h2>Verify Reset Code<\/h2>/);
+    assert.doesNotMatch(html, /Verify Reset Code\/h2>/);
+    assert.ok(html.indexOf("js/config.js") < html.indexOf("js/api.js"));
+    assert.match(verify, /apiRequest\("\/verify-reset-otp"/);
     assert.match(verify, /purpose:\s*"password_reset"/);
     assert.match(verify, /passwordResetAuthorization/);
     assert.match(reset, /reset_token:\s*resetToken/);
@@ -45,6 +67,60 @@ test("password reset carries OTP authorization and explicit resend purpose", () 
 
 test("API helper never stores pending plaintext registration credentials", () => {
     assert.doesNotMatch(read("js/api.js"), /pendingVerificationCredentials/);
+});
+
+test("forgot-password sends one request and advances to reset-code verification", async () => {
+    const elements = createElements(["forgotPasswordForm", "emailInput", "loginMessage", "backToLoginButton", "authSubmitButton"]);
+    elements.emailInput.value = "user@example.com";
+    const requests = [];
+    const context = authPageContext(elements, async (...args) => { requests.push(args); return {}; });
+    vm.runInNewContext(read("js/forgot-password.js"), context);
+    await elements.forgotPasswordForm.submit({ preventDefault() {} });
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0][0], "/forgot-password");
+    assert.equal(context.window.location.href, "verify-reset-otp.html?email=user%40example.com");
+});
+
+test("reset OTP verifies once, stores authorization, and advances", async () => {
+    const elements = createElements(["verificationForm", "otpInput", "verifyButton", "resendOtpButton", "verificationMessage", "verificationDescription"]);
+    elements.otpInput.value = "123456";
+    const requests = [];
+    const stored = new Map();
+    const context = authPageContext(elements, async (...args) => {
+        requests.push(args);
+        return { authorization: "reset-authorization" };
+    }, "?email=user%40example.com");
+    context.sessionStorage = {
+        setItem: (key, value) => stored.set(key, value),
+        getItem: (key) => stored.get(key),
+        removeItem: (key) => stored.delete(key)
+    };
+    context.window.setTimeout = (callback) => callback();
+    vm.runInNewContext(read("js/verify-reset-otp.js"), context);
+    await elements.verificationForm.submit({ preventDefault() {} });
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0][0], "/verify-reset-otp");
+    assert.notEqual(requests[0][0], "/forgot-password");
+    assert.equal(stored.get("passwordResetAuthorization"), "reset-authorization");
+    assert.equal(context.window.location.href, "reset-password.html?email=user%40example.com");
+});
+
+test("reset-password submits the stored authorization and returns to login", async () => {
+    const elements = createElements(["resetPasswordForm", "passwordInput", "confirmPasswordInput", "authSubmitButton", "loginMessage", "backToLoginButton"]);
+    elements.passwordInput.value = "Password123";
+    elements.confirmPasswordInput.value = "Password123";
+    const requests = [];
+    const context = authPageContext(elements, async (...args) => { requests.push(args); return {}; }, "?email=user%40example.com");
+    context.sessionStorage = {
+        getItem: () => "reset-authorization",
+        setItem() {},
+        removeItem() {}
+    };
+    vm.runInNewContext(read("js/reset-password.js"), context);
+    await elements.resetPasswordForm.submit({ preventDefault() {} });
+    assert.equal(requests[0][0], "/reset-password");
+    assert.equal(requests[0][1].body.reset_token, "reset-authorization");
+    assert.equal(context.window.location.href, "login.html");
 });
 
 for (const page of ["verify-email.html", "forgot-password.html", "reset-password.html"]) {

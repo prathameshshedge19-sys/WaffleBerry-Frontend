@@ -49,11 +49,11 @@ test("every API-backed page loads runtime config before api.js", () => {
 
     for (const name of htmlFiles) {
         const source = fs.readFileSync(path.join(root, name), "utf8");
-        const apiIndex = source.indexOf('src="js/api.js"');
+        const apiIndex = source.search(/src="js\/api\.js(?:\?[^\"]*)?"/);
         if (apiIndex === -1) {
             continue;
         }
-        const configIndex = source.indexOf('src="js/config.js"');
+        const configIndex = source.search(/src="js\/config\.js(?:\?[^\"]*)?"/);
         assert.ok(configIndex !== -1 && configIndex < apiIndex, name);
     }
 });
