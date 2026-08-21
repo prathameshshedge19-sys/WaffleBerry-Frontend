@@ -8,12 +8,13 @@ const vm = require("node:vm");
 
 const root = path.join(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "js", "live-call.js"), "utf8");
+const realtimeSource = fs.readFileSync(path.join(root, "js", "live-call-realtime.js"), "utf8");
 const markup = fs.readFileSync(path.join(root, "live-call.html"), "utf8");
 const chat = fs.readFileSync(path.join(root, "chat.html"), "utf8");
 const chatScript = fs.readFileSync(path.join(root, "js", "chat.js"), "utf8");
 const styles = fs.readFileSync(path.join(root, "css", "style.css"), "utf8");
 
-function loadController() {
+function loadController(options = {}) {
     const document = {
         body: { dataset: {} },
         visibilityState: "visible",
@@ -32,13 +33,15 @@ function loadController() {
         setInterval,
         clearInterval
     };
+    Object.assign(window, options.window || {});
     const sandbox = {
         window, document, navigator: {}, console, URLSearchParams, URL, Blob,
         Uint8Array, Float32Array, DataView, Set, Map, Promise,
         atob, btoa, CustomEvent: class CustomEvent {}
     };
+    if (options.realtime) vm.runInNewContext(realtimeSource, sandbox);
     vm.runInNewContext(source, sandbox);
-    return { Controller: window.WaffleBerryLiveCall.LiveCallController, document };
+    return { Controller: window.WaffleBerryLiveCall.LiveCallController, document, window };
 }
 
 function elements() {
@@ -59,9 +62,85 @@ function elements() {
         outputAudio: { autoplay: false, playsInline: false, muted: false, volume: 1,
             srcObject: null, paused: true, playCalls: 0,
             play() { this.playCalls += 1; this.paused = false; return Promise.resolve(); },
-            pause() { this.paused = true; } }
+            pause() { this.paused = true; } },
+        realtimeOutput: { autoplay: false, playsInline: false, muted: false, volume: 1,
+            srcObject: null, paused: true, addEventListener() {}, removeEventListener() {},
+            play() { this.paused = false; return Promise.resolve(); }, pause() { this.paused = true; } }
     };
 }
+
+test("production LiveCall to Realtime chain negotiates media, greets once, and reports a safe retry boundary", async () => {
+    class Channel {
+        constructor() { this.readyState = "connecting"; this.listeners = {}; this.sent = []; }
+        addEventListener(name, callback) { this.listeners[name] = callback; }
+        send(value) { this.sent.push(JSON.parse(value)); }
+        open() { this.readyState = "open"; this.listeners.open?.(); }
+        close() { this.readyState = "closed"; }
+    }
+    const channel = new Channel();
+    let peer;
+    class Peer {
+        constructor() { peer = this; this.connectionState = "new"; this.iceConnectionState = "new";
+            this.signalingState = "stable"; this.tracks = []; }
+        addEventListener() {}
+        createDataChannel() { return channel; }
+        addTrack(track) { this.tracks.push(track); return { track }; }
+        getTransceivers() { return []; }
+        async createOffer() { return { type: "offer", sdp: "test-offer" }; }
+        async setLocalDescription() { this.signalingState = "have-local-offer"; }
+        async setRemoteDescription() { this.signalingState = "stable"; }
+        close() { this.connectionState = "closed"; }
+    }
+    const track = { kind: "audio", readyState: "live", enabled: true, muted: false,
+        addEventListener() {}, removeEventListener() {}, stop() {} };
+    const stream = { getAudioTracks: () => [track], getTracks: () => [track] };
+    const events = [];
+    const { Controller } = loadController({ realtime: true, window: {
+        RTCPeerConnection: Peer,
+        fetch: async () => {
+            peer.ontrack?.({ track, streams: [{ id: "remote" }] });
+            setTimeout(() => channel.open(), 0);
+            return { ok: true, status: 200, text: async () => "test-answer" };
+        }
+    } });
+    class AudioContext { constructor() { return audioContext("running"); } }
+    let bootstrapCalls = 0;
+    const api = {
+        createLiveCallSession: async () => ({ session_id: "session-1", engine: "realtime",
+            transport: "webrtc", realtime_capable: true, speech_renderer: "realtime_native",
+            realtime_strict: true, engine_reason: "none", effective_voice: "marin" }),
+        createRealtimeBootstrap: async () => (++bootstrapCalls === 1 ? {} : ({
+            client_secret: "ephemeral", expires_at: 9, model: "gpt-realtime", voice: "marin"
+        })),
+        reportLiveCallOperationalEvent: async (_id, event) => events.push(event),
+        endLiveCallSession: async () => {}
+    };
+    const failed = new Controller({
+        legacy: { backendLegacyId: 1, relationship: "Grandmother" }, elements: elements(),
+        mediaDevices: { getUserMedia: async () => stream }, AudioContextClass: AudioContext, api
+    });
+    await failed.start();
+    assert.equal(failed.state, "error");
+    const failure = events.find((event) => event.outcome === "startup_failed");
+    assert.equal(failure.startup_phase, "bootstrap_start");
+    assert.equal(failure.failure_code, "bootstrap_contract_invalid");
+    assert.equal(failure.peer_state, "unavailable");
+    assert.equal(failure.data_channel_state, "unavailable");
+
+    const controller = new Controller({
+        legacy: { backendLegacyId: 1, relationship: "Grandmother" }, elements: elements(),
+        mediaDevices: { getUserMedia: async () => stream }, AudioContextClass: AudioContext,
+        api
+    });
+    await controller.start();
+    assert.equal(controller.startupPhase, "ready");
+    assert.equal(peer.tracks.length, 1);
+    assert.equal(controller.elements.realtimeOutput.srcObject.id, "remote");
+    assert.equal(channel.sent.filter((event) => event.type === "response.create").length, 1);
+    assert.notEqual(controller.timerId, null);
+    assert.equal(events.filter((event) => event.event === "call_started").length, 1);
+    await controller.end();
+});
 
 function audioContext(initialState = "running") {
     let allowResume = initialState === "running";

@@ -200,7 +200,7 @@ test("function calls complete once through authenticated WaffleBerry tools", () 
     assert.match(realtime, /this\.completedToolCalls\.has\(event\.call_id\)/);
     assert.match(realtime, /executeRealtimeTool/);
     assert.match(realtime, /type: "function_call_output"/);
-    assert.match(realtime, /this\.send\(\{ type: "response\.create", response: \{ output_modalities: \[this\.renderer\.kind === "native" \? "audio" : "text"\], tool_choice: "none" \} \}\)/);
+    assert.match(realtime, /continuationInstructions/);
 });
 
 test("hybrid selection and startup-only cascade fallback remain explicit", () => {
@@ -310,7 +310,11 @@ test("mocked peer lifecycle adds microphone, attaches remote stream once, and cl
             return { ok: true, status: 200, text: async () => "answer-sdp" };
         }
     });
+    assert.equal(controller.validatedRenderer, null,
+        "native startup must not eagerly construct the grounded-turn renderer");
     await controller.start();
+    assert.equal(controller.validatedRenderer, null,
+        "bootstrap, SDP, media, and greeting must remain independent of grounded rendering");
     assert.equal(controller.peer.tracks.length, 1);
     const remoteTrack = new Emitter();
     Object.assign(remoteTrack, { id: "track-1", kind: "audio", readyState: "live", enabled: true, muted: false });
@@ -363,6 +367,46 @@ test("native startup uses the documented SDP contract and requests greeting afte
     assert.equal(channel.sent.filter((event) => event.type === "response.create").length, 1);
 });
 
+test("browser SDP fetch rejection is classified at the exact startup boundary", async () => {
+    const channel = new Emitter();
+    channel.readyState = "connecting";
+    class Peer {
+        addEventListener() {}
+        createDataChannel() { return channel; }
+        addTrack() { return {}; }
+        getTransceivers() { return []; }
+        async createOffer() { return { type: "offer", sdp: "private-offer" }; }
+        async setLocalDescription() {}
+        close() {}
+    }
+    const phases = [];
+    const owner = {
+        api: { createRealtimeBootstrap: async () => ({ client_secret: "ephemeral-only" }) },
+        session: { session_id: "session-1" },
+        stream: { getAudioTracks: () => [{ kind: "audio" }], getTracks: () => [] },
+        elements: { realtimeOutput: {}, mute: {}, speaker: {} },
+        setStartupPhase: (phase) => phases.push(phase), renderDebugPanel() {},
+        speakerEnabled: true, clock: { setTimeout, clearTimeout }, debugLiveCall: false
+    };
+    const Controller = loadRealtimeController();
+    const controller = new Controller(owner, {
+        RTCPeerConnectionClass: Peer,
+        fetch: async () => { throw new TypeError("Failed to fetch"); }
+    });
+    await assert.rejects(controller.start(), (error) => {
+        assert.equal(error.frontendCategory, "sdp_fetch_failed");
+        assert.equal(error.messageCode, "sdp_fetch_failed");
+        assert.equal(error.realtimeStage, "sdp_exchange_failed");
+        return true;
+    });
+    assert.equal(phases.at(-1), "sdp_request_start");
+    const snapshot = controller.startupFailureSnapshot(new TypeError("Failed to fetch"));
+    assert.equal(snapshot.failure_code, "sdp_fetch_failed");
+    assert.equal(snapshot.sdp_attempted, true);
+    assert.equal(snapshot.remote_description_set, false);
+    controller.close();
+});
+
 test("strict startup failure owns one cleanup and contains no cascade session creation branch", () => {
     assert.match(cascade, /if \(this\.session\.realtime_strict\)[\s\S]*endLiveCallSession\(failedSessionId\)[\s\S]*throw error/);
     const strictBranch = cascade.match(/if \(this\.session\.realtime_strict\) \{([\s\S]*?)\n\s*\}/)?.[1] || "";
@@ -375,10 +419,13 @@ function runtimeController(options = {}) {
     const states = [];
     const channel = { readyState: "open", send: (value) => sent.push(JSON.parse(value)) };
     const owner = {
-        api: options.api || { executeRealtimeTool: async () => ({ result: {
-            status: "supported", memory_count: 1, identity_count: 0,
-            followup_context: "active", diagnostics: { total_tool_ms: 12 }
-        } }) },
+        api: options.api || {
+            routeRealtimeTurn: async () => ({ route: "direct", tool_name: null }),
+            executeRealtimeTool: async () => ({ result: {
+                status: "supported", memory_count: 1, identity_count: 0,
+                followup_context: "active", diagnostics: { total_tool_ms: 12 }
+            } })
+        },
         session: { session_id: "session-1" }, state: "listening", muted: false,
         elements: { realtimeOutput: { paused: false } },
         setState(state, label) { this.state = state; states.push([state, label]); },
@@ -392,8 +439,157 @@ function runtimeController(options = {}) {
         performance: options.performance || { now: () => 100 }
     });
     controller.channel = channel;
+    controller.greetingComplete = true;
     return { controller, owner, sent, states };
 }
+
+function loadApiForAuth(fetchImpl) {
+    const stored = new Map([
+        ["accessToken", "token-A"],
+        ["currentUser", JSON.stringify({ user_id: 7 })]
+    ]);
+    const localStorage = {
+        getItem: (key) => stored.get(key) || null,
+        setItem: (key, value) => stored.set(key, String(value)),
+        removeItem: (key) => stored.delete(key)
+    };
+    const window = {
+        WAFFLEBERRY_API_BASE_URL: "https://api.example.test/api/v1",
+        location: { hostname: "app.example.test", href: "https://app.example.test/live-call.html" },
+        fetch: fetchImpl
+    };
+    vm.runInNewContext(api, { window, localStorage, fetch: fetchImpl, URL, console, JSON, Promise });
+    return { api: window.WaffleBerryApi, stored };
+}
+
+function jsonResponse(status, body) {
+    return {
+        status, ok: status >= 200 && status < 300,
+        text: async () => body == null ? "" : JSON.stringify(body)
+    };
+}
+
+test("mid-call 401 renews once and retries the same assistant turn with token B", async () => {
+    const requests = [];
+    let assistantAttempts = 0;
+    let renewals = 0;
+    const fetchImpl = async (url, options) => {
+        requests.push({ url, options });
+        if (url.endsWith("/refresh")) {
+            renewals += 1;
+            return jsonResponse(200, { access_token: "token-B", token_type: "bearer", user: { user_id: 7 } });
+        }
+        if (url.includes("/assistant-turn")) {
+            assistantAttempts += 1;
+            if (assistantAttempts === 1) return jsonResponse(401, { detail: "Could not validate credentials" });
+        }
+        return jsonResponse(200, { status: "ok" });
+    };
+    const { api: client } = loadApiForAuth(fetchImpl);
+    await client.routeRealtimeTurn("session", 1, "hello");
+    await client.executeRealtimeTool("session", 1, "call-1", "retrieve", { query: "dogs" });
+    await client.renderRealtimeSpeech("session", "response-1", "generation-1", 1, "Hello");
+    await client.persistRealtimeAssistantTurn("session", 1, "response-1", "Canonical answer");
+    await client.routeRealtimeTurn("session", 2, "next turn");
+
+    assert.equal(renewals, 1);
+    assert.equal(assistantAttempts, 2);
+    assert.equal(requests.filter((item) => item.url.includes("/tool")).length, 1);
+    assert.equal(requests.filter((item) => item.url.includes("/speech")).length, 1);
+    const assistantBodies = requests.filter((item) => item.url.includes("/assistant-turn"))
+        .map((item) => item.options.body);
+    assert.equal(assistantBodies[0], assistantBodies[1]);
+    assert.equal(requests.at(-1).options.headers.Authorization, "Bearer token-B");
+});
+
+test("concurrent 401 responses share one authentication renewal", async () => {
+    let renewals = 0;
+    const attempts = new Map();
+    const fetchImpl = async (url, options) => {
+        if (url.endsWith("/refresh")) {
+            renewals += 1;
+            await new Promise((resolve) => setImmediate(resolve));
+            return jsonResponse(200, { access_token: "token-B", token_type: "bearer", user: { user_id: 7 } });
+        }
+        attempts.set(url, (attempts.get(url) || 0) + 1);
+        if (options.headers.Authorization === "Bearer token-A") return jsonResponse(401, {});
+        return jsonResponse(200, { status: "ok" });
+    };
+    const { api: client } = loadApiForAuth(fetchImpl);
+    await Promise.all([
+        client.routeRealtimeTurn("session", 3, "one"),
+        client.reportLiveCallOperationalEvent("session", { event: "turn", outcome: "ok" })
+    ]);
+    assert.equal(renewals, 1);
+    assert.equal([...attempts.values()].every((count) => count === 2), true);
+});
+
+test("failed renewal clears authentication once and never replays the protected request", async () => {
+    let protectedAttempts = 0;
+    let renewals = 0;
+    const fetchImpl = async (url) => {
+        if (url.endsWith("/refresh")) {
+            renewals += 1;
+            return jsonResponse(401, { detail: "Session renewal failed" });
+        }
+        protectedAttempts += 1;
+        return jsonResponse(401, {});
+    };
+    const { api: client, stored } = loadApiForAuth(fetchImpl);
+    await assert.rejects(client.routeRealtimeTurn("session", 4, "expired"));
+    assert.equal(renewals, 1);
+    assert.equal(protectedAttempts, 1);
+    assert.equal(stored.has("accessToken"), false);
+});
+
+test("greeting startup VAD noise cannot cancel greeting or create a routed turn", async () => {
+    const requested = [];
+    const { controller, owner, sent } = runtimeController({
+        api: { routeRealtimeTurn: async (...args) => { requested.push(args); return {
+            route: "direct", tool_name: null
+        }; } }
+    });
+    controller.greetingComplete = false;
+    owner.state = "greeting";
+    controller.handleResponseCreated({ id: "greeting-response" });
+    controller.handleEvent({ data: JSON.stringify({ type: "input_audio_buffer.speech_started" }) });
+    controller.handleEvent({ data: JSON.stringify({ type: "input_audio_buffer.speech_stopped" }) });
+    controller.handleEvent({ data: JSON.stringify({
+        type: "input_audio_buffer.committed", item_id: "noise-item"
+    }) });
+    controller.handleEvent({ data: JSON.stringify({
+        type: "conversation.item.input_audio_transcription.completed",
+        item_id: "noise-item", transcript: "..."
+    }) });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(controller.activeUserInputTurnId, null);
+    assert.equal(requested.length, 0);
+    assert.equal(sent.filter((event) => event.type === "response.cancel").length, 0);
+    assert.notEqual(owner.state, "listening");
+    controller.close();
+});
+
+test("transcript acceptance rejects noise but preserves genuine short turns", async () => {
+    const requested = [];
+    const api = { routeRealtimeTurn: async (_session, turnId, text) => {
+        requested.push([turnId, text]); return { route: "direct", tool_name: null };
+    } };
+    const { controller } = runtimeController({ api });
+    for (const [turnId, transcript] of [[1, ""], [2, "   "], [3, "..."], [4, "No"], [5, "Wait"]]) {
+        controller.activeUserInputTurnId = turnId;
+        controller.turnRoutingGeneration = turnId;
+        controller.handleEvent({ data: JSON.stringify({
+            type: "input_audio_buffer.committed", item_id: `item-${turnId}`
+        }) });
+        controller.handleEvent({ data: JSON.stringify({
+            type: "conversation.item.input_audio_transcription.completed",
+            item_id: `item-${turnId}`, transcript
+        }) });
+        await new Promise((resolve) => setImmediate(resolve));
+    }
+    assert.deepEqual(requested, [[4, "No"], [5, "Wait"]]);
+    controller.close();
+});
 
 function confirmCandidate(controller) {
     assert.ok(controller.bargeInCandidate);
@@ -679,6 +875,239 @@ test("response stall watchdog cancels once, returns to Listening, and keeps the 
     controller.close();
 });
 
+test("completed transcription deterministically creates direct responses or executes the routed tool", async () => {
+    const cases = [
+        [{ route: "direct", tool_name: null }, "none"],
+        [{ route: "identity", tool_name: "get_legacy_identity_context" },
+            { type: "function", name: "get_legacy_identity_context" }],
+        [{ route: "memory", tool_name: "retrieve_legacy_memory_context" },
+            { type: "function", name: "retrieve_legacy_memory_context" }],
+        [{ route: "followup", tool_name: "retrieve_legacy_memory_context" },
+            { type: "function", name: "retrieve_legacy_memory_context" }],
+    ];
+    for (const [route, expectedChoice] of cases) {
+        const toolCalls = [];
+        const api = {
+            routeRealtimeTurn: async () => route,
+            executeRealtimeTool: async (...args) => {
+                toolCalls.push(args);
+                return { result: {
+                    status: "supported", uncertain: false, memories: [],
+                    validated_text: "Validated personal answer."
+                } };
+            }
+        };
+        const { controller, sent } = runtimeController({ api });
+        controller.activeUserInputTurnId = 1;
+        controller.turnRoutingGeneration = 1;
+        await controller.routeCompletedTranscription(1, "authoritative transcript");
+        await new Promise((resolve) => setImmediate(resolve));
+        if (route.route === "direct") {
+            assert.equal(sent.length, 1);
+            assert.deepEqual(JSON.parse(JSON.stringify(sent[0].response.tool_choice)), expectedChoice);
+            assert.match(sent[0].response.instructions, /active Legacy persona/);
+            assert.match(sent[0].response.instructions, /Never identify yourself as ChatGPT/);
+            assert.match(sent[0].response.instructions, /without inventing personal biography/);
+            assert.equal(toolCalls.length, 0);
+        } else {
+            assert.equal(toolCalls.length, 1);
+            assert.equal(sent[0].item.type, "function_call");
+            assert.equal(sent[0].item.name, route.tool_name);
+            assert.equal(sent[1].item.type, "function_call_output");
+            assert.equal(sent.some((event) => event.type === "response.create"), false);
+        }
+        controller.close();
+    }
+});
+
+test("late turn routes are discarded after a newer speech generation", async () => {
+    let resolveRoute;
+    const api = { routeRealtimeTurn: () => new Promise((resolve) => { resolveRoute = resolve; }) };
+    const { controller, sent } = runtimeController({ api });
+    controller.activeUserInputTurnId = 1;
+    controller.turnRoutingGeneration = 1;
+    const pending = controller.routeCompletedTranscription(1, "Who was your husband?");
+    controller.beginUserSpeech(100, false, false);
+    resolveRoute({ route: "identity", tool_name: "get_legacy_identity_context" });
+    await pending;
+    assert.equal(sent.filter((event) => event.type === "response.create").length, 0);
+    controller.close();
+});
+
+test("committed input ownership drives routing and mixed direct-Legacy-direct turns", async () => {
+    const requested = [];
+    const routes = [
+        { route: "direct", tool_name: null },
+        { route: "identity", tool_name: "get_legacy_identity_context" },
+        { route: "direct", tool_name: null },
+    ];
+    const api = { routeRealtimeTurn: async (_session, turnId, text) => {
+        requested.push([turnId, text]); return routes.shift();
+    } };
+    const { controller, sent } = runtimeController({ api });
+    for (let turnId = 1; turnId <= 3; turnId += 1) {
+        controller.activeUserInputTurnId = turnId;
+        controller.turnRoutingGeneration = turnId;
+        controller.handleEvent({ data: JSON.stringify({
+            type: "input_audio_buffer.committed", item_id: `item-${turnId}`
+        }) });
+        controller.handleEvent({ data: JSON.stringify({
+            type: "conversation.item.input_audio_transcription.completed",
+            item_id: `item-${turnId}`, transcript: `turn ${turnId}`
+        }) });
+        await new Promise((resolve) => setImmediate(resolve));
+    }
+    assert.deepEqual(requested, [[1, "turn 1"], [2, "turn 2"], [3, "turn 3"]]);
+    assert.deepEqual(sent.filter((event) => event.type === "response.create")
+        .map((event) => JSON.parse(JSON.stringify(event.response.tool_choice))),
+        ["none", "none"]);
+    assert.equal(sent.filter((event) => event.item?.type === "function_call").length, 1);
+    controller.close();
+});
+
+test("turn-routing timeout recovers once without creating a response", async () => {
+    const timers = [];
+    const clock = {
+        setTimeout(callback) { timers.push(callback); return timers.length; },
+        clearTimeout() {}
+    };
+    const api = { routeRealtimeTurn: () => new Promise(() => {}) };
+    const { controller, owner, sent } = runtimeController({ api, clock });
+    controller.activeUserInputTurnId = 1;
+    controller.turnRoutingGeneration = 1;
+    const pending = controller.routeCompletedTranscription(1, "Who was your husband?");
+    assert.equal(timers.length, 1);
+    timers[0]();
+    await pending;
+    assert.equal(owner.state, "listening");
+    assert.equal(sent.filter((event) => event.type === "response.create").length, 0);
+    assert.equal(sent.filter((event) => event.type === "response.cancel").length, 1);
+    controller.close();
+});
+
+test("Marathi personal route owns one bounded handoff and dispatches the validated tool", async () => {
+    let finishRoute;
+    const routeCalls = [];
+    const toolCalls = [];
+    const timers = [];
+    const clock = {
+        setTimeout(callback, delay) { timers.push({ callback, delay }); return timers.length; },
+        clearTimeout() {}
+    };
+    const api = {
+        routeRealtimeTurn: (...args) => {
+            routeCalls.push(args);
+            return new Promise((resolve) => { finishRoute = resolve; });
+        },
+        executeRealtimeTool: async (...args) => {
+            toolCalls.push(args);
+            return { result: { status: "supported", validated_text: "माझं नाव Anjali Deshmukh आहे." } };
+        },
+        renderRealtimeSpeech: async () => ({ audio: "UklGRg==", content_type: "audio/wav" })
+    };
+    const { controller, owner, sent } = runtimeController({ api, clock });
+    controller.activeUserInputTurnId = 1;
+    controller.turnRoutingGeneration = 1;
+    const pending = controller.routeCompletedTranscription(1, "तुझं नाव काय आहे?");
+    assert.equal(timers.length, 1);
+    assert.equal(timers[0].delay, 15000);
+    finishRoute({ route: "memory", tool_name: "retrieve_legacy_memory_context",
+        response_language: "marathi" });
+    await pending;
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(routeCalls.length, 1);
+    assert.equal(toolCalls.length, 1);
+    assert.equal(controller.turnResponseOwners.get(1), "validated_personal");
+    assert.equal(controller.lastRecoveryReason, "none");
+    assert.notEqual(owner.status, "Something interrupted that response.");
+    assert.equal(sent.filter((event) => event.type === "response.create").length, 0);
+    controller.close();
+});
+
+test("personal ownership cancels pending native output without interrupting validated handoff", async () => {
+    const toolCalls = [];
+    const api = {
+        routeRealtimeTurn: async () => ({ route: "memory",
+            tool_name: "retrieve_legacy_memory_context", response_language: "marathi" }),
+        executeRealtimeTool: async (...args) => {
+            toolCalls.push(args);
+            return { result: { status: "supported", validated_text: "माझं नाव Anjali आहे." } };
+        },
+        renderRealtimeSpeech: async () => ({ audio: "UklGRg==", content_type: "audio/wav" })
+    };
+    const { controller, sent } = runtimeController({ api });
+    controller.activeUserInputTurnId = 1;
+    controller.turnRoutingGeneration = 1;
+    controller.activeResponseId = "native-before-route";
+    const ownershipGeneration = controller.assistantOwnership;
+    await controller.routeCompletedTranscription(1, "तुझं नाव काय आहे?");
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(toolCalls.length, 1);
+    assert.equal(controller.assistantOwnership, ownershipGeneration);
+    assert.equal(controller.lastRecoveryReason, "none");
+    assert.equal(controller.turnResponseOwners.get(1), "validated_personal");
+    assert.ok(controller.cancelledResponseIds.has("native-before-route"));
+    assert.equal(sent.filter((event) => event.type === "response.cancel").length, 1);
+    controller.close();
+});
+
+test("ordinary native responses complete without a tool and leave no continuation state", () => {
+    const { controller, owner, sent } = runtimeController();
+    for (const responseId of ["ordinary-how-are-you", "ordinary-general-knowledge"]) {
+        controller.handleResponseCreated({ id: responseId });
+        controller.handleAudioDelta(responseId);
+        assert.equal(controller.responsePhase, "native_playback");
+        assert.equal(controller.responseWatchdog, null);
+        controller.handleResponseTerminal({ type: "response.done", response: {
+            id: responseId, status: "completed"
+        } }, responseId);
+        controller.handleMediaPlaybackComplete();
+        assert.equal(owner.state, "listening");
+        assert.equal(controller.activeToolCallId, null);
+        assert.equal(controller.waitingForToolContinuation, false);
+        assert.equal(controller.responsePhase, "idle");
+    }
+    assert.equal(sent.filter((event) => event.type === "response.create").length, 0);
+    controller.close();
+});
+
+test("tool-call and continuation phases retain independent stall recovery", async () => {
+    const timers = [];
+    const clock = { setTimeout(callback) { timers.push(callback); return timers.length; }, clearTimeout() {} };
+    const first = runtimeController({ clock });
+    first.controller.handleResponseCreated({ id: "tool-response" });
+    first.controller.handleOutputItemAdded({ type: "function_call", id: "tool-item" });
+    assert.equal(first.controller.responsePhase, "awaiting_tool_call");
+    timers.at(-1)();
+    assert.equal(first.owner.state, "listening");
+    first.controller.close();
+
+    const second = runtimeController({ clock });
+    await second.controller.runTool({ call_id: "tool-complete", name: "retrieve_legacy_memory_context",
+        arguments: "{}", response_id: "tool-parent" });
+    assert.equal(second.controller.responsePhase, "awaiting_tool_continuation");
+    assert.equal(second.sent.filter((event) => event.type === "response.create").length, 1);
+    timers.at(-1)();
+    assert.equal(second.owner.state, "listening");
+    second.controller.close();
+});
+
+test("response failures and provider errors still recover native turns", () => {
+    for (const event of [
+        { type: "response.failed", response: { id: "failed-response", status: "failed" } },
+        { type: "error", error: { type: "server_error" } }
+    ]) {
+        const { controller, owner, sent } = runtimeController();
+        controller.handleResponseCreated({ id: event.response?.id || "provider-error-response" });
+        controller.handleEvent({ data: JSON.stringify(event) });
+        assert.equal(owner.state, "listening");
+        assert.equal(controller.responsePhase, "idle");
+        assert.deepEqual(sent.slice(-2).map((item) => item.type),
+            ["response.cancel", "output_audio_buffer.clear"]);
+        controller.close();
+    }
+});
+
 test("tool completion requests one continuation and duplicate events are ignored", async () => {
     const { controller, sent } = runtimeController();
     const event = { call_id: "call-1", name: "retrieve_legacy_memory_context",
@@ -687,6 +1116,370 @@ test("tool completion requests one continuation and duplicate events are ignored
     await controller.runTool(event);
     await controller.runTool(event);
     assert.deepEqual(sent.map((item) => item.type), ["conversation.item.create", "response.create"]);
+    controller.close();
+});
+
+test("one personal turn has one tool owner even when provider duplicates the call id", async () => {
+    let finish;
+    const api = { executeRealtimeTool: () => new Promise((resolve) => { finish = resolve; }) };
+    const { controller, sent } = runtimeController({ api });
+    controller.activeUserInputTurnId = 7;
+    const first = controller.runTool({ call_id: "forced-7", name: "retrieve_legacy_memory_context",
+        arguments: "{}", response_id: null });
+    await controller.runTool({ call_id: "provider-7", name: "retrieve_legacy_memory_context",
+        arguments: "{}", response_id: null });
+    finish({ result: { status: "supported", validated_text: "My brother is Aditya." } });
+    await first;
+    assert.equal(sent.filter((item) => item.type === "response.create").length, 0);
+    const outputs = sent.filter((item) => item.type === "conversation.item.create");
+    assert.equal(outputs.length, 2);
+    assert.equal(JSON.parse(outputs[0].item.output).status, "cancelled");
+    assert.equal(JSON.parse(outputs[1].item.output).status, "supported");
+    controller.close();
+});
+
+test("grounded personal output is prevalidated and rendered without a Realtime continuation", async () => {
+    const speech = [];
+    const api = {
+        executeRealtimeTool: async () => ({ result: {
+            status: "supported", validated_text: "Our TV is 85 inches.",
+            answer_source: "repaired", answer_plan: {
+                status: "supported", must_include: ["85 inches"]
+            }
+        } }),
+        renderRealtimeSpeech: async (...args) => {
+            speech.push(args);
+            return { audio: "UklGRg==", content_type: "audio/wav" };
+        },
+        persistRealtimeAssistantTurn: async () => {}
+    };
+    const { controller, sent } = runtimeController({ api });
+    assert.equal(controller.validatedRenderer, null);
+    controller.activeUserInputTurnId = 4;
+    await controller.runTool({
+        call_id: "validated-tv", name: "retrieve_legacy_memory_context",
+        arguments: JSON.stringify({ query: "Our TV" }), response_id: "tool-parent"
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(sent.filter((event) => event.type === "response.create").length, 0);
+    assert.equal(sent.filter((event) => event.type === "conversation.item.create").length, 1);
+    assert.equal(speech.length, 1);
+    assert.equal(speech[0][4], "Our TV is 85 inches.");
+    assert.equal(controller.lastToolEvent, "validated_audio_requested");
+    assert.equal(controller.validatedRenderer?.kind, "external",
+        "the grounded renderer is created only for a validated personal turn");
+    controller.close();
+});
+
+test("personal self family dogs and TV are validated-owned while general and social stay native", async () => {
+    for (const [query, route, validatedText] of [
+        ["What's your name?", "identity", "My name is Anjali."],
+        ["Tell me about your family.", "memory", "My husband is Mohan and my brother is Aditya."],
+        ["Do you have dogs?", "memory", "We have two Labradors, Bruno and Luffy."],
+        ["Do you have a TV?", "memory", "Yes, we have an 85-inch TV."]
+    ]) {
+        const speech = [];
+        const api = {
+            routeRealtimeTurn: async () => ({ route, tool_name: route === "identity"
+                ? "get_legacy_identity_context" : "retrieve_legacy_memory_context" }),
+            executeRealtimeTool: async () => ({ result: {
+                status: "supported", validated_text: validatedText,
+                answer_plan: { status: "supported" }
+            } }),
+            renderRealtimeSpeech: async (...args) => {
+                speech.push(args); return { audio: "UklGRg==", content_type: "audio/wav" };
+            }
+        };
+        const { controller, sent } = runtimeController({ api });
+        controller.activeUserInputTurnId = 1;
+        controller.turnRoutingGeneration = 1;
+        await controller.routeCompletedTranscription(1, query);
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(controller.turnResponseOwners.get(1), "validated_personal");
+        assert.equal(speech.length, 1);
+        assert.equal(sent.some((event) => event.type === "response.create"), false);
+        controller.close();
+    }
+    for (const query of ["What is an avocado?", "How are you?"]) {
+        const api = { routeRealtimeTurn: async () => ({ route: "direct", tool_name: null }) };
+        const { controller, sent } = runtimeController({ api });
+        controller.activeUserInputTurnId = 1;
+        controller.turnRoutingGeneration = 1;
+        await controller.routeCompletedTranscription(1, query);
+        assert.equal(controller.turnResponseOwners.get(1), "native_realtime");
+        assert.equal(sent.filter((event) => event.type === "response.create").length, 1);
+        controller.close();
+    }
+});
+
+test("tool continuation keeps supported facts direct and preserves uncertainty semantics", async () => {
+    const cases = [
+        {
+            result: { status: "supported", uncertain: false },
+            required: /naturally and directly in first person/i,
+            forbidden: /say naturally that you do not remember/i
+        },
+        {
+            result: { status: "supported", uncertain: true },
+            required: /natural human uncertainty/i,
+            forbidden: /state the supported fact naturally and directly/i
+        },
+        {
+            result: { status: "conflicted" },
+            required: /specific conflicting fact/i,
+            forbidden: /state the supported fact naturally and directly/i
+        },
+        {
+            result: { status: "conflicted", supported_relevant_evidence_count: 3,
+                epistemic_groups: [
+                    { kind: "identity", id: 1, status: "supported" },
+                    { kind: "memory", id: 18, status: "supported" },
+                    { kind: "memory", id: 30, status: "conflicted" }
+                ] },
+            required: /hedging[\s\S]*specific evidence group|uncertainty only for the specific evidence group/i,
+            forbidden: /accounts conflict/i
+        },
+        {
+            result: { status: "unsupported" },
+            required: /do not remember or do not know/i,
+            forbidden: /confidence or completeness disclaimer/i
+        }
+    ];
+    for (const [index, item] of cases.entries()) {
+        const api = { executeRealtimeTool: async () => ({ result: item.result }) };
+        const { controller, sent } = runtimeController({ api });
+        await controller.runTool({
+            call_id: `persona-${index}`, name: "get_legacy_identity_context",
+            arguments: "{}", response_id: `response-${index}`
+        });
+        const instructions = sent.find((event) => event.type === "response.create")
+            .response.instructions;
+        assert.match(instructions, item.required);
+        assert.doesNotMatch(instructions, item.forbidden);
+        assert.doesNotMatch(instructions, /Rohan|Amit|Pune/i);
+        if (item.result.status === "supported" && !item.result.uncertain) {
+            assert.match(instructions, /partial coverage is not uncertainty/i);
+            assert.match(instructions, /without volunteering unknown attributes/i);
+            assert.match(instructions, /do not hedge supported facts/i);
+            assert.match(instructions, /do not.*invite correction/i);
+            for (const padding of ["as far as I know", "that's what I remember",
+                "if it changed, you can correct me", "fuzzy", "vague"]) {
+                assert.match(instructions, new RegExp(padding.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+            }
+        }
+        controller.close();
+    }
+});
+
+test("serialized plural memory payload keeps every entity and continuation forbids contrary uncertainty", async () => {
+    const result = {
+        status: "supported", uncertain: false, memory_count: 2,
+        supported_relevant_evidence_count: 2,
+        selected_memory_ids: [18, 22], resolved_entities: ["Bruno", "Luffy"],
+        memories: [
+            { memory_id: 18, summary: "Bruno is a Labrador." },
+            { memory_id: 22, summary: "Luffy is a Labrador." }
+        ]
+    };
+    const { controller, sent } = runtimeController({
+        api: { executeRealtimeTool: async () => ({ result }) }
+    });
+    await controller.runTool({
+        call_id: "dogs-both", name: "retrieve_legacy_memory_context",
+        arguments: JSON.stringify({ query: "Tell me about our dogs" }),
+        response_id: "dogs-tool-response"
+    });
+    const payload = JSON.parse(sent.find((event) =>
+        event.type === "conversation.item.create").item.output);
+    assert.deepEqual(payload.selected_memory_ids, [18, 22]);
+    assert.deepEqual(payload.resolved_entities, ["Bruno", "Luffy"]);
+    assert.equal(payload.supported_relevant_evidence_count, 2);
+    assert.match(JSON.stringify(payload), /Bruno[\s\S]*Luffy/);
+    const instructions = sent.find((event) => event.type === "response.create").response.instructions;
+    assert.match(instructions, /include every directly relevant returned entity/i);
+    assert.match(instructions, /do not omit one or invent uncertainty/i);
+    controller.close();
+});
+
+test("long multi-clause dog turn routes once, calls one tool, and completes one continuation", async () => {
+    const routes = [];
+    const tools = [];
+    const speech = [];
+    const api = {
+        routeRealtimeTurn: async (_session, turnId, text) => {
+            routes.push([turnId, text]);
+            return { route: "followup", tool_name: "retrieve_legacy_memory_context" };
+        },
+        executeRealtimeTool: async (...args) => {
+            tools.push(args);
+            return { result: { status: "supported", uncertain: false, memory_count: 2,
+                validated_text: "We have two Labradors, Bruno and Luffy.",
+                selected_memory_ids: [18, 22], resolved_entities: ["Bruno", "Luffy"],
+                memories: [{ summary: "Bruno is a Labrador." }, { summary: "Luffy is a Labrador." }] } };
+        },
+        renderRealtimeSpeech: async (...args) => {
+            speech.push(args); return { audio: "UklGRg==", content_type: "audio/wav" };
+        }
+    };
+    const { controller, owner, sent } = runtimeController({ api });
+    const transcript = "You have, you have. There are two dogs. Both are Labradors. And their names I have given you.";
+    controller.handleEvent({ data: JSON.stringify({ type: "input_audio_buffer.speech_started" }) });
+    controller.handleEvent({ data: JSON.stringify({ type: "input_audio_buffer.speech_stopped" }) });
+    controller.handleEvent({ data: JSON.stringify({ type: "input_audio_buffer.committed", item_id: "long-dog-turn" }) });
+    controller.handleEvent({ data: JSON.stringify({
+        type: "conversation.item.input_audio_transcription.completed",
+        item_id: "long-dog-turn", transcript
+    }) });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(tools.length, 1);
+    assert.deepEqual(routes, [[1, transcript]]);
+    assert.equal(sent.filter((event) => event.type === "conversation.item.create").length, 2);
+    assert.equal(sent.filter((event) => event.type === "response.create").length, 0);
+    assert.equal(speech.length, 1);
+    controller.close();
+});
+
+test("sequential dog fragments execute one routed tool each and preserve the supported payload", async () => {
+    const queries = [
+        "Can you tell me about our docs", "Our dogs", "Their names",
+        "Their breeds", "One more, remember"
+    ];
+    const routes = [];
+    const toolCalls = [];
+    const speech = [];
+    const result = {
+        status: "supported", fact_confidence: "supported", coverage: "partial",
+        uncertain: false, conflict_count: 0, supported_relevant_evidence_count: 2,
+        selected_memory_ids: [22, 18],
+        resolved_entities: ["Luffy", "Bruno"],
+        memories: [{ memory_id: 22 }, { memory_id: 18 }],
+        validated_text: "We have two Labradors, Bruno and Luffy."
+    };
+    const api = {
+        routeRealtimeTurn: async (_session, turnId, text) => {
+            routes.push([turnId, text]);
+            return { route: turnId <= 2 ? "memory" : "followup",
+                tool_name: "retrieve_legacy_memory_context" };
+        },
+        executeRealtimeTool: async (...args) => {
+            toolCalls.push(args);
+            return { result };
+        },
+        renderRealtimeSpeech: async (...args) => {
+            speech.push(args); return { audio: "UklGRg==", content_type: "audio/wav" };
+        }
+    };
+    const { controller, sent } = runtimeController({ api });
+    for (const [index, query] of queries.entries()) {
+        const turnId = index + 1;
+        controller.activeUserInputTurnId = turnId;
+        controller.turnRoutingGeneration = turnId;
+        await controller.routeCompletedTranscription(turnId, query);
+        await new Promise((resolve) => setImmediate(resolve));
+    }
+    assert.deepEqual(routes, queries.map((query, index) => [index + 1, query]));
+    assert.equal(toolCalls.length, 5);
+    assert.equal(sent.filter((event) => event.item?.type === "function_call").length, 5);
+    const outputs = sent.filter((event) => event.item?.type === "function_call_output")
+        .map((event) => JSON.parse(event.item.output));
+    assert.equal(outputs.length, 5);
+    for (const output of outputs) {
+        assert.deepEqual(output.selected_memory_ids, [22, 18]);
+        assert.deepEqual(output.resolved_entities, ["Luffy", "Bruno"]);
+        assert.equal(output.status, "supported");
+        assert.equal(output.uncertain, false);
+    }
+    assert.equal(sent.filter((event) => event.type === "response.create").length, 0);
+    assert.equal(speech.length, 5);
+    controller.close();
+});
+
+test("assistant playback followed by echo-like VAD silence creates no user route", async () => {
+    const routes = [];
+    const { controller } = runtimeController({
+        api: { routeRealtimeTurn: async (...args) => { routes.push(args); } }
+    });
+    controller.greetingComplete = true;
+    controller.assistantSpeaking = true;
+    controller.responseHasAudio = true;
+    controller.activeResponseId = "assistant-playback";
+    controller.micRms = 0;
+    controller.micPeak = 0;
+    controller.handleEvent({ data: JSON.stringify({ type: "input_audio_buffer.speech_started" }) });
+    controller.handleEvent({ data: JSON.stringify({ type: "input_audio_buffer.speech_stopped" }) });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(controller.activeUserInputTurnId, null);
+    assert.equal(controller.userSpeaking, false);
+    assert.equal(routes.length, 0);
+    controller.close();
+});
+
+test("missing validated personal result never retries through native continuation", async () => {
+    const timers = [];
+    const clock = {
+        setTimeout(callback) { timers.push(callback); return timers.length; },
+        clearTimeout() {}
+    };
+    const { controller, owner, sent } = runtimeController({ clock });
+    controller.activeUserInputTurnId = 1;
+    await controller.runTool({ call_id: "retry-tool", name: "retrieve_legacy_memory_context",
+        arguments: "{}", response_id: "retry-parent", client_forced: true });
+    assert.equal(sent.filter((event) => event.type === "response.create").length, 0);
+    assert.equal(owner.state, "listening");
+    assert.equal(controller.lastRecoveryReason, "validated_personal_unavailable");
+    controller.close();
+});
+
+test("completed substantive assistant text persists only after native playback completes", () => {
+    const persisted = [];
+    const api = {
+        persistRealtimeAssistantTurn: async (...values) => { persisted.push(values); }
+    };
+    const { controller } = runtimeController({ api });
+    controller.activeUserInputTurnId = 3;
+    controller.handleResponseCreated({ id: "response-visible" });
+    controller.handleAudioDelta("response-visible");
+    controller.handleResponseTerminal({ type: "response.done", response: {
+        id: "response-visible", status: "completed", output: [{
+            type: "message", content: [{ type: "audio", transcript: "A substantive answer." }]
+        }]
+    } }, "response-visible");
+    assert.equal(persisted.length, 0);
+    controller.handleMediaPlaybackComplete();
+    assert.deepEqual(JSON.parse(JSON.stringify(persisted)), [["session-1", 3, "response-visible", "A substantive answer.", {
+        responseOwner: "native_realtime", playbackCompleted: true
+    }]]);
+    controller.handleMediaPlaybackComplete();
+    assert.equal(persisted.length, 1);
+    controller.close();
+});
+
+test("greeting and interrupted assistant output never persist", () => {
+    const persisted = [];
+    const api = {
+        persistRealtimeAssistantTurn: async (...values) => { persisted.push(values); }
+    };
+    const { controller } = runtimeController({ api });
+    controller.activeUserInputTurnId = 0;
+    controller.handleResponseCreated({ id: "greeting" });
+    controller.handleResponseTerminal({ type: "response.done", response: {
+        id: "greeting", status: "completed", output: [{
+            type: "message", content: [{ transcript: "Hello?" }]
+        }]
+    } }, "greeting");
+    controller.handleMediaPlaybackComplete();
+
+    controller.activeUserInputTurnId = 4;
+    controller.handleResponseCreated({ id: "interrupted" });
+    controller.handleAudioDelta("interrupted");
+    controller.handleResponseTerminal({ type: "response.done", response: {
+        id: "interrupted", status: "completed", output: [{
+            type: "message", content: [{ transcript: "An answer cut short." }]
+        }]
+    } }, "interrupted");
+    controller.markResponseCancelled("interrupted");
+    controller.handleMediaPlaybackComplete();
+    assert.equal(persisted.length, 0);
     controller.close();
 });
 
@@ -712,8 +1505,14 @@ test("memory diagnostics expose only safe counts and never retrieved content", a
 
 test("late interrupted tool output resolves safely without reviving a stale response", async () => {
     let finishTool;
-    const api = { executeRealtimeTool: () => new Promise((resolve) => { finishTool = resolve; }) };
+    let executedTurnId;
+    const api = { executeRealtimeTool: (_session, turnId) => {
+        executedTurnId = turnId;
+        return new Promise((resolve) => { finishTool = resolve; });
+    } };
     const { controller, sent } = runtimeController({ api });
+    controller.activeUserInputTurnId = 1;
+    controller.handleResponseCreated({ id: "response-tool" });
     controller.activeResponseId = "response-tool";
     const pending = controller.runTool({ call_id: "call-race", name: "retrieve_legacy_memory_context",
         arguments: "{}", response_id: "response-tool" });
@@ -721,6 +1520,7 @@ test("late interrupted tool output resolves safely without reviving a stale resp
     confirmCandidate(controller);
     finishTool({ result: { status: "grounded" } });
     await pending;
+    assert.equal(executedTurnId, 1);
     const output = sent.find((item) => item.type === "conversation.item.create");
     assert.equal(JSON.parse(output.item.output).status, "cancelled");
     assert.equal(sent.filter((item) => item.type === "response.create").length, 0);
@@ -889,7 +1689,8 @@ test("production operational telemetry is aggregate, allowlisted, and independen
 });
 
 test("recovery invalidates external queues and End/navigation always cancel replacement", () => {
-    assert.match(realtime, /requestTransportRecovery\(reason\)[\s\S]*renderer\.cancelResponse\(\)/);
+    assert.match(realtime, /requestTransportRecovery\(reason\)[\s\S]*cancelAllRenderers\(\)/);
+    assert.match(realtime, /cancelAllRenderers\(\)[\s\S]*renderer\.cancelResponse\(\)[\s\S]*validatedRenderer[\s\S]*cancelResponse\(\)/);
     assert.match(cascade, /performEnd\(\)[\s\S]*realtimeRecoveryGeneration \+= 1[\s\S]*realtimeController\?\.close\(\)/);
     assert.match(cascade, /cleanupForNavigation\(\)[\s\S]*realtimeRecoveryGeneration \+= 1[\s\S]*realtimeController\?\.close\(\)/);
     assert.match(cascade, /if \(this\.realtimeRecoveryPromise\) return this\.realtimeRecoveryPromise/);

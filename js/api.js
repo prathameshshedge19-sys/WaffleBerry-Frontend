@@ -241,12 +241,58 @@ async function parseResponse(response) {
 }
 
 
+let authenticationRenewal = null;
+
+function handleAuthenticationRenewalFailure() {
+    clearStoredSession();
+    try {
+        if (typeof document !== "undefined" && document.dispatchEvent) {
+            document.dispatchEvent(new CustomEvent("waffleberry:signout"));
+        }
+    } catch { /* local session clearing still wins */ }
+    if (typeof window.location?.replace === "function") {
+        window.location.replace("login.html");
+    }
+}
+
+function renewAuthentication() {
+    if (authenticationRenewal) return authenticationRenewal;
+    authenticationRenewal = (async () => {
+        let response;
+        try {
+            response = await fetch(`${API_BASE_URL}/refresh`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include"
+            });
+        } catch {
+            throw new ApiError("Unable to renew your session. Please check your connection.", {
+                kind: "network"
+            });
+        }
+        const data = await parseResponse(response);
+        if (!response.ok) {
+            if (response.status === 401) handleAuthenticationRenewalFailure();
+            throw new ApiError(getApiErrorMessage(response.status, data), {
+                status: response.status,
+                kind: getErrorKind(response.status, data),
+                details: data
+            });
+        }
+        storeAuthenticatedSession(data);
+        return data.access_token;
+    })().finally(() => { authenticationRenewal = null; });
+    return authenticationRenewal;
+}
+
+
 async function apiRequest(path, options = {}) {
     const {
         method = "GET",
         body,
         authenticated = true,
-        signal
+        signal,
+        retryAuthentication = true
     } = options;
 
     const headers = {
@@ -283,7 +329,8 @@ async function apiRequest(path, options = {}) {
                     body === undefined
                         ? undefined
                         : JSON.stringify(body),
-                signal
+                signal,
+                credentials: "include"
             }
         );
     } catch {
@@ -295,6 +342,17 @@ async function apiRequest(path, options = {}) {
 
     const data =
         await parseResponse(response);
+
+    if (response.status === 401 && authenticated && retryAuthentication) {
+        await renewAuthentication();
+        return apiRequest(path, {
+            method,
+            body,
+            authenticated,
+            signal,
+            retryAuthentication: false
+        });
+    }
 
     if (!response.ok) {
         throw new ApiError(
@@ -990,10 +1048,14 @@ function deleteStoredMemory(legacyId, memoryId) {
     );
 }
 
-function createLiveCallSession(legacyId, engine = "auto") {
+function createLiveCallSession(legacyId, engine = "auto", conversationId = null) {
     return apiRequest("/live-call/session", {
         method: "POST",
-        body: { legacy_id: Number(legacyId), engine }
+        body: {
+            legacy_id: Number(legacyId), engine,
+            ...(Number.isInteger(Number(conversationId)) && Number(conversationId) > 0
+                ? { conversation_id: Number(conversationId) } : {})
+        }
     });
 }
 
@@ -1009,10 +1071,26 @@ function learnRealtimeMemoryTurn(sessionId, turnId, text) {
     });
 }
 
-function executeRealtimeTool(sessionId, callId, name, argumentsValue) {
+function routeRealtimeTurn(sessionId, turnId, text) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/route`, {
+        method: "POST", body: { turn_id: turnId, text }
+    });
+}
+
+function persistRealtimeAssistantTurn(sessionId, turnId, responseId, text, ownership = {}) {
+    return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/assistant-turn`, {
+        method: "POST", body: {
+            turn_id: turnId, response_id: responseId, text,
+            response_owner: ownership.responseOwner || "native_realtime",
+            playback_completed: ownership.playbackCompleted === true
+        }
+    });
+}
+
+function executeRealtimeTool(sessionId, turnId, callId, name, argumentsValue) {
     return apiRequest(`/live-call/realtime/${encodeURIComponent(sessionId)}/tool`, {
         method: "POST",
-        body: { call_id: callId, name, arguments: argumentsValue }
+        body: { turn_id: turnId, call_id: callId, name, arguments: argumentsValue }
     });
 }
 
@@ -1057,6 +1135,7 @@ window.WaffleBerryApi = Object.freeze({
     STORAGE_KEYS,
     ApiError,
     apiRequest,
+    renewAuthentication,
     authenticateUser,
     storeAuthenticatedSession,
     getFriendlyChatError,
@@ -1082,8 +1161,10 @@ window.WaffleBerryApi = Object.freeze({
     editStoredMemory,
     deleteStoredMemory,
     createLiveCallSession,
+    persistRealtimeAssistantTurn,
     createRealtimeBootstrap,
     learnRealtimeMemoryTurn,
+    routeRealtimeTurn,
     executeRealtimeTool,
     renderRealtimeSpeech,
     endLiveCallSession,

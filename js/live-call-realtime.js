@@ -3,10 +3,13 @@
 (function initializeRealtimeLiveCall() {
 const RESPONSE_STALL_MS = 10000;
 const TOOL_STALL_MS = 7000;
+// One bounded deadline owns routing, including an optional structured semantic pass.
+const ROUTE_STALL_MS = 15000;
 const REMOTE_AUDIO_START_MS = 2500;
 const REMOTE_AUDIO_STALL_MS = 1500;
 const DATA_CHANNEL_STARTUP_TIMEOUT_MS = 10000;
 const BARGE_IN_CONFIRMATION_MS = 150;
+const GREETING_BARGE_IN_GRACE_MS = 600;
 const BARGE_IN_MIC_RMS_FLOOR = 0.01;
 const BARGE_IN_MIC_PEAK_FLOOR = 0.03;
 const EXTERNAL_TTS_MAX_QUEUE = 3;
@@ -231,6 +234,8 @@ class ExternalNonStreamingRenderer {
         if (this.readyQueue.length) return this.pumpPlayback();
         if (!this.synthesizing && !this.synthesisQueue.length && !this.controller.userSpeaking
                 && !this.controller.activeResponseId && this.controller.isCurrentCall()) {
+            this.controller.markValidatedPlaybackCompleted(this.responseId);
+            this.controller.persistCompletedAssistant();
             this.controller.owner.setState("listening", this.controller.owner.muted ? "Muted" : "Listening");
         }
     }
@@ -352,6 +357,10 @@ class RealtimeLiveCallController {
         this.started = false;
         this.closed = false;
         this.greetingSent = false;
+        this.greetingResponseId = null;
+        this.greetingPlaybackStartedAt = null;
+        this.greetingComplete = false;
+        this.suppressNextSpeechStopped = false;
         this.remoteAttached = false;
         this.responseHasAudio = false;
         this.userSpeaking = false;
@@ -365,6 +374,9 @@ class RealtimeLiveCallController {
         this.turnIndex = 0;
         this.cancelledResponseIds = new Set();
         this.completedToolCalls = new Set();
+        this.groundedToolTurnOwners = new Map();
+        this.completedGroundedTurnIds = new Set();
+        this.clientToolSequence = 0;
         this.pendingLearningTurns = new Map();
         this.responseWatchdog = null;
         this.speechStartedAt = null;
@@ -385,6 +397,17 @@ class RealtimeLiveCallController {
             stale_events_suppressed: 0, next_turn_started: false
         };
         this.waitingForToolContinuation = false;
+        this.toolContinuationRequest = null;
+        this.toolContinuationRetryCount = 0;
+        this.responsePhase = "idle";
+        this.turnRoutingGeneration = 0;
+        this.routedTurnIds = new Set();
+        this.inputItemTurnIds = new Map();
+        this.responseTurnIds = new Map();
+        this.responseTexts = new Map();
+        this.pendingAssistantPersistence = null;
+        this.turnResponseOwners = new Map();
+        this.turnResponseLifecycle = new Map();
         this.remoteTrack = null;
         this.mediaPlaying = false;
         this.mediaRepairAttempted = false;
@@ -436,6 +459,9 @@ class RealtimeLiveCallController {
         this.renderer = owner.session?.speech_renderer === "external_nonstreaming_tts"
             || owner.session?.speech_renderer === "external_streaming_tts"
             ? new ExternalNonStreamingRenderer(this) : new RealtimeNativeRenderer(this);
+        // Grounded personal speech is turn-time infrastructure.  Do not let a
+        // secondary renderer participate in bootstrap/WebRTC startup.
+        this.validatedRenderer = this.renderer.kind === "external" ? this.renderer : null;
         this.previousRendererKind = previousRendererKind;
         previousRendererKind = this.renderer.kind;
         if (this.renderer.kind === "native") this.claimMedia(owner.elements.realtimeOutput);
@@ -445,6 +471,18 @@ class RealtimeLiveCallController {
     claimMedia(audio) { if (audio) mediaOwnerGenerations.set(audio, this.logicalCallGeneration); }
     ownsMedia(audio) { return Boolean(audio) && mediaOwnerGenerations.get(audio) === this.logicalCallGeneration; }
     releaseMedia(audio) { if (this.ownsMedia(audio)) mediaOwnerGenerations.delete(audio); }
+    cancelAllRenderers() {
+        this.renderer.cancelResponse();
+        if (this.validatedRenderer && this.validatedRenderer !== this.renderer) {
+            this.validatedRenderer.cancelResponse();
+        }
+    }
+    groundedRenderer() {
+        if (!this.validatedRenderer) {
+            this.validatedRenderer = new ExternalNonStreamingRenderer(this);
+        }
+        return this.validatedRenderer;
+    }
     recordStaleRendererCallback() {
         this.staleRendererCallbackCount += 1;
         this.metric("stale_renderer_callback_count", this.staleRendererCallbackCount);
@@ -464,9 +502,30 @@ class RealtimeLiveCallController {
         this.owner.renderDebugPanel?.();
     }
 
+    startupFailureSnapshot(error) {
+        return {
+            phase: this.owner.startupPhase || "startup_failed",
+            error_name: error?.name || "Error",
+            error_message_classification: error?.messageCode || error?.frontendCategory
+                || this.startupFailureCategory || "unknown_frontend_startup",
+            failure_code: error?.frontendCategory || this.startupFailureCategory
+                || "unknown_frontend_startup",
+            peer_connection_state: this.peer?.connectionState || "unavailable",
+            ice_connection_state: this.peer?.iceConnectionState || "unavailable",
+            signaling_state: this.peer?.signalingState || "unavailable",
+            data_channel_state: this.channel?.readyState || "unavailable",
+            has_microphone_track: Boolean(this.micTrack),
+            has_remote_track: Boolean(this.remoteTrack),
+            bootstrap_received: Boolean(this.bootstrapReceived),
+            sdp_attempted: Boolean(this.sdpAttempted),
+            remote_description_set: Boolean(this.remoteDescriptionSet)
+        };
+    }
+
     async start() {
         if (!this.RTCPeerConnectionClass) throw new Error("WebRTC is unavailable.");
         this.owner.recordFrontendStartup?.("realtime_start_entered");
+        this.owner.setStartupPhase?.("bootstrap_start");
         this.recordStartup("bootstrap_started");
         let bootstrap;
         try {
@@ -482,6 +541,14 @@ class RealtimeLiveCallController {
             );
             this.owner.recordFrontendStartup?.("bootstrap_request_sent");
             bootstrap = await bootstrapRequest;
+            if (!bootstrap || typeof bootstrap.client_secret !== "string" || !bootstrap.client_secret) {
+                const error = new TypeError("Realtime bootstrap response is invalid.");
+                error.frontendCategory = "bootstrap_contract_invalid";
+                error.messageCode = "bootstrap_contract_invalid";
+                throw error;
+            }
+            this.bootstrapReceived = true;
+            this.owner.setStartupPhase?.("bootstrap_received");
         } catch (error) {
             this.lastProviderFailureCategory = [
                 "provider_rate_limited", "provider_quota_exhausted", "provider_transient"
@@ -505,6 +572,7 @@ class RealtimeLiveCallController {
         this.peer.addEventListener?.("connectionstatechange", this.boundPeerStateChange);
         this.peer.addEventListener?.("iceconnectionstatechange", this.boundIceStateChange);
         this.recordStartup("peer_connection_created");
+        this.owner.setStartupPhase?.("peer_created");
         this.channel = this.peer.createDataChannel("oai-events");
         this.dataChannelReady = new Promise((resolve, reject) => {
             this.resolveDataChannelReady = resolve;
@@ -524,6 +592,7 @@ class RealtimeLiveCallController {
         await this.configureMicTrack();
         this.micSender = this.peer.addTrack(this.micTrack, this.owner.stream);
         this.recordStartup("local_track_added");
+        this.owner.setStartupPhase?.("local_track_added");
         this.micTransceiver = this.peer.getTransceivers?.().find(
             (transceiver) => transceiver.sender === this.micSender
                 || transceiver.sender?.track === this.micTrack
@@ -531,17 +600,30 @@ class RealtimeLiveCallController {
         this.startMicDiagnostic();
         const offer = await this.peer.createOffer();
         this.recordStartup("offer_created");
+        this.owner.setStartupPhase?.("offer_created");
         await this.peer.setLocalDescription(offer);
         this.recordStartup("local_description_set");
+        this.owner.setStartupPhase?.("local_description_set");
         this.recordStartup("sdp_exchange_started");
-        const answer = await this.fetch("https://api.openai.com/v1/realtime/calls", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${bootstrap.client_secret}`,
-                "Content-Type": "application/sdp"
-            },
-            body: offer.sdp
-        });
+        this.sdpAttempted = true;
+        this.owner.setStartupPhase?.("sdp_request_start");
+        let answer;
+        try {
+            answer = await this.fetch("https://api.openai.com/v1/realtime/calls", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${bootstrap.client_secret}`,
+                    "Content-Type": "application/sdp"
+                },
+                body: offer.sdp
+            });
+        } catch (error) {
+            this.recordStartup("sdp_exchange_failed", false, "sdp_fetch_failed", null, error);
+            error.frontendCategory = "sdp_fetch_failed";
+            error.messageCode = "sdp_fetch_failed";
+            error.realtimeStage = this.startupStage;
+            throw error;
+        }
         if (!answer.ok) {
             const error = new Error("Realtime signaling failed.");
             error.status = answer.status;
@@ -551,6 +633,7 @@ class RealtimeLiveCallController {
             throw error;
         }
         this.recordStartup("sdp_exchange_completed");
+        this.owner.setStartupPhase?.("sdp_response_received");
         try {
             await this.peer.setRemoteDescription({ type: "answer", sdp: await answer.text() });
         } catch (error) {
@@ -560,11 +643,14 @@ class RealtimeLiveCallController {
             throw error;
         }
         this.recordStartup("remote_description_set");
+        this.remoteDescriptionSet = true;
+        this.owner.setStartupPhase?.("remote_description_set");
         this.micTransceiver = this.micTransceiver || this.peer.getTransceivers?.().find(
             (transceiver) => transceiver.sender?.track === this.micTrack
         ) || null;
         this.debugInputPath();
         let timeoutId;
+        this.owner.setStartupPhase?.("data_channel_wait");
         try {
             await Promise.race([
                 this.dataChannelReady,
@@ -655,7 +741,7 @@ class RealtimeLiveCallController {
         }
         this.recoveryRequested = true;
         this.lastRecoveryReason = reason;
-        this.renderer.cancelResponse();
+        this.cancelAllRenderers();
         this.clearResponseWatchdog();
         this.owner.recoverRealtimeTransport?.(reason);
     }
@@ -664,7 +750,7 @@ class RealtimeLiveCallController {
         if (this.closed) return;
         this.lastRecoveryReason = "network_offline";
         this.owner.setTransportState?.("offline", "Reconnecting…");
-        this.renderer.cancelResponse();
+        this.cancelAllRenderers();
     }
 
     handleOnlineHint() {
@@ -744,7 +830,7 @@ class RealtimeLiveCallController {
 
     invalidateForRecovery(reason) {
         this.lastRecoveryReason = reason;
-        this.renderer.cancelResponse();
+        this.cancelAllRenderers();
         this.assistantOwnership += 1;
     }
 
@@ -752,6 +838,7 @@ class RealtimeLiveCallController {
         if (this.started) return;
         this.started = true;
         this.recordStartup("data_channel_open");
+        this.owner.setStartupPhase?.("data_channel_open");
         this.resolveDataChannelReady?.();
         this.owner.stopRingback(false);
         this.owner.startTimer();
@@ -761,11 +848,14 @@ class RealtimeLiveCallController {
         this.owner.setState("greeting", "Connecting…");
         if (!this.greetingSent) {
             this.greetingSent = true;
+            this.owner.setStartupPhase?.("greeting_requested");
+            this.greetingComplete = false;
             this.send({
                 type: "response.create",
                 response: { output_modalities: [this.renderer.kind === "native" ? "audio" : "text"], tool_choice: "none", instructions: "Say exactly: Hello? Do not say anything else." }
             });
-            this.armResponseWatchdog();
+            this.setResponsePhase("awaiting_initial_response", { watch: true });
+            this.owner.setStartupPhase?.("ready");
         }
     }
 
@@ -776,6 +866,7 @@ class RealtimeLiveCallController {
         this.remoteStream = stream;
         this.remoteTrack = event.track;
         this.recordStartup("remote_audio_track_received");
+        this.owner.setStartupPhase?.("remote_track_received");
         const audio = this.owner.elements.realtimeOutput;
         this.claimMedia(audio);
         audio.autoplay = true;
@@ -843,13 +934,22 @@ class RealtimeLiveCallController {
             this.handleSpeechStopped();
         } else if (event.type === "input_audio_buffer.committed") {
             this.turnEvidence.user_turn_committed = true;
+            if (event.item_id && this.activeUserInputTurnId > 0) {
+                this.inputItemTurnIds.set(event.item_id, this.activeUserInputTurnId);
+                while (this.inputItemTurnIds.size > 32) {
+                    this.inputItemTurnIds.delete(this.inputItemTurnIds.keys().next().value);
+                }
+            }
         } else if (event.type === "conversation.item.input_audio_transcription.completed") {
             const text = typeof event.transcript === "string" ? event.transcript.trim() : "";
-            if (text && this.activeUserInputTurnId > 0) {
-                this.pendingLearningTurns.set(this.activeUserInputTurnId, text);
+            const turnId = this.inputItemTurnIds.get(event.item_id) || this.activeUserInputTurnId;
+            if (event.item_id) this.inputItemTurnIds.delete(event.item_id);
+            if (this.isSubstantiveTranscript(text) && turnId > 0) {
+                this.pendingLearningTurns.set(turnId, text);
                 while (this.pendingLearningTurns.size > 32) {
                     this.pendingLearningTurns.delete(this.pendingLearningTurns.keys().next().value);
                 }
+                this.routeCompletedTranscription(turnId, text);
             }
         } else if (event.type === "response.created") {
             this.handleResponseCreated(event.response);
@@ -858,7 +958,12 @@ class RealtimeLiveCallController {
         } else if (event.type === "response.output_audio.delta") {
             this.handleAudioDelta(responseId);
         } else if (event.type === "response.output_text.delta") {
+            this.appendResponseText(responseId, event.delta);
             this.handleTextDelta(responseId, event.delta);
+        } else if (event.type === "response.output_audio_transcript.delta") {
+            this.appendResponseText(responseId, event.delta);
+        } else if (event.type === "response.output_audio_transcript.done") {
+            this.setResponseText(responseId, event.transcript);
         } else if (event.type === "response.output_text.done") {
             this.renderer.finishResponse();
         } else if (event.type === "response.output_audio.done") {
@@ -885,6 +990,17 @@ class RealtimeLiveCallController {
 
     handleSpeechStarted() {
         const now = this.performance.now();
+        if (!this.greetingComplete && (
+            this.greetingPlaybackStartedAt === null
+            || now - this.greetingPlaybackStartedAt < GREETING_BARGE_IN_GRACE_MS
+        )) {
+            this.suppressNextSpeechStopped = true;
+            this.debug("REALTIME_BARGE_IN", {
+                greeting_startup_event_suppressed: true,
+                greeting_playback_started: this.greetingPlaybackStartedAt !== null
+            });
+            return;
+        }
         this.turnEvidence = {
             speech_started: true, speech_stopped: false, user_turn_committed: false,
             response_created: false, first_output_received: false
@@ -933,6 +1049,7 @@ class RealtimeLiveCallController {
     beginUserSpeech(now, playbackActive, generationActive) {
         const interrupting = playbackActive || generationActive;
         this.userInputTurnId += 1;
+        this.turnRoutingGeneration += 1;
         this.owner.countOperational?.("turn_started_count");
         this.activeUserInputTurnId = this.userInputTurnId;
         this.userSpeaking = true;
@@ -1008,6 +1125,11 @@ class RealtimeLiveCallController {
 
     handleSpeechStopped() {
         const now = this.performance.now();
+        if (this.suppressNextSpeechStopped) {
+            this.suppressNextSpeechStopped = false;
+            this.debug("REALTIME_BARGE_IN", { greeting_startup_stop_suppressed: true });
+            return;
+        }
         this.turnEvidence.speech_stopped = true;
         this.speechStoppedTotal += 1;
         if (this.bargeInCandidate) {
@@ -1042,7 +1164,7 @@ class RealtimeLiveCallController {
         this.speechEndedAt = now;
         this.firstAudioReceivedAt = null;
         this.owner.setState("processing", "Thinking");
-        this.armResponseWatchdog();
+        this.setResponsePhase("awaiting_transcription", { watch: true });
         this.debug("REALTIME_BARGE_IN", {
             user_input_turn_id: this.activeUserInputTurnId,
             speech_stopped_ms: Math.round(now),
@@ -1058,22 +1180,129 @@ class RealtimeLiveCallController {
         });
     }
 
+    async routeCompletedTranscription(turnId, text) {
+        if (!this.isSubstantiveTranscript(text) || turnId !== this.activeUserInputTurnId || this.userSpeaking
+                || this.routedTurnIds.has(turnId)) return;
+        this.routedTurnIds.add(turnId);
+        while (this.routedTurnIds.size > 32) {
+            this.routedTurnIds.delete(this.routedTurnIds.values().next().value);
+        }
+        const generation = this.turnRoutingGeneration;
+        this.setResponsePhase("awaiting_turn_route");
+        let route;
+        try {
+            route = await this.withTimeout(
+                this.api.routeRealtimeTurn(this.owner.session.session_id, turnId, text),
+                ROUTE_STALL_MS,
+                "realtime_route_stalled"
+            );
+        } catch {
+            if (generation === this.turnRoutingGeneration && turnId === this.activeUserInputTurnId) {
+                this.recoverResponse("awaiting_turn_route_stalled");
+            }
+            return;
+        }
+        if (this.closed || this.userSpeaking || generation !== this.turnRoutingGeneration
+                || turnId !== this.activeUserInputTurnId) return this.recordStaleEvent();
+        this.debug("TURN_ROUTE_DECISION", {
+            turn_id: turnId, route: route?.route || "invalid",
+            tool_name: route?.tool_name || "none", response_phase: this.responsePhase
+        });
+        const outputModalities = [this.renderer.kind === "native" ? "audio" : "text"];
+        if (route?.route === "direct" && route.tool_name === null) {
+            this.setTurnResponseOwner(turnId, "native_realtime", "direct");
+            this.responsePhase = "awaiting_direct_response";
+            this.debug("TURN_HANDOFF", {
+                turn_id: turnId, language_stage: route?.response_language || "unknown",
+                top_level_class: "direct", owner: "native_realtime",
+                route_status: "accepted", frontend_phase: this.responsePhase,
+                action_started: "native_response", interruption_reason: "none"
+            });
+            this.send({ type: "response.create", response: {
+                output_modalities: outputModalities, tool_choice: "none",
+                instructions: `Respond only in ${route.response_language || "english"} for this turn. `
+                    + "Continue speaking as the active Legacy persona selected by the application. "
+                    + "Never identify yourself as ChatGPT, OpenAI, an AI assistant, an AI voice companion, "
+                    + "or a role-play, and never deny the represented identity. For GENERAL or SOCIAL turns, "
+                    + "answer naturally without inventing personal biography. Match the user's natural "
+                    + "code-switching style and do not mention language detection or translation."
+            } });
+            this.armResponseWatchdog("awaiting_direct_response");
+            return;
+        }
+        if (!["identity", "memory", "followup"].includes(route?.route)
+                || !["get_legacy_identity_context", "retrieve_legacy_memory_context"].includes(route?.tool_name)) {
+            return this.recoverResponse("invalid_turn_route");
+        }
+        this.setTurnResponseOwner(turnId, "validated_personal", route.route);
+        if (this.activeResponseId) {
+            this.markResponseCancelled(this.activeResponseId);
+            this.send({ type: "response.cancel" });
+            this.send({ type: "output_audio_buffer.clear" });
+            this.activeResponseId = null;
+            this.responseHasAudio = false;
+        }
+        this.debug("TURN_HANDOFF", {
+            turn_id: turnId, language_stage: route?.response_language || "unknown",
+            top_level_class: "personal", owner: "validated_personal",
+            route_status: "accepted", frontend_phase: "personal_validated_pending",
+            action_started: "tool", interruption_reason: "none"
+        });
+        this.clientToolSequence += 1;
+        const callId = `wb_forced_${turnId}_${this.clientToolSequence}`;
+        const argumentsJson = JSON.stringify({ query: text });
+        this.debug("TURN_TOOL_EXPECTED", {
+            turn_id: turnId, route: route.route, tool_name: route.tool_name,
+            call_id_safe: this.safeId(callId), response_phase: "executing_tool"
+        });
+        this.send({ type: "conversation.item.create", item: {
+            type: "function_call", name: route.tool_name, call_id: callId,
+            arguments: argumentsJson, status: "completed"
+        } });
+        this.runTool({
+            call_id: callId, name: route.tool_name, arguments: argumentsJson,
+            response_id: null, client_forced: true
+        });
+    }
+
     handleResponseCreated(response) {
         const responseId = response?.id || null;
+        if (this.activeUserInputTurnId > 0
+                && this.turnResponseOwners.get(this.activeUserInputTurnId) === "validated_personal") {
+            if (responseId) this.markResponseCancelled(responseId);
+            this.logTurnResponseOwner(this.activeUserInputTurnId, {
+                nativeResponseAttemptBlocked: true
+            });
+            this.send({ type: "response.cancel" });
+            return;
+        }
+        if (this.activeUserInputTurnId === null && this.greetingResponseId === null) {
+            this.greetingResponseId = responseId;
+        }
         this.turnEvidence.response_created = true;
         if (responseId && this.cancelledResponseIds.has(responseId)) return this.recordStaleEvent();
         if (this.activeResponseId && responseId && this.activeResponseId !== responseId) {
             this.markResponseCancelled(this.activeResponseId);
         }
         this.activeResponseId = responseId;
+        if (responseId && this.activeUserInputTurnId > 0) {
+            this.responseTurnIds.set(responseId, this.activeUserInputTurnId);
+            while (this.responseTurnIds.size > 32) {
+                this.responseTurnIds.delete(this.responseTurnIds.keys().next().value);
+            }
+        }
         this.renderer.startResponse(responseId);
         this.assistantOwnership += 1;
         this.mediaRepairAttempted = false;
-        if (this.waitingForToolContinuation) {
+        const continuation = this.waitingForToolContinuation;
+        if (continuation) {
             this.waitingForToolContinuation = false;
             this.debug("REALTIME_TOOL", { continuation_started: true });
         }
-        this.armResponseWatchdog();
+        const phase = continuation ? "awaiting_tool_continuation"
+            : (["awaiting_direct_response", "awaiting_tool_call"].includes(this.responsePhase)
+                ? this.responsePhase : "awaiting_initial_response");
+        this.setResponsePhase(phase, { watch: true });
         this.debug("REALTIME_TURN", { turn_index: this.turnIndex, response_created_ms: Math.round(this.performance.now()) });
         this.debug("REALTIME_BARGE_IN", {
             user_input_turn_id: this.activeUserInputTurnId,
@@ -1082,6 +1311,9 @@ class RealtimeLiveCallController {
     }
 
     handleOutputItemAdded(item) {
+        if (item?.type === "function_call") {
+            this.setResponsePhase("awaiting_tool_call", { watch: true });
+        }
         if (item?.type === "message" && item?.role === "assistant") {
             this.activeAssistantItemId = item.id || null;
         }
@@ -1094,6 +1326,7 @@ class RealtimeLiveCallController {
             return;
         }
         this.responseHasAudio = true;
+        if (this.renderer.kind === "native") this.setResponsePhase("native_playback");
         this.turnEvidence.first_output_received = true;
         if (this.firstAudioReceivedAt === null) {
             this.firstAudioReceivedAt = this.performance.now();
@@ -1142,24 +1375,72 @@ class RealtimeLiveCallController {
         if (this.activeToolCallId) return;
         if (!this.responseHasAudio && !this.assistantSpeaking
                 && !(this.renderer.kind === "external" && this.renderer.busy)) {
+            this.responsePhase = "idle";
             this.owner.setState("listening", this.owner.muted ? "Muted" : "Listening");
         }
         this.debug("REALTIME_TURN", { turn_index: this.turnIndex, response_done_ms: Math.round(this.performance.now()) });
         if (status === "completed") {
+            if (responseId && responseId === this.greetingResponseId && !this.responseHasAudio) {
+                this.greetingComplete = true;
+            }
             this.owner.countOperational?.("turn_completed_count");
-            const text = this.pendingLearningTurns.get(this.activeUserInputTurnId);
-            if (text) {
-                this.pendingLearningTurns.delete(this.activeUserInputTurnId);
-                this.api.learnRealtimeMemoryTurn?.(
-                    this.owner.session.session_id, this.activeUserInputTurnId, text
-                ).catch?.(() => {});
+            const turnId = this.responseTurnIds.get(responseId) || this.activeUserInputTurnId;
+            const text = this.finalResponseText(event, responseId);
+            if (text && responseId && turnId > 0) {
+                this.pendingAssistantPersistence = { turnId, responseId, text };
+                if (!this.responseHasAudio && this.renderer.kind === "native") {
+                    this.persistCompletedAssistant();
+                }
             }
         }
+    }
+
+    appendResponseText(responseId, delta) {
+        if (!responseId || typeof delta !== "string") return;
+        this.responseTexts.set(responseId, `${this.responseTexts.get(responseId) || ""}${delta}`);
+    }
+
+    setResponseText(responseId, text) {
+        if (responseId && typeof text === "string" && text.trim()) {
+            this.responseTexts.set(responseId, text);
+        }
+    }
+
+    finalResponseText(event, responseId) {
+        const parts = [];
+        for (const item of event.response?.output || []) {
+            if (item.type === "function_call") continue;
+            for (const content of item.content || []) {
+                const value = content.transcript || content.text;
+                if (typeof value === "string" && value.trim()) parts.push(value.trim());
+            }
+        }
+        return (parts.join(" ") || this.responseTexts.get(responseId) || "").trim();
+    }
+
+    persistCompletedAssistant() {
+        const pending = this.pendingAssistantPersistence;
+        if (!pending || this.userSpeaking || this.cancelledResponseIds.has(pending.responseId)) return;
+        const owner = this.turnResponseOwners.get(pending.turnId) || "native_realtime";
+        const lifecycle = this.turnResponseLifecycle.get(pending.turnId);
+        if (owner === "validated_personal" && (!lifecycle?.speechRequested
+                || !lifecycle?.playbackCompleted || pending.owner !== "validated_personal")) return;
+        this.pendingAssistantPersistence = null;
+        this.responseTexts.delete(pending.responseId);
+        if (lifecycle) lifecycle.persistenceRequested = true;
+        this.logTurnResponseOwner(pending.turnId);
+        this.api.persistRealtimeAssistantTurn?.(
+            this.owner.session.session_id, pending.turnId, pending.responseId, pending.text,
+            { responseOwner: owner, playbackCompleted: true }
+        ).catch?.(() => {});
     }
 
     handleRealtimeInterruption({ playbackActive, generationActive }) {
         const interruptedId = this.activeResponseId;
         if (interruptedId) this.markResponseCancelled(interruptedId);
+        if (this.pendingAssistantPersistence?.responseId) {
+            this.markResponseCancelled(this.pendingAssistantPersistence.responseId);
+        }
         this.interruptionStartedAt = this.performance.now();
         this.assistantOwnership += 1;
         if (generationActive && interruptedId) {
@@ -1172,7 +1453,7 @@ class RealtimeLiveCallController {
             this.interruptionDiagnostics.buffer_clear_sent = true;
             this.interruptionDiagnostics.output_clear_sent = true;
         }
-        this.renderer.cancelResponse();
+        this.cancelAllRenderers();
         // With WebRTC, OpenAI manages playback position and clear truncates the
         // server-managed buffer. conversation.item.truncate is for clients that
         // manage playback timing themselves, so no guessed timestamp is sent.
@@ -1218,6 +1499,10 @@ class RealtimeLiveCallController {
 
     markResponseCancelled(responseId) {
         if (!responseId) return;
+        if (this.pendingAssistantPersistence?.responseId === responseId) {
+            this.pendingAssistantPersistence = null;
+            this.responseTexts.delete(responseId);
+        }
         this.cancelledResponseIds.add(responseId);
         while (this.cancelledResponseIds.size > 32) {
             this.cancelledResponseIds.delete(this.cancelledResponseIds.values().next().value);
@@ -1238,20 +1523,47 @@ class RealtimeLiveCallController {
         if (!event.call_id || this.completedToolCalls.has(event.call_id)) return;
         const ownership = this.assistantOwnership;
         const parentResponseId = event.response_id || this.activeResponseId;
+        const toolTurnId = this.responseTurnIds.get(parentResponseId) || this.activeUserInputTurnId;
+        if (event.client_forced || this.turnResponseOwners.get(toolTurnId) === "validated_personal") {
+            this.setTurnResponseOwner(toolTurnId, "validated_personal", "grounded_tool");
+        }
+        const existingOwner = this.groundedToolTurnOwners.get(toolTurnId);
+        if (this.completedGroundedTurnIds.has(toolTurnId) || existingOwner) {
+            this.completedToolCalls.add(event.call_id);
+            this.send({ type: "conversation.item.create", item: {
+                type: "function_call_output", call_id: event.call_id,
+                output: JSON.stringify({ status: "cancelled" })
+            } });
+            this.recordStaleEvent();
+            return;
+        }
+        this.groundedToolTurnOwners.set(toolTurnId, event.call_id);
         this.activeToolCallId = event.call_id;
+        this.setResponsePhase("executing_tool");
         this.lastToolEvent = `received:${event.name}`;
         this.clearResponseWatchdog();
         const startedAt = this.performance.now();
         this.debug("REALTIME_TOOL", { tool_name: event.name, call_id_safe: this.safeId(event.call_id), tool_call_received: true, execution_started: true });
+        this.debug("TURN_TOOL_RECEIVED", {
+            turn_id: toolTurnId, tool_name: event.name,
+            call_id_safe: this.safeId(event.call_id),
+            source: event.client_forced ? "client_route" : "provider",
+            response_phase: this.responsePhase
+        });
         let args = {};
         try { args = JSON.parse(event.arguments || "{}"); } catch { /* backend validates */ }
         let result;
         let toolTimedOut = false;
         try {
-            result = await this.withTimeout(
-                this.api.executeRealtimeTool(this.owner.session.session_id, event.call_id, event.name, args),
-                TOOL_STALL_MS
+            // A personal response is server-owned. Do not discard a late HTTP
+            // success and replace it with a native model continuation.
+            const toolRequest = this.api.executeRealtimeTool(
+                this.owner.session.session_id, toolTurnId,
+                event.call_id, event.name, args
             );
+            result = this.turnResponseOwners.get(toolTurnId) === "validated_personal"
+                ? await toolRequest
+                : await this.withTimeout(toolRequest, TOOL_STALL_MS);
             result = result.result;
         } catch (error) {
             toolTimedOut = error?.message === "realtime_tool_stalled";
@@ -1295,23 +1607,93 @@ class RealtimeLiveCallController {
             }
         });
         this.activeToolCallId = null;
-        if (!obsolete) {
-            this.waitingForToolContinuation = true;
-            this.send({ type: "response.create", response: { output_modalities: [this.renderer.kind === "native" ? "audio" : "text"], tool_choice: "none" } });
-            this.armResponseWatchdog();
+        if (!obsolete && ["supported", "conflicted", "unsupported"].includes(result?.status)) {
+            this.completedGroundedTurnIds.add(toolTurnId);
+            while (this.completedGroundedTurnIds.size > 32) {
+                this.completedGroundedTurnIds.delete(this.completedGroundedTurnIds.values().next().value);
+            }
+        }
+        if (!obsolete && typeof result?.validated_text === "string" && result.validated_text.trim()) {
+            const responseId = `validated-${event.call_id}`;
+            const text = result.validated_text.trim();
+            if (this.activeResponseId === parentResponseId) this.activeResponseId = null;
+            this.waitingForToolContinuation = false;
+            this.toolContinuationRequest = null;
+            this.setResponsePhase("validated_personal_playback");
+            this.pendingAssistantPersistence = {
+                turnId: toolTurnId, responseId, text, owner: "validated_personal"
+            };
+            this.responseTexts.set(responseId, text);
+            const groundedRenderer = this.groundedRenderer();
+            groundedRenderer.startResponse(responseId);
+            groundedRenderer.enqueueChunks([text]);
+            const lifecycle = this.turnResponseLifecycle.get(toolTurnId);
+            if (lifecycle) {
+                lifecycle.toolCompleted = true;
+                lifecycle.validatedTextReady = true;
+                lifecycle.speechRequested = true;
+            }
+            this.logTurnResponseOwner(toolTurnId);
+            this.debug("TURN_RESPONSE_CREATE", {
+                turn_id: toolTurnId, kind: "validated_personal",
+                call_id_safe: this.safeId(event.call_id), response_phase: this.responsePhase
+            });
+        } else if (!obsolete && result?.status !== "cancelled"
+                && this.turnResponseOwners.get(toolTurnId) === "validated_personal") {
+            // PERSONAL ownership is immutable. A failed/malformed tool result
+            // may recover the turn, but may never ask Realtime to invent it.
+            this.logTurnResponseOwner(toolTurnId, { nativeResponseAttemptBlocked: true });
+            this.recoverResponse("validated_personal_unavailable");
+        } else if (!obsolete && result?.status !== "cancelled") {
+            const supportedEvidenceCount = Number.isInteger(result?.supported_relevant_evidence_count)
+                ? result.supported_relevant_evidence_count
+                : (result?.status === "supported" ? 1 : 0);
+            const epistemicGroups = Array.isArray(result?.epistemic_groups)
+                ? result.epistemic_groups : [];
+            const hasSupportedGroup = epistemicGroups.some((group) => group?.status === "supported");
+            const hasQualifiedGroup = epistemicGroups.some((group) =>
+                group?.status === "conflicted" || group?.status === "uncertain");
+            const responseMode = hasSupportedGroup && hasQualifiedGroup ? "mixed"
+                : result?.status === "conflicted"
+                ? (hasSupportedGroup ? "mixed" : "conflicted")
+                : (result?.status === "unsupported" ? "unknown"
+                    : (result?.status === "supported" && supportedEvidenceCount === 0 ? "unknown"
+                        : (result?.status === "supported" && result?.uncertain ? "uncertain"
+                            : (result?.status === "supported" ? "supported" : "error"))));
+            const continuationInstructions = {
+                supported: "Answer the user's question now as the represented person. Treat every directly relevant supported fact in the function result as authoritative. Coverage may be partial; partial coverage is not uncertainty. State the known relevant facts and stop without volunteering unknown attributes or discussing absent attributes. For a broad, plural, both, other, or one-more question, include every directly relevant returned entity and its supported attributes; do not omit one or invent uncertainty that contradicts the result. State the facts naturally and directly in first person. Do not mention memory, retrieval, stored information, evidence, confidence, certainty, or how you know it. Do not hedge supported facts, invent uncertainty, add a confidence or completeness disclaimer, or invite correction. Never use caution such as 'I'm not sure', 'I think', 'maybe', 'possibly', 'probably', 'as far as I know', 'as far as I remember', 'that's what I remember', 'I'm not totally sure if that's still current', 'fuzzy', 'vague', 'vaguely', 'floating around', 'I wouldn't swear to it', 'I wouldn't bet my life on it', 'I don't want to guess', 'if it changed, you can correct me', 'you can correct me', 'you can remind me', or 'I don't remember anything else'.",
+                uncertain: "Answer as the represented person using natural human uncertainty. Preserve the uncertainty in the result, but do not mention retrieval, stored information, evidence, confidence scores, systems, or tools.",
+                mixed: "Answer as the represented person. State every supported fact directly and without hedging. Express uncertainty only for the specific evidence group marked conflicted or uncertain; never let that caution contaminate supported people, relationships, pets, events, or attributes. Do not discuss absent attributes, invite correction, or mention retrieval, records, databases, evidence, confidence scores, systems, or tools.",
+                conflicted: "Answer as the represented person and express natural human uncertainty only about the specific conflicting fact. Do not mention retrieval, records, databases, evidence, confidence scores, systems, or tools.",
+                unknown: "Briefly say naturally that you do not remember or do not know that. Do not mention searching, retrieval, stored information, records, systems, or tools.",
+                error: "Briefly say naturally that you are having trouble remembering that right now. Do not mention systems, tools, retrieval, or technical errors."
+            }[responseMode];
+            this.toolContinuationRequest = { type: "response.create", response: {
+                output_modalities: [this.renderer.kind === "native" ? "audio" : "text"],
+                tool_choice: "none", instructions: continuationInstructions
+            } };
+            this.toolContinuationRetryCount = 0;
+            this.send(this.toolContinuationRequest);
+            this.debug("TURN_RESPONSE_CREATE", {
+                turn_id: toolTurnId, kind: "tool_continuation",
+                call_id_safe: this.safeId(event.call_id), response_phase: this.responsePhase
+            });
+            this.armResponseWatchdog("awaiting_tool_continuation");
         }
         const elapsed = Math.round(this.performance.now() - startedAt);
         this.metric("tool_call_complete_ms", elapsed);
         this.debug("REALTIME_TOOL", {
             tool_name: event.name, call_id_safe: this.safeId(event.call_id), execution_ms: elapsed,
-            result_sent: true, continuation_requested: !obsolete
+            result_sent: true,
+            continuation_requested: !obsolete && !result?.validated_text
         });
-        this.lastToolEvent = obsolete ? "result_discarded" : "audio_continuation_requested";
+        this.lastToolEvent = obsolete ? "result_discarded"
+            : (result?.validated_text ? "validated_audio_requested" : "audio_continuation_requested");
     }
 
-    withTimeout(promise, timeoutMs) {
+    withTimeout(promise, timeoutMs, reason = "realtime_tool_stalled") {
         return new Promise((resolve, reject) => {
-            const timer = this.clock.setTimeout(() => reject(new Error("realtime_tool_stalled")), timeoutMs);
+            const timer = this.clock.setTimeout(() => reject(new Error(reason)), timeoutMs);
             Promise.resolve(promise).then(
                 (value) => { this.clock.clearTimeout(timer); resolve(value); },
                 (error) => { this.clock.clearTimeout(timer); reject(error); }
@@ -1319,24 +1701,54 @@ class RealtimeLiveCallController {
         });
     }
 
-    armResponseWatchdog() {
+    setResponsePhase(phase, { watch = false } = {}) {
+        this.responsePhase = phase;
+        if (watch) this.armResponseWatchdog(phase);
+        else this.clearResponseWatchdog();
+    }
+
+    armResponseWatchdog(phase = this.responsePhase === "idle" ? "awaiting_initial_response" : this.responsePhase,
+            timeoutMs = RESPONSE_STALL_MS) {
         this.clearResponseWatchdog();
+        if (["idle", "executing_tool", "native_playback"].includes(phase)) return;
+        this.responsePhase = phase;
         const ownership = this.assistantOwnership;
         const startedAt = this.performance.now();
         this.responseWatchdog = this.clock.setTimeout(() => {
-            if (ownership !== this.assistantOwnership || this.closed || this.userSpeaking) return;
+            if (ownership !== this.assistantOwnership || this.closed || this.userSpeaking
+                    || phase !== this.responsePhase) return;
+            if (phase === "awaiting_tool_continuation" && this.waitingForToolContinuation
+                    && this.toolContinuationRequest && this.toolContinuationRetryCount < 1) {
+                this.toolContinuationRetryCount += 1;
+                this.debug("REALTIME_STALL", {
+                    response_phase: phase, elapsed_ms: Math.round(this.performance.now() - startedAt),
+                    recovered: true, continuation_retried: true
+                });
+                this.send(this.toolContinuationRequest);
+                this.armResponseWatchdog("awaiting_tool_continuation");
+                return;
+            }
             const elapsed = Math.round(this.performance.now() - startedAt);
             this.debug("REALTIME_STALL", {
                 state: this.owner.state, active_response_id_safe: this.safeId(this.activeResponseId),
-                active_tool_call: Boolean(this.activeToolCallId), elapsed_ms: elapsed, recovered: true
+                active_tool_call: Boolean(this.activeToolCallId), response_phase: phase,
+                elapsed_ms: elapsed, recovered: true
             });
-            this.recoverResponse("realtime_response_stalled");
-        }, RESPONSE_STALL_MS);
+            this.recoverResponse(`${phase}_stalled`);
+        }, timeoutMs);
     }
 
     clearResponseWatchdog() {
         if (this.responseWatchdog !== null) this.clock.clearTimeout(this.responseWatchdog);
         this.responseWatchdog = null;
+    }
+
+    isSubstantiveTranscript(text) {
+        if (typeof text !== "string") return false;
+        const normalized = text.trim();
+        if (!normalized || !/[\p{L}\p{N}]/u.test(normalized)) return false;
+        const compact = normalized.replace(/[^\p{L}\p{N}]+/gu, "");
+        return compact.length >= 2 || /^(?:i|a)$/iu.test(normalized);
     }
 
     classifyProviderError(error = {}) {
@@ -1350,6 +1762,8 @@ class RealtimeLiveCallController {
 
     recoverResponse(reason) {
         const toolWasActive = Boolean(this.activeToolCallId);
+        this.lastRecoveryReason = reason;
+        this.turnRoutingGeneration += 1;
         if (this.activeResponseId) this.markResponseCancelled(this.activeResponseId);
         this.send({ type: "response.cancel" });
         this.send({ type: "output_audio_buffer.clear" });
@@ -1357,15 +1771,23 @@ class RealtimeLiveCallController {
         this.activeResponseId = null;
         this.activeToolCallId = null;
         this.waitingForToolContinuation = false;
+        this.toolContinuationRequest = null;
+        this.toolContinuationRetryCount = 0;
+        this.responsePhase = "idle";
         this.responseHasAudio = false;
         this.assistantSpeaking = false;
         this.mediaPlaying = false;
-        this.renderer.cancelResponse();
+        this.cancelAllRenderers();
         this.clearRemoteAudioWatchdog();
         this.clearResponseWatchdog();
         if (!this.closed) this.owner.setState("listening", "Something interrupted that response.");
         if (reason === "external_tts_failed") this.metric("external_tts_failure_count", 1);
-        if (["realtime_response_stalled", "response_failed"].includes(reason)) this.metric("response_failure_count", 1);
+        if (["awaiting_initial_response_stalled", "awaiting_transcription_stalled",
+            "awaiting_turn_route_stalled", "awaiting_direct_response_stalled",
+            "awaiting_tool_call_stalled", "awaiting_tool_continuation_stalled",
+            "response_failed"].includes(reason)) {
+            this.metric("response_failure_count", 1);
+        }
         this.debug("REALTIME_RECOVERY", {
             reason, last_provider_event: this.lastResponseEvent,
             speech_started: this.turnEvidence.speech_started,
@@ -1381,10 +1803,18 @@ class RealtimeLiveCallController {
             data_channel_state: this.channel?.readyState || "missing",
             provider_failure_category: this.lastProviderFailureCategory
         });
+        this.debug("TURN_RECOVERY_REASON", {
+            turn_id: this.activeUserInputTurnId, reason,
+            response_phase: this.responsePhase,
+            response_id_safe: this.safeId(this.activeResponseId)
+        });
         this.metric(reason, 1);
         this.owner.countOperational?.("turn_recovered_count");
         if (reason === "external_tts_failed") this.owner.countOperational?.("external_tts_failure_count");
-        if (["realtime_response_stalled", "response_failed"].includes(reason)) {
+        if (["awaiting_initial_response_stalled", "awaiting_transcription_stalled",
+            "awaiting_turn_route_stalled", "awaiting_direct_response_stalled",
+            "awaiting_tool_call_stalled", "awaiting_tool_continuation_stalled",
+            "response_failed"].includes(reason)) {
             this.owner.countOperational?.("response_failure_count");
         }
     }
@@ -1407,7 +1837,54 @@ class RealtimeLiveCallController {
     }
 
     send(event) {
+        if (event?.type === "response.create") {
+            const turnId = this.activeUserInputTurnId;
+            if (turnId > 0 && this.turnResponseOwners.get(turnId) === "validated_personal") {
+                this.logTurnResponseOwner(turnId, { nativeResponseAttemptBlocked: true });
+                return false;
+            }
+        }
         if (this.channel?.readyState === "open") this.channel.send(JSON.stringify(event));
+        return true;
+    }
+
+    setTurnResponseOwner(turnId, owner, classification) {
+        if (!(turnId > 0)) return;
+        const existing = this.turnResponseOwners.get(turnId);
+        if (existing && existing !== owner) return;
+        this.turnResponseOwners.set(turnId, owner);
+        if (!this.turnResponseLifecycle.has(turnId)) {
+            this.turnResponseLifecycle.set(turnId, {
+                classification, toolCompleted: false, validatedTextReady: false,
+                speechRequested: false, playbackCompleted: false,
+                persistenceRequested: false, nativeResponseAttemptBlocked: false
+            });
+        }
+        this.logTurnResponseOwner(turnId);
+    }
+
+    markValidatedPlaybackCompleted(responseId) {
+        const pending = this.pendingAssistantPersistence;
+        if (!pending || pending.responseId !== responseId) return;
+        const lifecycle = this.turnResponseLifecycle.get(pending.turnId);
+        if (lifecycle) lifecycle.playbackCompleted = true;
+        this.logTurnResponseOwner(pending.turnId);
+    }
+
+    logTurnResponseOwner(turnId, update = {}) {
+        const lifecycle = this.turnResponseLifecycle.get(turnId);
+        if (!lifecycle) return;
+        Object.assign(lifecycle, update);
+        this.debug("TURN_RESPONSE_OWNER", {
+            turn_id: turnId, classification: lifecycle.classification,
+            owner: this.turnResponseOwners.get(turnId),
+            tool_completed: lifecycle.toolCompleted,
+            validated_text_ready: lifecycle.validatedTextReady,
+            speech_requested: lifecycle.speechRequested,
+            playback_completed: lifecycle.playbackCompleted,
+            persistence_requested: lifecycle.persistenceRequested,
+            native_response_attempt_blocked: lifecycle.nativeResponseAttemptBlocked
+        });
     }
 
     reportSpeechLatency(name, at) {
@@ -1445,6 +1922,10 @@ class RealtimeLiveCallController {
         }
         this.lastMediaEvent = eventName;
         this.mediaPlaying = true;
+        if (!this.greetingComplete && this.activeResponseId === this.greetingResponseId
+                && this.greetingPlaybackStartedAt === null) {
+            this.greetingPlaybackStartedAt = this.performance.now();
+        }
         this.debugInputPath();
         this.debugRemoteAudio({ playing_event_received: eventName === "playing" });
         if (!this.responseHasAudio || this.userSpeaking || !this.remoteTrackHealthy()) return;
@@ -1492,7 +1973,10 @@ class RealtimeLiveCallController {
         this.responseHasAudio = false;
         this.assistantSpeaking = false;
         this.activeAssistantItemId = null;
+        this.responsePhase = "idle";
+        if (this.greetingResponseId !== null) this.greetingComplete = true;
         this.clearRemoteAudioWatchdog();
+        this.persistCompletedAssistant();
         if (!this.userSpeaking && !this.activeToolCallId) {
             this.owner.setState("listening", this.owner.muted ? "Muted" : "Listening");
         }
@@ -1774,6 +2258,9 @@ class RealtimeLiveCallController {
         if (this.closed) return;
         this.closed = true;
         this.renderer.close();
+        if (this.validatedRenderer && this.validatedRenderer !== this.renderer) {
+            this.validatedRenderer.close();
+        }
         this.clearResponseWatchdog();
         this.clearRemoteAudioWatchdog();
         for (const timer of [this.iceDisconnectTimer, this.remoteMuteTimer, this.micMuteTimer]) {

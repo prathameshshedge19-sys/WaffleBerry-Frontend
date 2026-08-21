@@ -16,6 +16,14 @@ const VAD_SPEECH_THRESHOLD = 0.035;
 const RINGBACK_GAIN = 0.025;
 const MINIMUM_CONNECTING_MS = 2700;
 const RINGBACK_FADE_OUT_MS = 150;
+const LIVE_CALL_START_PHASES = Object.freeze([
+    "controller_created", "microphone_start", "microphone_ready", "session_creating",
+    "session_created", "bootstrap_start", "bootstrap_received", "peer_created",
+    "local_track_added", "offer_created", "local_description_set", "sdp_request_start",
+    "sdp_response_received", "remote_description_set", "data_channel_wait",
+    "data_channel_open", "remote_track_received", "greeting_requested", "ready",
+    "startup_failed", "cleanup"
+]);
 const FIRST_AUDIO_PLAYBACK_TIMEOUT_MS = 2500;
 const OUTPUT_ENERGY_SAMPLE_MS = 25;
 const OUTPUT_ENERGY_CONFIRM_MS = 75;
@@ -139,6 +147,7 @@ class LiveCallController {
         this.frontendStartupStage = "not_started";
         this.frontendFailureCategory = "none";
         this.frontendMessageCode = "none";
+        this.startupPhase = "controller_created";
         this.operationalStarted = false;
         this.operationalEnded = false;
         this.operational = {
@@ -151,7 +160,7 @@ class LiveCallController {
         };
     }
 
-    reportOperational(event, outcome, failureCategory = "none") {
+    reportOperational(event, outcome, failureCategory = "none", startup = null) {
         if (!this.session?.session_id
                 || typeof this.api.reportLiveCallOperationalEvent !== "function") return Promise.resolve();
         if (event === "call_started") {
@@ -165,7 +174,7 @@ class LiveCallController {
         const durationMs = this.connectedAt ? Math.max(0, Date.now() - this.connectedAt) : 0;
         return this.api.reportLiveCallOperationalEvent(this.session.session_id, {
             event, outcome, failure_category: failureCategory,
-            duration_ms: durationMs, ...this.operational
+            duration_ms: durationMs, ...this.operational, ...(startup || {})
         }).catch(() => {});
     }
 
@@ -187,6 +196,10 @@ class LiveCallController {
             message_code: messageCode
         });
         this.renderDebugPanel();
+    }
+
+    setStartupPhase(phase) {
+        if (LIVE_CALL_START_PHASES.includes(phase)) this.startupPhase = phase;
     }
 
     validateRealtimeSession(session) {
@@ -553,6 +566,7 @@ class LiveCallController {
 
     async start() {
         if (this.state !== "idle") return;
+        this.setStartupPhase("controller_created");
         this.setState("connecting", "Connecting…");
         if (!this.legacy?.backendLegacyId) {
             return this.fail("This Companion is not available for Live Call.");
@@ -562,11 +576,13 @@ class LiveCallController {
         }
         this.elements.relationship.textContent = this.legacy.relationship;
         try {
+            this.setStartupPhase("microphone_start");
             this.recordFrontendStartup("microphone_request_started");
             this.stream = await this.mediaDevices.getUserMedia({
                 audio: { echoCancellation: true, noiseSuppression: true },
                 video: false
             });
+            this.setStartupPhase("microphone_ready");
             this.recordFrontendStartup("microphone_acquired");
             if (this.intentionalEnd) return this.releaseMicrophone();
             this.elements.microphoneStatus.textContent = "Microphone ready";
@@ -574,9 +590,16 @@ class LiveCallController {
             this.startRingback();
             if (this.intentionalEnd) return this.releaseMicrophone();
             const requestedEngine = new URLSearchParams(window.location.search).get("engine") || "auto";
-            this.session = await this.api.createLiveCallSession(
-                this.legacy.backendLegacyId, requestedEngine
+            const requestedConversationId = Number(
+                new URLSearchParams(window.location.search).get("conversationId")
             );
+            this.setStartupPhase("session_creating");
+            this.session = await this.api.createLiveCallSession(
+                this.legacy.backendLegacyId, requestedEngine,
+                Number.isInteger(requestedConversationId) && requestedConversationId > 0
+                    ? requestedConversationId : null
+            );
+            this.setStartupPhase("session_created");
             this.recordFrontendStartup("session_response_received");
             this.validateRealtimeSession(this.session);
             this.recordFrontendStartup("engine_validated");
@@ -622,12 +645,31 @@ class LiveCallController {
                         error?.messageCode || "realtime_start_failed"
                     );
                     const fallbackReason = this.realtimeStartupFailureReason(error);
+                    const startupFailure = this.realtimeController?.startupFailureSnapshot?.(error) || {
+                        phase: this.startupPhase,
+                        error_name: error?.name || "Error",
+                        error_message_classification: error?.messageCode || "unknown_frontend_startup",
+                        failure_code: error?.frontendCategory || "unknown_frontend_startup",
+                        peer_connection_state: "unavailable", ice_connection_state: "unavailable",
+                        signaling_state: "unavailable", data_channel_state: "unavailable",
+                        has_microphone_track: Boolean(this.stream?.getAudioTracks?.()[0]),
+                        has_remote_track: false, bootstrap_received: false,
+                        sdp_attempted: false, remote_description_set: false
+                    };
+                    this.setStartupPhase("startup_failed");
+                    if (this.debugLiveCall) console.debug("LIVE_CALL_START_FAILURE", startupFailure);
                     this.realtimeController?.close();
+                    this.setStartupPhase("cleanup");
                     if (this.session.realtime_strict) {
                         this.session.fallback_reason = fallbackReason;
                         const failedSessionId = this.session.session_id;
                         await this.reportOperational("call_ended", "startup_failed",
-                            this.operationalFailureCategory(error));
+                            this.operationalFailureCategory(error), {
+                                startup_phase: startupFailure.phase,
+                                failure_code: startupFailure.failure_code,
+                                peer_state: startupFailure.peer_connection_state,
+                                data_channel_state: startupFailure.data_channel_state
+                            });
                         try { await this.api.endLiveCallSession(failedSessionId); } catch { /* best effort */ }
                         this.renderDebugPanel();
                         this.recordEngineDecision(fallbackReason);
@@ -639,7 +681,7 @@ class LiveCallController {
                         this.operationalFailureCategory(error));
                     try { await this.api.endLiveCallSession(failedSessionId); } catch { /* best effort */ }
                     this.session = await this.api.createLiveCallSession(
-                        this.legacy.backendLegacyId, "cascade"
+                        this.legacy.backendLegacyId, "cascade", this.session.conversation_id
                     );
                     this.session.fallback_reason = fallbackReason;
                     this.operationalStarted = false;

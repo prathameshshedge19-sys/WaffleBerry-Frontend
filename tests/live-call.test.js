@@ -42,7 +42,7 @@ test("Live Call resolves authoritative Aaji context before creating its session"
     assert.match(script, /element\.textContent = legacy\.displayName/);
     assert.match(script, /this\.elements\.relationship\.textContent = this\.legacy\.relationship/);
     assert.match(script, /createLiveCallSession\([\s\S]*this\.legacy\.backendLegacyId/);
-    assert.match(script, /this\.api\.createLiveCallSession\(\s*this\.legacy\.backendLegacyId, requestedEngine\s*\)/);
+    assert.match(script, /this\.api\.createLiveCallSession\(\s*this\.legacy\.backendLegacyId, requestedEngine,[\s\S]*requestedConversationId/);
 });
 
 test("invalid context fails safely and return navigation retains the same scope", () => {
