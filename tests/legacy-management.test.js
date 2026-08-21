@@ -18,6 +18,18 @@ const transition = read("js/legacy-transition.js");
 const companion = read("js/companion-home.js");
 const css = read("css/style.css");
 
+test("Legacy dashboard header exposes an accessible secondary Plans control", () => {
+    const start = dashboardHtml.indexOf('<header class="navbar">');
+    const header = dashboardHtml.slice(start, dashboardHtml.indexOf("</header>", start));
+    assert.match(header, /class="dashboard-plans-button"[\s\S]*href="plans\.html"[\s\S]*Plans/);
+    assert.ok(header.indexOf("dashboard-plans-button") < header.indexOf("logout-button"));
+    assert.match(header, /class="logout-button"[\s\S]*Sign out/);
+    assert.match(header, /id="themeToggle"[\s\S]*class="theme-toggle"/);
+    assert.match(css, /\.dashboard-plans-button:visited,[\s\S]*\.dashboard-plans-button:focus-visible \{[\s\S]*text-decoration: none/);
+    assert.match(css, /\.dashboard-plans-button:hover \{[\s\S]*text-decoration: none/);
+    assert.match(css, /@media \(max-width: 600px\)[\s\S]*\.dashboard-plans-button \{[\s\S]*font-size: 0\.78rem/);
+});
+
 test("management uses active and archived backend listings", () => {
     assert.match(api, /function listOwnedLegaciesByStatus/);
     assert.match(api, /\?status=\$\{encodeURIComponent\(status\)\}/);

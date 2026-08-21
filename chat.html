@@ -547,6 +547,74 @@
         </div>
     </section>
     <dialog
+        id="chatQuotaDialog"
+        class="quota-modal"
+        aria-modal="true"
+        aria-labelledby="chatQuotaTitle"
+        aria-describedby="chatQuotaDescription"
+    >
+        <div class="quota-modal-card">
+            <p class="quota-modal-eyebrow">WaffleBerry limits</p>
+            <h2 id="chatQuotaTitle">Today&rsquo;s Chat limit reached</h2>
+            <p id="chatQuotaDescription"></p>
+            <p id="chatQuotaAvailability" class="quota-modal-availability"></p>
+            <div class="quota-modal-actions">
+                <a class="primary-button" href="plans.html">View plans</a>
+                <button id="chatQuotaKeepFree" class="secondary-button" type="button">
+                    Keep using Free
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog
+        id="liveCallQuotaDialog"
+        class="quota-modal"
+        aria-modal="true"
+        aria-labelledby="liveCallQuotaTitle"
+        aria-describedby="liveCallQuotaDescription"
+    >
+        <div class="quota-modal-card">
+            <p class="quota-modal-eyebrow">WaffleBerry limits</p>
+            <h2 id="liveCallQuotaTitle">Today&rsquo;s Live Call limit reached</h2>
+            <p id="liveCallQuotaDescription"></p>
+            <p id="liveCallQuotaAvailability" class="quota-modal-availability"></p>
+            <div class="quota-modal-actions">
+                <a class="primary-button" href="plans.html">View plans</a>
+                <button id="liveCallQuotaKeepFree" class="secondary-button" type="button">
+                    Keep using Free
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog id="voiceQuotaDialog" class="quota-modal" aria-modal="true"
+        aria-labelledby="voiceQuotaTitle" aria-describedby="voiceQuotaDescription">
+        <div class="quota-modal-card">
+            <p class="quota-modal-eyebrow">WaffleBerry limits</p>
+            <h2 id="voiceQuotaTitle">Today&rsquo;s Berry voice limit reached</h2>
+            <p id="voiceQuotaDescription"></p>
+            <p id="voiceQuotaAvailability" class="quota-modal-availability"></p>
+            <div class="quota-modal-actions">
+                <a class="primary-button" href="plans.html">View plans</a>
+                <button id="voiceQuotaKeepFree" class="secondary-button" type="button">Keep using Free</button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog id="serviceUnavailableDialog" class="quota-modal" aria-modal="true"
+        aria-labelledby="serviceUnavailableTitle" aria-describedby="serviceUnavailableDescription">
+        <div class="quota-modal-card">
+            <p class="quota-modal-eyebrow">WaffleBerry service</p>
+            <h2 id="serviceUnavailableTitle">WaffleBerry is temporarily unavailable</h2>
+            <p id="serviceUnavailableDescription">Sorry, our AI service is temporarily unavailable right now. Please try again later.</p>
+            <div class="quota-modal-actions">
+                <button class="primary-button" type="button" data-service-close>Close</button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog
         id="voiceSettingsDialog"
         class="voice-settings-dialog"
         aria-modal="true"
@@ -665,6 +733,8 @@
     <script src="js/legacy-context-ui.js"></script>
     <script src="js/companion-identity.js"></script>
     <script src="js/live-call-realtime.js"></script>
+    <script src="js/quota-modal.js"></script>
+    <script src="js/service-unavailable.js"></script>
     <script src="js/live-call.js"></script>
     <script src="js/chat.js"></script>
 </body>

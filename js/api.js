@@ -132,6 +132,22 @@ function getApiErrorMessage(status, data) {
 
 function getErrorKind(status, data) {
     if (
+        data?.detail?.error ===
+        "quota_exceeded"
+    ) {
+        if (data.detail.feature === "live_call") {
+            return "live_call_quota_exceeded";
+        }
+        if (data.detail.feature === "voice_play") {
+            return "voice_play_quota_exceeded";
+        }
+        if (data.detail.feature === "memory") {
+            return "memory_quota_exceeded";
+        }
+        return "chat_quota_exceeded";
+    }
+
+    if (
         typeof data?.detail?.code ===
         "string"
     ) {
@@ -180,17 +196,17 @@ function getFriendlyChatError(error) {
 
     if (
         error instanceof ApiError &&
-        error.kind === "quota_exceeded"
+        error.kind === "chat_quota_exceeded"
     ) {
-        return "Berry is temporarily unavailable because the AI usage balance has been exhausted.";
+        return "You’ve reached today’s Chat limit.";
     }
 
-    if (
-        error instanceof ApiError &&
-        (error.kind === "rate_limited" ||
-            error.kind === "rate-limit")
-    ) {
-        return "Berry is receiving too many requests right now. Please try again shortly.";
+    if ([
+        "ai_service_unavailable", "quota_exceeded", "provider_unavailable",
+        "rate_limited", "rate-limit", "speech_provider_unavailable",
+        "speech_rate_limited"
+    ].includes(error?.kind)) {
+        return "WaffleBerry is temporarily unavailable. Please try again later.";
     }
 
     if (
@@ -198,13 +214,6 @@ function getFriendlyChatError(error) {
         error.kind === "timeout"
     ) {
         return "Berry took too long to respond. Please try again.";
-    }
-
-    if (
-        error instanceof ApiError &&
-        error.kind === "provider_unavailable"
-    ) {
-        return "Berry’s AI service is temporarily unavailable. Please try again shortly.";
     }
 
     if (
@@ -1048,6 +1057,22 @@ function deleteStoredMemory(legacyId, memoryId) {
     );
 }
 
+async function approveStoredMemory(legacyId, memoryId, expectedUpdatedAt) {
+    try {
+        return await apiRequest(
+            `/legacies/${encodeURIComponent(legacyId)}/memories/${encodeURIComponent(memoryId)}/approve`,
+            { method: "POST", body: { expected_updated_at: expectedUpdatedAt } }
+        );
+    } catch (error) {
+        if (error instanceof ApiError && error.kind === "memory_quota_exceeded") {
+            document.dispatchEvent(new CustomEvent(
+                "waffleberry:memory-quota", { detail: error }
+            ));
+        }
+        throw error;
+    }
+}
+
 function createLiveCallSession(legacyId, engine = "auto", conversationId = null) {
     return apiRequest("/live-call/session", {
         method: "POST",
@@ -1160,6 +1185,7 @@ window.WaffleBerryApi = Object.freeze({
     listStoredMemories,
     editStoredMemory,
     deleteStoredMemory,
+    approveStoredMemory,
     createLiveCallSession,
     persistRealtimeAssistantTurn,
     createRealtimeBootstrap,

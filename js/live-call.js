@@ -57,6 +57,9 @@ class LiveCallController {
         this.stream = null;
         this.socket = null;
         this.timerId = null;
+        this.quotaTimerId = null;
+        this.quotaEndPending = false;
+        this.quotaEndPromise = null;
         this.connectedAt = null;
         this.endPromise = null;
         this.muted = false;
@@ -711,6 +714,16 @@ class LiveCallController {
             }
             if (error?.status === 401) {
                 return this.fail("Your session has expired. Please sign in again.");
+            }
+            if (error?.kind === "live_call_quota_exceeded") {
+                this.stopRingback();
+                this.finishEnded();
+                this.showQuotaDialog(error.details);
+                return;
+            }
+            if (window.WaffleBerryServiceUnavailable?.isServiceFailure(error)) {
+                await this.handleProviderServiceFailure();
+                return;
             }
             return this.fail("We couldn’t start the call. Please try again.");
         }
@@ -1627,6 +1640,105 @@ class LiveCallController {
         if (this.timerId === null) {
             this.timerId = this.clock.setInterval(() => this.updateTimer(), 1000);
         }
+        const seconds = Number(this.session?.available_seconds);
+        if (Number.isFinite(seconds) && seconds >= 0 && this.quotaTimerId === null) {
+            this.quotaTimerId = this.clock.setTimeout(
+                () => this.reachQuotaLimit(), Math.max(0, seconds * 1000)
+            );
+        }
+    }
+
+    reachQuotaLimit() {
+        if (this.quotaEndPending || ["ending", "ended", "error"].includes(this.state)) return;
+        this.quotaEndPending = true;
+        this.muted = true;
+        this.stream?.getAudioTracks?.().forEach((track) => { track.enabled = false; });
+        this.stopVad();
+        if (this.recorder?.state === "recording") {
+            this.discardRecording = true;
+            this.recorder.stop();
+        }
+        const settle = () => {
+            if (["processing", "speaking", "greeting"].includes(this.state)
+                    || this.realtimeController?.assistantSpeaking) {
+                this.clock.setTimeout(settle, 100);
+                return;
+            }
+            this.performQuotaEnd();
+        };
+        settle();
+    }
+
+    async performQuotaEnd(detail = null) {
+        if (this.quotaEndPromise) return this.quotaEndPromise;
+        this.quotaEndPromise = this.completeQuotaEnd(detail);
+        return this.quotaEndPromise;
+    }
+
+    async completeQuotaEnd(detail = null) {
+        if (this.state !== "ended") {
+            this.intentionalEnd = true;
+            this.realtimeRecoveryGeneration += 1;
+            this.realtimeController?.close();
+            this.stopRingback();
+            this.clearReconnectTimer();
+            this.stopHeartbeat();
+            this.stopTimer();
+            this.stopTurnMedia();
+            this.releaseMicrophone();
+            this.closeAudioContext();
+            document.dispatchEvent(new CustomEvent("waffleberry:stopspeech"));
+            this.socket?.close();
+            this.finishEnded();
+            this.showQuotaDialog(detail);
+            if (this.session?.session_id) {
+                await this.reportOperational("call_ended", "completed_normally");
+                try { await this.api.endLiveCallSession(this.session.session_id); } catch { /* idempotent cleanup */ }
+            }
+        } else {
+            this.showQuotaDialog(detail);
+        }
+    }
+
+    showQuotaDialog(detail = null) {
+        const quota = detail?.detail || detail || {};
+        const rawPlan = quota.plan || this.session?.quota_plan || "free";
+        const plan = window.WaffleBerryQuotaModal.planName(rawPlan);
+        const description = document.getElementById("liveCallQuotaDescription");
+        if (description) description.textContent =
+            `You’ve reached today’s Live Call limit on your ${plan} plan.`;
+        const availability = document.getElementById("liveCallQuotaAvailability");
+        if (availability) availability.textContent =
+            `${window.WaffleBerryQuotaModal.dailyAvailability(
+                quota.resets_at || this.session?.quota_resets_at
+            )}. Chat and your other WaffleBerry features are still available.`;
+        const keep = document.getElementById("liveCallQuotaKeepFree");
+        if (keep) keep.textContent = rawPlan === "free" ? "Keep using Free" : `Keep using ${plan}`;
+        const dialog = document.getElementById("liveCallQuotaDialog");
+        window.WaffleBerryQuotaModal.open(dialog);
+    }
+
+    async handleProviderServiceFailure() {
+        if (this.providerFailureEnding) return this.providerFailureEnding;
+        this.providerFailureEnding = (async () => {
+            this.intentionalEnd = true;
+            this.realtimeController?.close();
+            this.stopRingback();
+            this.clearReconnectTimer();
+            this.stopHeartbeat();
+            this.stopTurnMedia();
+            this.releaseMicrophone();
+            this.closeAudioContext();
+            this.socket?.close();
+            if (this.session?.session_id) {
+                try { await this.api.endLiveCallSession(this.session.session_id); } catch { /* best effort */ }
+            }
+            this.finishEnded();
+            window.WaffleBerryServiceUnavailable?.open(
+                document.getElementById("serviceUnavailableDialog")
+            );
+        })();
+        return this.providerFailureEnding;
     }
 
     toggleMute() {
@@ -2171,6 +2283,7 @@ class LiveCallController {
     }
 
     end() {
+        if (this.state === "ended") return this.leaveEndedCall();
         if (this.endPromise) return this.endPromise;
         this.endPromise = this.performEnd();
         return this.endPromise;
@@ -2206,6 +2319,19 @@ class LiveCallController {
         const returnUrl = this.elements.ended.querySelector('a[href^="chat.html"]')?.href
             || document.getElementById("returnToChatTop")?.href || "chat.html";
         this.clock.setTimeout(() => this.navigate(returnUrl), 150);
+    }
+
+    leaveEndedCall() {
+        const dialog = document.getElementById("liveCallQuotaDialog");
+        if (dialog?.open) dialog.close();
+        if (this.onEnded) {
+            this.onEnded();
+            return Promise.resolve();
+        }
+        const returnUrl = this.elements.ended.querySelector('a[href^="chat.html"]')?.href
+            || document.getElementById("returnToChatTop")?.href || "chat.html";
+        this.navigate(returnUrl);
+        return Promise.resolve();
     }
 
     requestTransportEnd() {
@@ -2258,7 +2384,9 @@ class LiveCallController {
 
     stopTimer() {
         if (this.timerId !== null) this.clock.clearInterval(this.timerId);
+        if (this.quotaTimerId !== null) this.clock.clearTimeout(this.quotaTimerId);
         this.timerId = null;
+        this.quotaTimerId = null;
         this.connectedAt = null;
     }
 
@@ -2361,6 +2489,13 @@ function mountLiveCall(options = {}) {
     controller.elements.mute.addEventListener("click", () => controller.toggleMute(), listenerOptions);
     controller.elements.speaker.addEventListener("click", () => controller.toggleSpeaker(), listenerOptions);
     controller.elements.end.addEventListener("click", () => controller.end(), listenerOptions);
+    window.WaffleBerryQuotaModal.bindDismissal(
+        document.getElementById("liveCallQuotaDialog"),
+        document.getElementById("liveCallQuotaKeepFree")
+    );
+    window.WaffleBerryServiceUnavailable?.bind(
+        document.getElementById("serviceUnavailableDialog")
+    );
     controller.elements.audioUnlock?.addEventListener("click", () => controller.activateAudio(), listenerOptions);
     window.addEventListener("offline", () => controller.handleOffline(), { signal: lifecycle.signal });
     window.addEventListener("online", () => controller.handleOnline(), { signal: lifecycle.signal });

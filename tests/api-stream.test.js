@@ -297,10 +297,59 @@ test("maps structured non-streaming AI errors to safe categories", async () => {
                     .getFriendlyChatError(
                         error
                     ),
-                "Berry is temporarily unavailable because the AI usage balance has been exhausted."
+                "WaffleBerry is temporarily unavailable. Please try again later."
             );
             return true;
         }
+    );
+});
+
+test("maps WaffleBerry Chat quota 429 ahead of provider 429 handling", async () => {
+    global.fetch = async () =>
+        new Response(JSON.stringify({
+            detail: {
+                error: "quota_exceeded",
+                feature: "chat",
+                plan: "free",
+                resets_at: "2026-08-22T00:00:00+02:00",
+                upgrade_available: false
+            }
+        }), {
+            status: 429,
+            headers: { "Content-Type": "application/json" }
+        });
+
+    await assert.rejects(
+        window.WaffleBerryApi.apiRequest(
+            "/conversations/4/messages",
+            { method: "POST", body: { content: "Hi" } }
+        ),
+        (error) => {
+            assert.equal(error.kind, "chat_quota_exceeded");
+            assert.equal(error.details.detail.feature, "chat");
+            assert.equal(error.details.detail.plan, "free");
+            return true;
+        }
+    );
+});
+
+test("successful quota-exempt Chat response remains unchanged", async () => {
+    const payload = {
+        user_message: { message_id: 1, content: "Hi" },
+        assistant_message: { message_id: 2, content: "Hello" },
+        conversation: { conversation_id: 4 }
+    };
+    global.fetch = async () => new Response(JSON.stringify(payload), {
+        status: 201,
+        headers: { "Content-Type": "application/json" }
+    });
+
+    assert.deepEqual(
+        await window.WaffleBerryApi.apiRequest(
+            "/conversations/4/messages",
+            { method: "POST", body: { content: "Hi" } }
+        ),
+        payload
     );
 });
 
@@ -308,7 +357,7 @@ test("maps streaming reliability codes consistently", () => {
     const cases = [
         [
             "rate_limited",
-            "Berry is receiving too many requests right now. Please try again shortly."
+            "WaffleBerry is temporarily unavailable. Please try again later."
         ],
         [
             "timeout",
@@ -316,7 +365,7 @@ test("maps streaming reliability codes consistently", () => {
         ],
         [
             "provider_unavailable",
-            "Berry’s AI service is temporarily unavailable. Please try again shortly."
+            "WaffleBerry is temporarily unavailable. Please try again later."
         ],
         [
             "stream_interrupted",

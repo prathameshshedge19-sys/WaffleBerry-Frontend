@@ -196,6 +196,19 @@ const conversationTitle =
     );
 const chatStatus =
     document.getElementById("chatStatus");
+const chatQuotaDialog =
+    document.getElementById("chatQuotaDialog");
+const chatQuotaDescription =
+    document.getElementById("chatQuotaDescription");
+const chatQuotaAvailability =
+    document.getElementById("chatQuotaAvailability");
+const chatQuotaKeepFree =
+    document.getElementById("chatQuotaKeepFree");
+const voiceQuotaDialog = document.getElementById("voiceQuotaDialog");
+const voiceQuotaDescription = document.getElementById("voiceQuotaDescription");
+const voiceQuotaAvailability = document.getElementById("voiceQuotaAvailability");
+const voiceQuotaKeepFree = document.getElementById("voiceQuotaKeepFree");
+const serviceUnavailableDialog = document.getElementById("serviceUnavailableDialog");
 const sendButton =
     document.getElementById("sendButton");
 const voiceRecordButton =
@@ -1376,6 +1389,35 @@ function messageSpeechErrorMessage(error) {
     return "Berry's voice could not be played. Please try again.";
 }
 
+function showServiceUnavailable() {
+    window.WaffleBerryServiceUnavailable.open(serviceUnavailableDialog);
+}
+
+window.WaffleBerryServiceUnavailable.bind(serviceUnavailableDialog);
+
+
+function showVoiceQuotaDialog(error) {
+    const detail = error instanceof ApiError ? error.details?.detail : null;
+    const rawPlan = detail?.plan || "free";
+    const plan = window.WaffleBerryQuotaModal.planName(rawPlan);
+    if (voiceQuotaDescription) {
+        voiceQuotaDescription.textContent =
+            `You’ve reached today’s Berry voice limit on your ${plan} plan.`;
+    }
+    if (voiceQuotaAvailability) {
+        voiceQuotaAvailability.textContent =
+            `${window.WaffleBerryQuotaModal.dailyAvailability(detail?.resets_at)}. ` +
+            "You can still use Chat, Live Call, and your other features.";
+    }
+    if (voiceQuotaKeepFree) {
+        voiceQuotaKeepFree.textContent = rawPlan === "free"
+            ? "Keep using Free" : `Keep using ${plan}`;
+    }
+    window.WaffleBerryQuotaModal.open(voiceQuotaDialog);
+}
+
+window.WaffleBerryQuotaModal.bindDismissal(voiceQuotaDialog, voiceQuotaKeepFree);
+
 
 async function playCachedMessageSpeech(
     messageId,
@@ -1574,6 +1616,20 @@ async function toggleMessageSpeech(button) {
         }
         messageSpeechState.requestController =
             null;
+        if (error?.kind === "voice_play_quota_exceeded") {
+            messageSpeechState.phase = "idle";
+            setMessageSpeechStatus("");
+            updateMessageSpeechControls();
+            showVoiceQuotaDialog(error);
+            return;
+        }
+        if (window.WaffleBerryServiceUnavailable.isServiceFailure(error)) {
+            messageSpeechState.phase = "idle";
+            setMessageSpeechStatus("");
+            updateMessageSpeechControls();
+            showServiceUnavailable();
+            return;
+        }
         messageSpeechState.phase = "error";
         setMessageSpeechStatus(
             messageSpeechErrorMessage(error)
@@ -2063,6 +2119,20 @@ function appendInlineError(error) {
         return;
     }
 
+    // Application quota is page-level UI, never an assistant utterance.
+    if (
+        error instanceof ApiError &&
+        error.kind === "chat_quota_exceeded"
+    ) {
+        showChatQuotaDialog(error);
+        return;
+    }
+
+    if (window.WaffleBerryServiceUnavailable.isServiceFailure(error)) {
+        showServiceUnavailable();
+        return;
+    }
+
     const errorElement =
         createBerryMessage(
             companionIdentity.personalize(
@@ -2073,6 +2143,37 @@ function appendInlineError(error) {
     chatMessages.appendChild(errorElement);
     scrollChatToBottom("smooth");
 }
+
+
+function quotaDetail(error) {
+    return error instanceof ApiError
+        ? error.details?.detail
+        : null;
+}
+
+
+function showChatQuotaDialog(error) {
+    const detail = quotaDetail(error);
+    const rawPlan = detail?.plan || "free";
+    const plan = window.WaffleBerryQuotaModal.planName(rawPlan);
+    if (chatQuotaDescription) {
+        chatQuotaDescription.textContent =
+            `You’ve reached today’s limit for Chat on your ${plan} plan.`;
+    }
+    if (chatQuotaAvailability) {
+        chatQuotaAvailability.textContent =
+            `${window.WaffleBerryQuotaModal.dailyAvailability(detail?.resets_at)}. ` +
+            "Your other WaffleBerry features are still available.";
+    }
+    if (chatQuotaKeepFree) {
+        chatQuotaKeepFree.textContent = rawPlan === "free"
+            ? "Keep using Free"
+            : `Keep using ${plan}`;
+    }
+    window.WaffleBerryQuotaModal.open(chatQuotaDialog);
+}
+
+window.WaffleBerryQuotaModal.bindDismissal(chatQuotaDialog, chatQuotaKeepFree);
 
 
 function createUserMessage(content) {
@@ -3324,6 +3425,20 @@ async function sendMessage(event) {
         }
 
         if (
+            error instanceof ApiError &&
+            error.kind === "chat_quota_exceeded"
+        ) {
+            optimisticMessage?.remove();
+            showChatQuotaDialog(error);
+            setChatStatus(
+                "Today’s Chat limit has been reached.",
+                "error"
+            );
+        } else if (window.WaffleBerryServiceUnavailable.isServiceFailure(error)) {
+            optimisticMessage?.remove();
+            showServiceUnavailable();
+            setChatStatus("WaffleBerry is temporarily unavailable.", "error");
+        } else if (
             error instanceof ApiError &&
             error.status === 404
         ) {

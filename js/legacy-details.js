@@ -36,11 +36,47 @@ const elements = {
     storedMemoriesStatus: document.getElementById("storedMemoriesStatus"),
     storedMemoriesList: document.getElementById("storedMemoriesList"),
     storedMemoriesMore: document.getElementById("storedMemoriesMore"),
+    memoryQuotaDialog: document.getElementById("memoryQuotaDialog"),
+    memoryQuotaKeepFree: document.getElementById("memoryQuotaKeepFree"),
+    memoryQuotaDescription: document.getElementById("memoryQuotaDescription"),
+    memoryQuotaAvailability: document.getElementById("memoryQuotaAvailability"),
 };
 
 let storedLegacyId = null;
 let storedMemoryOffset = 0;
 const STORED_MEMORY_PAGE_SIZE = 30;
+
+function isMemoryQuotaError(error) {
+    return error instanceof window.WaffleBerryApi.ApiError
+        && error.kind === "memory_quota_exceeded"
+        && error.details?.detail?.feature === "memory";
+}
+
+function showMemoryQuota(error) {
+    if (!isMemoryQuotaError(error)) return false;
+    const plan = String(error.details?.detail?.plan || "free");
+    const label = window.WaffleBerryQuotaModal.planName(plan);
+    if (elements.memoryQuotaDescription) {
+        elements.memoryQuotaDescription.textContent =
+            `Your ${label} plan has reached its memory capacity for this Legacy.`;
+    }
+    if (elements.memoryQuotaAvailability) {
+        elements.memoryQuotaAvailability.textContent =
+            "You can still Chat, use Live Call, and work with existing memories. " +
+            "New memories can’t be added until space becomes available or you upgrade.";
+    }
+    if (elements.memoryQuotaKeepFree) {
+        elements.memoryQuotaKeepFree.textContent = plan === "free"
+            ? "Keep using Free" : `Keep using ${label}`;
+    }
+    window.WaffleBerryQuotaModal.open(elements.memoryQuotaDialog);
+    return true;
+}
+
+window.WaffleBerryMemoryQuotaUi = Object.freeze({
+    isMemoryQuotaError,
+    showMemoryQuota,
+});
 
 function storedMemoryCard(memory) {
     const card = document.createElement("article");
@@ -705,6 +741,12 @@ async function loadDashboard() {
 
 elements.retry?.addEventListener("click", loadDashboard);
 elements.storedMemoriesMore?.addEventListener("click", () => loadStoredMemories(false));
+window.WaffleBerryQuotaModal.bindDismissal(
+    elements.memoryQuotaDialog, elements.memoryQuotaKeepFree
+);
+document.addEventListener("waffleberry:memory-quota", (event) => {
+    showMemoryQuota(event.detail);
+});
 elements.helpButton?.addEventListener("click", () => {
     elements.helpDialog?.showModal();
     elements.helpClose?.focus();

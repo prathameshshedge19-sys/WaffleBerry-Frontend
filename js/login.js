@@ -42,6 +42,10 @@ const forgotPasswordButton =
     document.getElementById("forgotPasswordButton");
 const rememberMeGroup =
     document.getElementById("rememberMeGroup");
+const termsAgreementGroup =
+    document.getElementById("termsAgreementGroup");
+const termsAgreementInput =
+    document.getElementById("termsAgreementInput");
 
 const authTitle =
     document.getElementById("authTitle");
@@ -119,6 +123,17 @@ function setAuthMode(mode) {
     if (rememberMeGroup) {
         rememberMeGroup.hidden =
             isRegisterMode;
+    }
+
+    if (termsAgreementGroup) {
+        termsAgreementGroup.hidden =
+            !isRegisterMode;
+    }
+
+    if (termsAgreementInput) {
+        if (!isRegisterMode) {
+            termsAgreementInput.checked = false;
+        }
     }
 
     if (authTitle) {
@@ -247,6 +262,18 @@ if (
                 return;
             }
 
+            if (
+                isRegisterMode &&
+                (!termsAgreementInput ||
+                    !termsAgreementInput.checked)
+            ) {
+                setLoginMessage(
+                    "Please accept the Terms & Conditions to continue.",
+                    "error"
+                );
+                return;
+            }
+
             setSubmitting(true);
             setLoginMessage(
                 isRegisterMode
@@ -267,7 +294,8 @@ if (
                             body: {
                                 full_name:
                                     fullName,
-                                email
+                                email,
+                                accepted_terms: true
                             }
                         }
                     );

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compare Free, Plus, and Pro WaffleBerry usage limits.">
+    <title>Plans | Waffle Berry</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main id="website" class="website-unlocked plans-page">
+        <header class="navbar">
+            <a href="home.html" class="brand wb-brand" aria-label="Waffle Berry home">
+                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
+                <span class="brand-text wb-brand__name">Waffle Berry</span>
+            </a>
+            <div class="navbar-actions">
+                <a class="logout-button" href="/" title="Sign out">Sign out</a>
+            </div>
+        </header>
+        <section class="plans-hero" aria-labelledby="plansTitle">
+            <a class="plans-back-control" href="legacy-dashboard.html">← Back to Legacies</a>
+            <p class="plans-eyebrow">Plans</p>
+            <h1 id="plansTitle">Choose your WaffleBerry plan</h1>
+            <p class="plans-subtitle">Every plan includes the same thoughtful Berry intelligence, memory, and personality. Higher plans simply give you more room to use them.</p>
+            <div class="plans-grid" aria-label="WaffleBerry plans">
+                <article class="plan-card" data-plan="free">
+                    <div class="plan-card-heading"><div><p class="plan-label">Free</p><h2>Stay connected</h2></div><span class="current-plan-badge" hidden>Current plan</span></div>
+                    <ul class="plan-features"><li>40 Chat messages per day</li><li>3 minutes of Live Call per day</li><li>10 Berry voice generations per day</li><li>100 memories per Legacy</li></ul>
+                    <p class="plan-action" data-plan-action="free">Free plan</p>
+                </article>
+                <article class="plan-card plan-card-featured" data-plan="plus">
+                    <span class="popular-plan-badge">Future favorite</span>
+                    <div class="plan-card-heading"><div><p class="plan-label">Plus</p><h2>More time with Berry</h2></div><span class="current-plan-badge" hidden>Current plan</span></div>
+                    <ul class="plan-features"><li>120 Chat messages per day</li><li>9 minutes of Live Call per day</li><li>30 Berry voice generations per day</li><li>300 memories per Legacy</li><li>2 minutes of Voice Cloning</li></ul>
+                    <button class="plan-action" type="button" disabled aria-disabled="true">Subscribe — Coming Soon</button>
+                </article>
+                <article class="plan-card" data-plan="pro">
+                    <div class="plan-card-heading"><div><p class="plan-label">Pro</p><h2>Maximum capacity</h2></div><span class="current-plan-badge" hidden>Current plan</span></div>
+                    <ul class="plan-features"><li>400 Chat messages per day</li><li>30 minutes of Live Call per day</li><li>100 Berry voice generations per day</li><li>1000 memories per Legacy</li><li>20 minutes of Voice Cloning</li></ul>
+                    <button class="plan-action" type="button" disabled aria-disabled="true">Subscribe — Coming Soon</button>
+                </article>
+            </div>
+            <aside class="plans-intelligence-note" aria-label="Plan intelligence"><strong>Berry is equally intelligent on every plan.</strong><span>Plus and Pro will increase usage capacity—not the quality of your conversations.</span></aside>
+        </section>
+    </main>
+    <script src="js/theme.js"></script>
+    <script src="js/plans.js"></script>
+</body>
+</html>

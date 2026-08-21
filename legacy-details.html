@@ -355,12 +355,35 @@
                 </dl>
             </article>
         </dialog>
+        <dialog
+            id="memoryQuotaDialog"
+            class="quota-modal"
+            aria-modal="true"
+            aria-labelledby="memoryQuotaTitle"
+            aria-describedby="memoryQuotaDescription"
+        >
+            <article class="quota-modal-card">
+                <p class="quota-modal-eyebrow">WaffleBerry limits</p>
+                <h2 id="memoryQuotaTitle">Memory space is full</h2>
+                <p id="memoryQuotaDescription">
+                    Your Free plan has reached its memory capacity for this Legacy.
+                </p>
+                <p id="memoryQuotaAvailability" class="quota-modal-availability">
+                    You can still Chat, use Live Call, and work with existing memories. New memories can&rsquo;t be added until space becomes available or you upgrade.
+                </p>
+                <div class="quota-modal-actions">
+                    <a class="primary-button" href="plans.html">View plans</a>
+                    <button id="memoryQuotaKeepFree" class="secondary-button" type="button">Keep using Free</button>
+                </div>
+            </article>
+        </dialog>
     </main>
 
     <script src="js/theme.js"></script>
     <script src="js/back-navigation.js"></script>
     <script src="js/legacy-state.js"></script>
     <script src="js/guided-stories-content.js"></script>
+    <script src="js/quota-modal.js"></script>
     <script src="js/legacy-details.js"></script>
 </body>
 

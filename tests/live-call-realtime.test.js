@@ -1092,10 +1092,10 @@ test("tool-call and continuation phases retain independent stall recovery", asyn
     second.controller.close();
 });
 
-test("response failures and provider errors still recover native turns", () => {
+test("response failures and unknown provider errors still recover native turns", () => {
     for (const event of [
         { type: "response.failed", response: { id: "failed-response", status: "failed" } },
-        { type: "error", error: { type: "server_error" } }
+        { type: "error", error: { type: "unknown_provider_error" } }
     ]) {
         const { controller, owner, sent } = runtimeController();
         controller.handleResponseCreated({ id: event.response?.id || "provider-error-response" });

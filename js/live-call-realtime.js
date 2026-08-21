@@ -984,6 +984,12 @@ class RealtimeLiveCallController {
             }
             this.lastProviderFailureCategory = this.classifyProviderError(event.error);
             this.metric("provider_error_count", 1);
+            if (["provider_quota_exhausted", "provider_rate_limited", "provider_transient"]
+                    .includes(this.lastProviderFailureCategory)) {
+                this.close();
+                this.owner.handleProviderServiceFailure?.();
+                return;
+            }
             this.recoverResponse(this.lastProviderFailureCategory);
         }
     }

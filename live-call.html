@@ -64,10 +64,34 @@
             </div>
         </section>
     </main>
+    <dialog id="liveCallQuotaDialog" class="quota-modal" aria-modal="true"
+        aria-labelledby="liveCallQuotaTitle" aria-describedby="liveCallQuotaDescription">
+        <div class="quota-modal-card">
+            <p class="quota-modal-eyebrow">WaffleBerry limits</p>
+            <h2 id="liveCallQuotaTitle">Today&rsquo;s Live Call limit reached</h2>
+            <p id="liveCallQuotaDescription"></p>
+            <p id="liveCallQuotaAvailability" class="quota-modal-availability"></p>
+            <div class="quota-modal-actions">
+                <a class="primary-button" href="plans.html">View plans</a>
+                <button id="liveCallQuotaKeepFree" class="secondary-button" type="button">Keep using Free</button>
+            </div>
+        </div>
+    </dialog>
+    <dialog id="serviceUnavailableDialog" class="quota-modal" aria-modal="true"
+        aria-labelledby="serviceUnavailableTitle" aria-describedby="serviceUnavailableDescription">
+        <div class="quota-modal-card">
+            <p class="quota-modal-eyebrow">WaffleBerry service</p>
+            <h2 id="serviceUnavailableTitle">WaffleBerry is temporarily unavailable</h2>
+            <p id="serviceUnavailableDescription">Sorry, our AI service is temporarily unavailable right now. Please try again later.</p>
+            <div class="quota-modal-actions"><button class="primary-button" type="button" data-service-close>Close</button></div>
+        </div>
+    </dialog>
     <script src="js/theme.js"></script>
     <script src="js/legacy-state.js"></script>
     <script src="js/companion-identity.js"></script>
     <script src="js/live-call-realtime.js"></script>
+    <script src="js/quota-modal.js"></script>
+    <script src="js/service-unavailable.js"></script>
     <script src="js/live-call.js"></script>
 </body>
 </html>
