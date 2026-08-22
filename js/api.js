@@ -399,6 +399,24 @@ async function authenticateUser(email, password) {
 }
 
 
+async function authenticateWithGoogle(credential, acceptedTerms = false) {
+    const response = await apiRequest(
+        "/auth/google",
+        {
+            method: "POST",
+            authenticated: false,
+            body: {
+                credential,
+                accepted_terms: acceptedTerms === true
+            }
+        }
+    );
+
+    storeAuthenticatedSession(response);
+    return response;
+}
+
+
 function storeAuthenticatedSession(response) {
     if (
         !response?.access_token ||
@@ -1162,6 +1180,7 @@ window.WaffleBerryApi = Object.freeze({
     apiRequest,
     renewAuthentication,
     authenticateUser,
+    authenticateWithGoogle,
     storeAuthenticatedSession,
     getFriendlyChatError,
     streamChatMessage,

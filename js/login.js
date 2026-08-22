@@ -5,6 +5,7 @@ const {
     ApiError,
     apiRequest,
     authenticateUser,
+    authenticateWithGoogle,
     clearStoredSession
 } = window.WaffleBerryApi;
 
@@ -72,9 +73,28 @@ const authTogglePrompt =
 
 const loginMessage =
     document.getElementById("loginMessage");
+const googleSignIn =
+    document.getElementById("googleSignIn");
+const googleTermsDialog =
+    document.getElementById("googleTermsDialog");
+const googleTermsForm =
+    document.getElementById("googleTermsForm");
+const googleTermsAgreement =
+    document.getElementById("googleTermsAgreement");
+const googleTermsMessage =
+    document.getElementById("googleTermsMessage");
+const googleTermsCancel =
+    document.getElementById("googleTermsCancel");
+const googleTermsSubmit =
+    document.getElementById("googleTermsSubmit");
 
 let authMode = "login";
 let isSubmitting = false;
+let isGoogleSubmitting = false;
+let googleInitialized = false;
+let pendingGoogleCredential = null;
+let isGoogleRegistrationSubmitting = false;
+let googleAuthenticationComplete = false;
 
 
 function setLoginMessage(message, type = "") {
@@ -199,6 +219,181 @@ function setSubmitting(submitting) {
             submitting;
     }
 }
+
+
+function setGoogleSubmitting(submitting) {
+    isGoogleSubmitting = submitting;
+    if (googleSignIn) {
+        googleSignIn.classList.toggle("is-loading", submitting);
+        googleSignIn.setAttribute("aria-busy", String(submitting));
+    }
+}
+
+
+function setGoogleTermsMessage(message) {
+    if (googleTermsMessage) {
+        googleTermsMessage.textContent = message;
+        googleTermsMessage.classList.toggle("error-state", Boolean(message));
+    }
+}
+
+
+function resetGoogleTermsFlow() {
+    pendingGoogleCredential = null;
+    isGoogleRegistrationSubmitting = false;
+    if (googleTermsAgreement) googleTermsAgreement.checked = false;
+    if (googleTermsSubmit) googleTermsSubmit.disabled = false;
+    if (googleTermsCancel) googleTermsCancel.disabled = false;
+    setGoogleTermsMessage("");
+}
+
+
+function closeGoogleTermsFlow() {
+    if (googleTermsDialog?.open) googleTermsDialog.close();
+    resetGoogleTermsFlow();
+}
+
+
+function handleGoogleTermsRequired(credential) {
+    pendingGoogleCredential = credential;
+    if (googleTermsAgreement) googleTermsAgreement.checked = false;
+    setGoogleTermsMessage("");
+    setLoginMessage("");
+    googleTermsDialog?.showModal();
+    googleTermsAgreement?.focus();
+}
+
+
+function getGoogleErrorMessage(error) {
+    if (!(error instanceof ApiError)) {
+        return "Google sign-in failed. Please try again.";
+    }
+    if (error.kind === "google_auth_unavailable") {
+        return "Google sign-in is temporarily unavailable. Please try again later.";
+    }
+    if (error.kind === "google_identity_conflict") {
+        return "This Google account cannot be linked automatically. Please sign in using your existing WaffleBerry account.";
+    }
+    return "Google sign-in failed. Please try again.";
+}
+
+
+async function handleGoogleCredential(response) {
+    if (
+        isGoogleSubmitting ||
+        isSubmitting ||
+        googleAuthenticationComplete ||
+        !response?.credential
+    ) {
+        return;
+    }
+
+    setGoogleSubmitting(true);
+    setLoginMessage("Signing you in with Google...");
+    try {
+        await authenticateWithGoogle(response.credential);
+        googleAuthenticationComplete = true;
+        window.location.href = "experience.html";
+    } catch (error) {
+        clearStoredSession();
+        if (error instanceof ApiError && error.kind === "terms_required") {
+            handleGoogleTermsRequired(response.credential);
+        } else {
+            setLoginMessage(getGoogleErrorMessage(error), "error");
+        }
+    } finally {
+        setGoogleSubmitting(false);
+    }
+}
+
+
+if (googleTermsForm) {
+    googleTermsForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (isGoogleRegistrationSubmitting || googleAuthenticationComplete) return;
+        if (!googleTermsAgreement?.checked) {
+            setGoogleTermsMessage("Please accept the Terms & Conditions to continue.");
+            return;
+        }
+        if (!pendingGoogleCredential) {
+            closeGoogleTermsFlow();
+            setLoginMessage("Your Google sign-in session expired. Please try again.", "error");
+            return;
+        }
+
+        isGoogleRegistrationSubmitting = true;
+        googleTermsSubmit.disabled = true;
+        if (googleTermsCancel) googleTermsCancel.disabled = true;
+        setGoogleTermsMessage("Creating your account...");
+        try {
+            await authenticateWithGoogle(pendingGoogleCredential, true);
+            googleAuthenticationComplete = true;
+            pendingGoogleCredential = null;
+            if (googleTermsDialog.open) googleTermsDialog.close();
+            window.location.href = "experience.html";
+        } catch (error) {
+            if (error instanceof ApiError && error.kind === "invalid_google_credential") {
+                closeGoogleTermsFlow();
+                setLoginMessage("Your Google sign-in session expired. Please try again.", "error");
+                return;
+            }
+            if (error instanceof ApiError && ["google_auth_unavailable", "google_identity_conflict"].includes(error.kind)) {
+                closeGoogleTermsFlow();
+                setLoginMessage(getGoogleErrorMessage(error), "error");
+                return;
+            }
+            setGoogleTermsMessage("Unable to create your account. Please try again.");
+        } finally {
+            isGoogleRegistrationSubmitting = false;
+            if (googleTermsSubmit) googleTermsSubmit.disabled = false;
+            if (googleTermsCancel) googleTermsCancel.disabled = false;
+        }
+    });
+}
+
+googleTermsCancel?.addEventListener("click", closeGoogleTermsFlow);
+googleTermsDialog?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeGoogleTermsFlow();
+});
+
+
+function initializeGoogleSignIn() {
+    if (googleInitialized || !googleSignIn) {
+        return;
+    }
+    const clientId = String(
+        window.WAFFLEBERRY_GOOGLE_CLIENT_ID || ""
+    ).trim();
+    const googleAccounts = window.google?.accounts?.id;
+    if (!clientId || !googleAccounts) {
+        const status = googleSignIn.querySelector("small");
+        if (status) {
+            status.textContent = clientId ? "Unavailable" : "Not configured";
+        }
+        return;
+    }
+
+    googleInitialized = true;
+    googleAccounts.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredential
+    });
+    googleSignIn.replaceChildren();
+    googleAccounts.renderButton(
+        googleSignIn,
+        {
+            type: "standard",
+            theme: "outline",
+            size: "large",
+            text: "continue_with",
+            shape: "rectangular",
+            width: Math.max(240, Math.floor(googleSignIn.clientWidth || 320))
+        }
+    );
+}
+
+window.initializeWaffleBerryGoogleSignIn = initializeGoogleSignIn;
 
 
 
