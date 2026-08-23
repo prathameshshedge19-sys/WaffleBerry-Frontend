@@ -25,7 +25,7 @@ function element(id) {
     };
 }
 
-function loginContext({ clientId = "client-id", authenticateWithGoogle } = {}) {
+function loginContext({ clientId = "client-id", authenticateWithGoogle, containerWidth = 320, withResizeObserver = false } = {}) {
     const ids = [
         "loginForm", "fullNameGroup", "fullNameInput", "emailInput",
         "passwordInput", "passwordGroup", "confirmPasswordGroup",
@@ -38,8 +38,10 @@ function loginContext({ clientId = "client-id", authenticateWithGoogle } = {}) {
         "googleTermsCancel", "googleTermsSubmit"
     ];
     const elements = Object.fromEntries(ids.map((id) => [id, element(id)]));
+    elements.googleSignIn.clientWidth = containerWidth;
     const initialized = [];
     const rendered = [];
+    const observers = [];
     class ApiError extends Error {
         constructor(message, options = {}) {
             super(message);
@@ -51,6 +53,8 @@ function loginContext({ clientId = "client-id", authenticateWithGoogle } = {}) {
         window: {
             WAFFLEBERRY_GOOGLE_CLIENT_ID: clientId,
             location: { href: "" },
+            setTimeout,
+            clearTimeout,
             google: { accounts: { id: {
                 initialize(options) { initialized.push(options); },
                 renderButton(target, options) { rendered.push({ target, options }); }
@@ -67,8 +71,14 @@ function loginContext({ clientId = "client-id", authenticateWithGoogle } = {}) {
         URLSearchParams,
         console: { info() {}, error() {} }
     };
+    if (withResizeObserver) {
+        context.window.ResizeObserver = class {
+            constructor(callback) { this.callback = callback; observers.push(this); }
+            observe(target) { this.target = target; }
+        };
+    }
     vm.runInNewContext(read("js/login.js"), context);
-    return { context, elements, initialized, rendered, ApiError };
+    return { context, elements, initialized, rendered, observers, ApiError };
 }
 
 test("login page loads current GIS library after local scripts", () => {
@@ -86,6 +96,48 @@ test("GIS initializes with configured client ID and renders supported button", (
     assert.equal(typeof result.initialized[0].callback, "function");
     assert.equal(result.rendered.length, 1);
     assert.equal(result.rendered[0].target, result.elements.googleSignIn);
+    assert.deepEqual(
+        { ...result.rendered[0].options },
+        {
+            type: "standard", theme: "filled_black", size: "large",
+            text: "continue_with", shape: "rectangular",
+            logo_alignment: "left", locale: "en", width: 320
+        }
+    );
+});
+
+test("GIS width is capped at 400px and respects narrow containers", () => {
+    const wide = loginContext({ containerWidth: 640 });
+    wide.context.window.initializeWaffleBerryGoogleSignIn();
+    assert.equal(wide.rendered[0].options.width, 400);
+
+    const narrow = loginContext({ containerWidth: 286 });
+    narrow.context.window.initializeWaffleBerryGoogleSignIn();
+    assert.equal(narrow.rendered[0].options.width, 286);
+});
+
+test("GIS resize replaces the existing button only when its width changes", async () => {
+    const result = loginContext({ containerWidth: 390, withResizeObserver: true });
+    result.context.window.initializeWaffleBerryGoogleSignIn();
+    assert.equal(result.observers.length, 1);
+    assert.equal(result.rendered.length, 1);
+
+    result.observers[0].callback();
+    await new Promise((resolve) => setTimeout(resolve, 140));
+    assert.equal(result.rendered.length, 1);
+
+    result.elements.googleSignIn.clientWidth = 320;
+    result.observers[0].callback();
+    await new Promise((resolve) => setTimeout(resolve, 140));
+    assert.equal(result.rendered.length, 2);
+    assert.equal(result.rendered[1].options.width, 320);
+});
+
+test("Google and Apple controls share the responsive provider layout", () => {
+    const html = read("login.html");
+    const css = read("css/style.css");
+    assert.match(html, /provider-button-stack[\s\S]*googleSignIn[\s\S]*appleSignIn/);
+    assert.match(css, /\.provider-button\s*\{[\s\S]*max-width:\s*400px/);
 });
 
 test("missing Google client ID leaves a graceful disabled placeholder", () => {

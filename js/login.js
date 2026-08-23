@@ -92,6 +92,9 @@ let authMode = "login";
 let isSubmitting = false;
 let isGoogleSubmitting = false;
 let googleInitialized = false;
+let googleButtonWidth = 0;
+let googleResizeTimer = 0;
+let googleResizeObserver = null;
 let pendingGoogleCredential = null;
 let isGoogleRegistrationSubmitting = false;
 let googleAuthenticationComplete = false;
@@ -379,18 +382,40 @@ function initializeGoogleSignIn() {
         client_id: clientId,
         callback: handleGoogleCredential
     });
-    googleSignIn.replaceChildren();
-    googleAccounts.renderButton(
-        googleSignIn,
-        {
-            type: "standard",
-            theme: "outline",
-            size: "large",
-            text: "continue_with",
-            shape: "rectangular",
-            width: Math.max(240, Math.floor(googleSignIn.clientWidth || 320))
-        }
-    );
+
+    const renderGoogleButton = () => {
+        const availableWidth = Math.floor(googleSignIn.clientWidth || 0);
+        if (availableWidth <= 0) return;
+
+        const width = Math.min(400, availableWidth);
+        if (width === googleButtonWidth) return;
+
+        googleButtonWidth = width;
+        googleSignIn.replaceChildren();
+        googleAccounts.renderButton(
+            googleSignIn,
+            {
+                type: "standard",
+                theme: "filled_black",
+                size: "large",
+                text: "continue_with",
+                shape: "rectangular",
+                logo_alignment: "left",
+                locale: "en",
+                width
+            }
+        );
+    };
+
+    renderGoogleButton();
+
+    if (window.ResizeObserver) {
+        googleResizeObserver = new window.ResizeObserver(() => {
+            window.clearTimeout(googleResizeTimer);
+            googleResizeTimer = window.setTimeout(renderGoogleButton, 120);
+        });
+        googleResizeObserver.observe(googleSignIn);
+    }
 }
 
 window.initializeWaffleBerryGoogleSignIn = initializeGoogleSignIn;
