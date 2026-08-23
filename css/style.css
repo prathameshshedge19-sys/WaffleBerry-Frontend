@@ -7291,7 +7291,7 @@ body.dark-mode .wb-brand__mark {
     }
 }
 
-/* Mobile login */
+/* Mobile authentication and authenticated header controls */
 @media (max-width: 600px) {
     #authScreen {
         align-items: flex-start;
@@ -7315,8 +7315,45 @@ body.dark-mode .wb-brand__mark {
         font-size: 1.7rem;
     }
 
+    .navbar-actions {
+        flex: 0 0 auto;
+        gap: 6px;
+    }
+
     .logout-button {
-        display: none;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 0.76rem;
+        line-height: 1;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .companion-transition-page > .logout-button {
+        position: fixed;
+        top: max(10px, env(safe-area-inset-top));
+        right: max(10px, env(safe-area-inset-right));
+        z-index: 1000;
+    }
+}
+
+@media (max-width: 350px) {
+    body:not(.chat-page) .navbar:has(> .nav-links) {
+        flex-wrap: wrap;
+        row-gap: 5px;
+    }
+
+    body:not(.chat-page) .navbar:has(> .nav-links) > .nav-links {
+        width: 100%;
+        order: 3;
+        justify-content: center;
+    }
+
+    body:has(.navbar > .nav-links) .page-section {
+        padding-top: 136px;
     }
 }
 /* FINAL FIX: Google and Apple sign-in buttons */
@@ -8681,7 +8718,7 @@ body.dark-mode .live-call-ended { background: rgba(42, 28, 35, 0.9); border-colo
     }
 
     .chat-page .brand-text,
-    .chat-page .logout-button {
+    .chat-page > #website > .navbar .logout-button {
         display: none;
     }
 
