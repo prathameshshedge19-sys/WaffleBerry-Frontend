@@ -150,15 +150,15 @@
     if (!legacy || missing.has("target_type")) {
       emptyStateTitle.textContent = "Who are we building this Legacy for?";
       emptyStatePrompt.textContent = "Tell Rya: yourself, or someone you care about.";
+    } else if (missing.has("relationship")) {
+      emptyStateTitle.textContent = "How are they connected to you?";
+      emptyStatePrompt.textContent = "Tell Rya in your own words.";
     } else if (missing.has("subject_name")) {
       const relation = legacy.relationship_to_owner && legacy.relationship_to_owner !== "self"
         ? `your ${legacy.relationship_to_owner}`
         : "you";
       emptyStateTitle.textContent = `What should Rya call ${relation}?`;
       emptyStatePrompt.textContent = "Continue naturally in any language.";
-    } else if (missing.has("relationship")) {
-      emptyStateTitle.textContent = "How are they connected to you?";
-      emptyStatePrompt.textContent = "Tell Rya in your own words.";
     } else {
       emptyStateTitle.replaceChildren(document.createTextNode("Speak with "));
       const name = document.createElement("span");
@@ -231,8 +231,37 @@
     window.dispatchEvent(new CustomEvent("legarya-legacy-change", { detail: { legacy: selected } }));
   };
 
+  const bootstrapPendingLegacy = async () => {
+    try {
+      return await apiRequest("/legacies/setup/bootstrap", { method: "POST", authenticated: true });
+    } catch (error) {
+      logChatFailure("legacy_setup_bootstrap_failed", error);
+      throw new ApiError("Rya couldn’t start the Legacy setup. Try again.", {
+        status: error instanceof ApiError ? error.status : 0,
+        kind: "legacy_setup_bootstrap_failed",
+      });
+    }
+  };
+
   const fetchLegacyContext = async ({ preserveSelection = false } = {}) => {
-    const context = await apiRequest("/legacies", { authenticated: true });
+    let context = await apiRequest("/legacies", { authenticated: true });
+    const owned = context.owned_legacies || [];
+    const collaborations = context.collaborations || [];
+    const shouldBootstrap = collaborations.length === 0 && (
+      owned.length === 0
+      || (!context.active_legacy_id && owned.some((legacy) => legacy.setup_status === "collecting_identity"))
+    );
+    if (shouldBootstrap) {
+      const result = await bootstrapPendingLegacy();
+      const withoutPending = context.legacies.filter((legacy) => legacy.id !== result.legacy.id);
+      const withoutPendingOwned = owned.filter((legacy) => legacy.id !== result.legacy.id);
+      context = {
+        ...context,
+        active_legacy_id: result.legacy.id,
+        legacies: [result.legacy, ...withoutPending],
+        owned_legacies: [result.legacy, ...withoutPendingOwned],
+      };
+    }
     legacies = context.legacies;
     if (!preserveSelection || !legacies.some((legacy) => legacy.id === chatSession.selectedLegacyId)) {
       const requestedId = Number(new URLSearchParams(location.search).get("legacy"));
@@ -793,13 +822,19 @@
       preparingSend = true;
       updateSendState();
       setChatStatus("Restoring your Legacy workspace...");
+      let recoveryError = null;
       try {
         await fetchLegacyContext();
       } catch (error) {
+        recoveryError = error;
         logChatFailure("composer-legacy-recovery", error);
       } finally {
         preparingSend = false;
         updateSendState();
+      }
+      if (!chatSession.selectedLegacyId && recoveryError?.kind === "legacy_setup_bootstrap_failed") {
+        setChatStatus(recoveryError.message, true);
+        return;
       }
     }
     if (!chatSession.canSend(content, sending)) {
@@ -1068,7 +1103,14 @@
       else showEmptyState();
       updateSendState();
       input.focus();
-    } catch {
+    } catch (error) {
+      if (error?.kind === "legacy_setup_bootstrap_failed") {
+        showEmptyState();
+        setChatStatus(error.message, true);
+        updateSendState();
+        input.focus();
+        return;
+      }
       redirectToAuth();
     }
   };
