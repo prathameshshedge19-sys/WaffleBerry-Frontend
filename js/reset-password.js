@@ -1,159 +1,50 @@
 "use strict";
 
-(function initializeResetPassword() {
-const {
-    ApiError,
-    apiRequest
-} = window.WaffleBerryApi;
+(() => {
+  const { ApiError, apiRequest } = window.LegaryaAuthApi;
+  const email = new URLSearchParams(location.search).get("email")?.trim();
+  const resetToken = sessionStorage.getItem("passwordResetAuthorization");
+  const form = document.querySelector("#resetPasswordForm");
+  const passwordInput = document.querySelector("#passwordInput");
+  const confirmationInput = document.querySelector("#confirmPasswordInput");
+  const submit = document.querySelector("#submitButton");
+  const message = document.querySelector("#authMessage");
+  let submitting = false;
 
-const form =
-    document.getElementById("resetPasswordForm");
+  const show = (text, error = false) => {
+    message.textContent = text;
+    message.classList.toggle("error-state", error);
+  };
 
-const passwordInput =
-    document.getElementById("passwordInput");
-
-const confirmPasswordInput =
-    document.getElementById("confirmPasswordInput");
-
-const submitButton =
-    document.getElementById("authSubmitButton");
-
-const loginMessage =
-    document.getElementById("loginMessage");
-
-const backButton =
-    document.getElementById("backToLoginButton");
-
-const email = new URLSearchParams(
-    window.location.search
-).get("email")?.trim();
-const resetToken = sessionStorage.getItem("passwordResetAuthorization");
-
-let isSubmitting = false;
-
-function setMessage(message, type = "") {
-    if (!loginMessage) {
-        return;
-    }
-
-    loginMessage.textContent = message;
-    loginMessage.classList.toggle(
-        "error-state",
-        type === "error"
-    );
-}
-
-function setSubmitting(submitting) {
-    isSubmitting = submitting;
-
-    if (submitButton) {
-        submitButton.disabled = submitting;
-    }
-}
-
-function getErrorMessage(error) {
-    if (!(error instanceof ApiError)) {
-        return "Unable to reset your password.";
-    }
-
-    return error.message;
-}
-
-if (!email || !resetToken) {
-    setMessage(
-        "Your password reset authorization is missing or expired. Request a new code.",
-        "error"
-    );
-
-    setSubmitting(true);
+  if (!email || !resetToken) {
+    show("Your password reset authorization is missing or expired. Request a new code.", true);
+    submit.disabled = true;
     return;
-}
+  }
 
-if (form) {
-    form.addEventListener(
-        "submit",
-        async (event) => {
-            event.preventDefault();
-
-            if (isSubmitting) {
-                return;
-            }
-
-            const password =
-                passwordInput.value;
-
-            const confirmPassword =
-                confirmPasswordInput.value;
-
-            if (!password || !confirmPassword) {
-                setMessage(
-                    "Please fill in all fields.",
-                    "error"
-                );
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                setMessage(
-                    "Passwords do not match.",
-                    "error"
-                );
-                return;
-            }
-
-            setSubmitting(true);
-            setMessage(
-                "Resetting your password..."
-            );
-
-            try {
-
-                await apiRequest(
-                    "/reset-password",
-                    {
-                        method: "POST",
-                        authenticated: false,
-                        body: {
-                            email,
-                            password,
-                            reset_token: resetToken
-                        }
-                    }
-                );
-
-                sessionStorage.removeItem("passwordResetAuthorization");
-                setMessage("Password reset successfully! Redirecting to login...");
-                window.location.href = "login.html";
-
-            } catch (error) {
-
-                setMessage(
-                    getErrorMessage(error),
-                    "error"
-                );
-
-            } finally {
-
-                setSubmitting(false);
-
-            }
-
-        }
-    );
-}
-
-if (backButton) {
-
-    backButton.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "login.html";
-
-        }
-    );
-
-}
-
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (submitting) return;
+    const password = passwordInput.value;
+    if (password !== confirmationInput.value) return show("Passwords do not match.", true);
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      return show("Password must be at least eight characters and include a letter and number.", true);
+    }
+    submitting = true;
+    submit.disabled = true;
+    show("Resetting your password...");
+    try {
+      await apiRequest("/auth/reset-password", {
+        method: "POST",
+        body: { email, password, reset_token: resetToken },
+      });
+      sessionStorage.removeItem("passwordResetAuthorization");
+      location.href = "auth.html?mode=login&reset=success";
+    } catch (error) {
+      show(error instanceof ApiError ? error.message : "Unable to reset your password.", true);
+    } finally {
+      submitting = false;
+      submit.disabled = false;
+    }
+  });
 })();

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#050504" />
+    <link rel="icon" href="favicon.svg?v=1" type="image/svg+xml" />
+    <title>Choose your path | LegaRya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/rya-core.css?v=1.0" />
+    <link rel="stylesheet" href="css/gateway.css?v=1.1" />
+  </head>
+  <body>
+    <header class="gateway-header">
+      <a class="gateway-brand" href="index.html"><img class="rya-core-icon" src="favicon.svg?v=1" alt="" /><span>Lega<span class="rya-glow">Rya</span></span></a>
+      <button id="gatewayLogout" type="button">Log out</button>
+    </header>
+    <main class="gateway-main">
+      <p class="gateway-eyebrow">Your Legacy journey</p>
+      <h1>How would you like to begin?</h1>
+      <p id="gatewayWelcome" class="gateway-welcome"></p>
+      <div class="gateway-choices">
+        <a class="gateway-card" href="chat.html">
+          <span class="gateway-number">01</span><h2>Build Legacy person with Rya</h2><p>Build or improve a Legacy through conversation.</p><span class="gateway-action">Enter builder <b>→</b></span>
+        </a>
+        <button id="openJoin" class="gateway-card" type="button">
+          <span class="gateway-number">02</span><h2>Collaborate on a created Legacy</h2><p>Help someone you trust preserve their stories using a collaborator code.</p><span class="gateway-action">Enter code <b>→</b></span>
+        </button>
+        <button id="openLegacyJoin" class="gateway-card" type="button">
+          <span class="gateway-number">03</span><h2>Talk with a Legacy</h2><p>Experience a preserved person through their shared Legacy code.</p><span class="gateway-action">Enter Legacy code <b>→</b></span>
+        </button>
+      </div>
+    </main>
+
+    <dialog id="joinDialog" class="join-dialog">
+      <form id="joinForm" method="dialog">
+        <button id="closeJoin" class="join-close" type="button" aria-label="Close">×</button>
+        <p class="join-eyebrow">Trusted collaboration</p>
+        <h2 id="joinTitle">Enter collaborator code</h2>
+        <p id="joinDescription">Use the code shared by the Legacy owner.</p>
+        <div id="codeStep">
+          <label for="collaboratorCode">Collaborator code</label>
+          <input id="collaboratorCode" name="code" autocomplete="off" maxlength="14" placeholder="COL-XXXX-XXXX" required />
+          <button id="previewCode" class="join-primary" type="submit">Continue</button>
+        </div>
+        <div id="confirmStep" hidden>
+          <div class="join-identity"><strong id="joinLegacyName"></strong><span id="joinOwnerName"></span></div>
+          <button id="confirmJoin" class="join-primary" type="button">Join collaboration</button>
+          <button id="changeCode" class="join-secondary" type="button">Use a different code</button>
+        </div>
+        <p id="joinStatus" class="join-status" aria-live="polite"></p>
+      </form>
+    </dialog>
+    <dialog id="legacyJoinDialog" class="join-dialog">
+      <form id="legacyJoinForm" method="dialog">
+        <button id="closeLegacyJoin" class="join-close" type="button" aria-label="Close">×</button>
+        <p class="join-eyebrow">AI Legacy access</p>
+        <h2>Enter Legacy Code</h2>
+        <p>Use the read-only code shared by the Legacy owner.</p>
+        <div id="legacyCodeStep">
+          <label for="legacyCode">Legacy code</label>
+          <input id="legacyCode" name="code" autocomplete="off" maxlength="13" placeholder="LEG-XXXX-XXXX" required />
+          <button class="join-primary" type="submit">Continue</button>
+        </div>
+        <div id="legacyConfirmStep" hidden>
+          <div class="join-identity"><strong id="legacyPreviewName"></strong><span>AI Legacy · Read-only conversation</span></div>
+          <button id="beginLegacyConversation" class="join-primary" type="button">Begin conversation</button>
+          <button id="changeLegacyCode" class="join-secondary" type="button">Use a different code</button>
+        </div>
+        <p id="legacyJoinStatus" class="join-status" aria-live="polite"></p>
+      </form>
+    </dialog>
+    <script src="js/auth-config.js?v=1.1"></script>
+    <script src="js/auth-api.js?v=1.4"></script>
+    <script src="js/workspace-role.js?v=1.0"></script>
+    <script src="js/gateway.js?v=1.2"></script>
+  </body>
+</html>

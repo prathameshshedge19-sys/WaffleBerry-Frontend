@@ -1,265 +1,245 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WaffleBerry | No one is truly gone while their story can still be told.</title>
-    <meta name="description" content="WaffleBerry is an AI-powered digital legacy platform that preserves memories, stories and meaningful human connections for future generations.">
-    <meta name="author" content="WaffleBerry">
-    <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#8d3dc5">
-    <link rel="canonical" href="https://www.waffleberry.app/">
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
-
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="WaffleBerry">
-    <meta property="og:url" content="https://www.waffleberry.app/">
-    <meta property="og:title" content="WaffleBerry">
-    <meta property="og:description" content="No one is truly gone while their story can still be told.">
-    <meta property="og:image" content="https://www.waffleberry.app/assets/og-image.png">
-    <meta property="og:image:alt" content="WaffleBerry digital legacy platform">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="WaffleBerry">
-    <meta name="twitter:description" content="No one is truly gone while their story can still be told.">
-    <meta name="twitter:image" content="https://www.waffleberry.app/assets/og-image.png">
-    <meta name="twitter:image:alt" content="WaffleBerry digital legacy platform">
-
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "WaffleBerry",
-        "url": "https://www.waffleberry.app/",
-        "logo": "https://www.waffleberry.app/assets/waffle-berry-mascot.png",
-        "slogan": "No one is truly gone while their story can still be told.",
-        "email": "support@waffleberry.app"
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050504" />
+    <link rel="icon" href="favicon.ico?v=1" sizes="any" />
+    <link rel="icon" href="favicon-32x32.png?v=1" type="image/png" sizes="32x32" />
+    <link rel="icon" href="favicon.svg?v=1" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1" />
+    <link rel="manifest" href="site.webmanifest?v=1" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="LegaRya" />
+    <meta name="description" content="LegaRya is an AI-powered digital legacy that preserves memories, stories, relationships, and personality for generations." />
+    <link rel="canonical" href="https://www.waffleberry.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="LegaRya" />
+    <meta property="og:description" content="Preserve what makes someone, them." />
+    <meta property="og:url" content="https://www.waffleberry.app/" />
+    <title>LegaRya | Remember You, Always.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/rya-core.css?v=1.0" />
+    <link rel="stylesheet" href="css/style.css?v=1.3" />
+    <script>
+      document.documentElement.classList.add("js");
+      window.__ryaDiagnostics = { errors: [], frames: 0 };
+      const originalConsoleError = console.error.bind(console);
+      console.error = (...args) => {
+        window.__ryaDiagnostics.errors.push(args.map(String).join(" ").slice(0, 2000));
+        originalConsoleError(...args);
+      };
+      window.addEventListener("error", (event) => {
+        window.__ryaDiagnostics.errors.push(`${event.message} at ${event.filename}:${event.lineno}`);
+      });
+      window.addEventListener("unhandledrejection", (event) => {
+        window.__ryaDiagnostics.errors.push(`Unhandled: ${String(event.reason)}`);
+      });
+      window.__reportRya = (phase) => {
+        const canvas = document.querySelector("canvas");
+        const memoryCanvas = document.querySelector("[data-memory-world] canvas");
+        fetch("/client-report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phase,
+            frames: window.__ryaDiagnostics.frames,
+            energyBlooms: window.__ryaDiagnostics.energyBlooms || 0,
+            arcEvents: window.__ryaDiagnostics.arcEvents || 0,
+            centerOriginArcs: window.__ryaDiagnostics.centerOriginArcs || 0,
+            maxArcSourceRadius: window.__ryaDiagnostics.maxArcSourceRadius || 0,
+            energyArcs: window.__ryaDiagnostics.energyArcs || 0,
+            maxVisibleArcs: window.__ryaDiagnostics.maxVisibleArcs || 0,
+            strongArcEvents: window.__ryaDiagnostics.strongArcEvents || 0,
+            interactions: window.__ryaDiagnostics.interactions || 0,
+            hoverPeak: window.__ryaDiagnostics.hoverPeak || 0,
+            reactionPeak: window.__ryaDiagnostics.reactionPeak || 0,
+            errors: window.__ryaDiagnostics.errors,
+            resources: window.__ryaDiagnostics.resources,
+            canvas: canvas ? [canvas.width, canvas.height] : null,
+            memoryReady: Boolean(window.__ryaDiagnostics.memoryReady),
+            memoryFrames: window.__ryaDiagnostics.memoryFrames || 0,
+            memoryPulses: window.__ryaDiagnostics.memoryPulses || 0,
+            memoryInteractions: window.__ryaDiagnostics.memoryInteractions || 0,
+            memoryCanvas: memoryCanvas ? [memoryCanvas.width, memoryCanvas.height] : null,
+          }),
+        }).catch(() => {});
+      };
+      setTimeout(() => window.__reportRya("startup"), 3000);
+      setTimeout(() => window.__reportRya("continuous-20s"), 21000);
+      Promise.all(["./js/rya.js", "./js/three.module.min.js", "./js/site.js", "./js/memory-earth.js"].map(async (url) => {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          return { url, status: response.status, type: response.headers.get("content-type") };
+        } catch (error) {
+          return { url, error: String(error) };
+        }
+      })).then((resources) => {
+        window.__ryaDiagnostics.resources = resources;
+        window.__reportRya("resource-check");
+      });
     </script>
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "WaffleBerry",
-        "url": "https://www.waffleberry.app/",
-        "description": "An AI-powered digital legacy platform for preserving memories, stories and meaningful human connections.",
-        "publisher": { "@type": "Organization", "name": "WaffleBerry" }
-    }
-    </script>
-    <link rel="stylesheet" href="css/landing.css">
-    <script src="js/landing.js" defer></script>
-</head>
-<body class="public-landing">
-    <a class="public-skip-link" href="#main-content">Skip to content</a>
-    <header class="public-navbar" data-public-navbar>
-        <div class="public-nav-inner">
-            <a class="public-brand wb-brand" href="#home" aria-label="Waffle Berry home">
-                <span class="wb-brand__mark"><img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44"></span>
-                <span class="wb-brand__name">Waffle Berry</span>
-            </a>
-            <button class="public-menu-toggle" type="button" aria-expanded="false" aria-controls="public-navigation">
-                <span class="public-menu-label">Menu</span><span class="public-menu-icon" aria-hidden="true"></span>
-            </button>
-            <nav class="public-nav-links" id="public-navigation" aria-label="Public navigation">
-                <a href="#home">Home</a>
-                <a href="#mission">Mission</a>
-                <a href="#contact">Contact</a>
-                <a class="public-button public-button-small" href="login.html">Sign In</a>
-            </nav>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav-shell">
+        <a class="wordmark" href="#home" aria-label="LegaRya home">
+          <img class="rya-core-icon rya-core-icon--brand" src="favicon.svg?v=1" alt="" aria-hidden="true" />
+          <span class="legarya-brand legarya-brand-nav"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span>
+        </a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation">
+          <span class="sr-only">Open navigation</span>
+          <span aria-hidden="true"></span><span aria-hidden="true"></span>
+        </button>
+        <nav class="site-nav" id="site-navigation" aria-label="Main navigation">
+          <a href="#home">Home</a><a href="#mission">Mission</a><a href="#how-it-works">How It Works</a><a href="#rya"><span class="rya-glow">Rya</span></a><a href="#plans">Plans</a>
+        </nav>
+        <div class="nav-actions">
+          <a class="text-action" href="auth.html?mode=login">Log In</a>
+          <a class="button button-small" href="auth.html?mode=register">Get Started</a>
         </div>
+      </div>
     </header>
 
     <main id="main-content">
-        <section class="public-hero" id="home">
-            <div class="public-orb public-orb-one" aria-hidden="true"></div>
-            <div class="public-orb public-orb-two" aria-hidden="true"></div>
-            <div class="public-section-inner public-hero-grid">
-                <div class="public-hero-copy">
-                    <p class="public-eyebrow">Stories that stay close</p>
-                    <h1>WaffleBerry</h1>
-                    <p class="public-motto">
-                        <span class="public-motto-lead">No one is truly gone</span>
-                        <span class="public-motto-continuation">while their story can still be told.</span>
-                    </p>
-                    <p class="public-hero-lede">Preserve meaningful stories, memories and human connections through responsible artificial intelligence.</p>
-                    <div class="public-button-row">
-                        <a class="public-button" href="login.html">Get Started <span aria-hidden="true">→</span></a>
-                        <a class="public-button public-button-secondary" href="#products">Explore WaffleBerry</a>
-                    </div>
-                    <p class="public-trust-note"><span aria-hidden="true">✦</span> Your story, thoughtfully preserved.</p>
-                </div>
-                <div class="public-hero-art" aria-label="WaffleBerry mascot surrounded by memory moments">
-                    <div class="public-mascot-halo"></div>
-                    <img class="public-mascot" src="assets/waffle-berry-mascot.png" alt="The WaffleBerry mascot" width="560" height="560">
-                    <span class="public-memory-chip public-chip-one">Family stories</span>
-                    <span class="public-memory-chip public-chip-two">Shared moments</span>
-                    <span class="public-memory-chip public-chip-three">Your voice</span>
-                </div>
-            </div>
-        </section>
+      <section class="experience hero" id="home" aria-labelledby="hero-title">
+        <div id="rya-canvas" class="rya-canvas" aria-hidden="true"><div class="rya-fallback"><span></span></div></div>
+        <div class="hero-shade" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <p class="eyebrow">A digital legacy, made living</p>
+          <h1 id="hero-title" class="legarya-brand legarya-brand-hero"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></h1>
+          <p class="hero-statement">Preserve what makes<br />someone, them.</p>
+          <p class="hero-lede">An AI-powered digital legacy that learns memories, stories, relationships, personality, and voice - so they can live on for generations.</p>
+          <div class="button-row">
+            <a class="button" href="auth.html?mode=register">Get Started <span aria-hidden="true">&#8599;</span></a>
+            <a class="button button-secondary" href="#mission">Our Mission</a>
+          </div>
+        </div>
+        <div class="identity" aria-label="Meet Rya, Remember You, Always">
+          <span>Meet</span><h2><span class="rya-glow">Rya</span></h2><p>Remember You, Always.</p>
+        </div>
+        <a class="scroll-cue" href="#mission"><span>Discover <span class="legarya-word"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span></span><i aria-hidden="true"></i></a>
+      </section>
 
-        <section class="public-section public-overview" id="about">
-            <div class="public-section-inner">
-                <div class="public-section-heading">
-                    <p class="public-eyebrow">What is WaffleBerry?</p>
-                    <h2>A home for the stories that shape us.</h2>
-                    <p>WaffleBerry is an AI-powered digital legacy platform that helps people preserve memories, stories and personal experiences for future generations.</p>
-                </div>
-                <div class="public-pillars">
-                    <article class="public-pillar"><span>01</span><h3>Preserve</h3><p>Capture the stories and moments you want future generations to know.</p></article>
-                    <article class="public-pillar"><span>02</span><h3>Understand</h3><p>Organize memories with context so their meaning remains clear.</p></article>
-                    <article class="public-pillar"><span>03</span><h3>Continue</h3><p>Keep stories present through thoughtful, memory-grounded experiences.</p></article>
-                </div>
-            </div>
-        </section>
+      <section class="section idea-section" id="mission" aria-labelledby="idea-title">
+        <div class="section-inner idea-layout">
+          <div class="section-copy reveal">
+            <p class="eyebrow">The idea</p>
+            <h2 id="idea-title">Your life is more than photographs and files.</h2>
+            <p class="section-lede"><span class="legarya-word"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span> preserves the stories, relationships, and personality behind them - the context that makes a memory human.</p>
+            <p><span class="legarya-word"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span> gives experiences, values, family history, and ways of speaking a place to remain connected over time.</p>
+          </div>
+          <div class="memory-world reveal" data-memory-world role="img" aria-label="A living world of connected human memories">
+            <div class="memory-world-fallback" aria-hidden="true"><span></span><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </section>
 
-        <section class="public-section public-mission" id="mission">
-            <div class="public-section-inner public-mission-grid">
-                <div>
-                    <p class="public-eyebrow">Our mission</p>
-                    <h2>Technology in service of human connection.</h2>
-                </div>
-                <div class="public-mission-copy">
-                    <p class="public-mission-lede">We preserve human stories so families can remain connected to the people and experiences that shaped their lives.</p>
-                    <p>WaffleBerry uses AI responsibly to help people capture and revisit meaningful experiences—never to replace real relationships. Privacy, emotional wellbeing and psychological safety guide how these experiences are designed.</p>
-                    <div class="public-values" aria-label="Our values">
-                        <span>Human stories</span><span>Family connection</span><span>Responsible AI</span><span>Privacy &amp; safety</span>
-                    </div>
-                </div>
-            </div>
-        </section>
+      <section class="section rya-section" id="rya" aria-labelledby="rya-section-title">
+        <div class="rya-section-visual" data-rya-section-host role="img" aria-label="Rya's living memory consciousness"></div>
+        <div class="section-inner rya-copy reveal">
+          <p class="eyebrow">Meet <span class="rya-glow">Rya</span></p>
+          <h2 id="rya-section-title">The intelligence inside <span class="legarya-word"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span>.</h2>
+          <p class="section-lede"><span class="rya-glow">Rya</span> begins as an AI companion. As memories, stories, and experiences are shared, she learns the person being preserved.</p>
+          <div class="rya-meaning"><span>R</span><p>Remember</p><span>Y</span><p>You</p><span>A</span><p>Always</p></div>
+          <p><span class="rya-glow">Rya</span> can become your digital legacy, or help preserve someone you love. She is designed to stay grounded in what people choose to share - not to invent a life that was never lived.</p>
+        </div>
+      </section>
 
-        <section class="public-section public-products" id="products">
-            <div class="public-section-inner">
-                <div class="public-section-heading public-section-heading-light">
-                    <p class="public-eyebrow">Our products</p>
-                    <h2>Two ways to make memories meaningful.</h2>
-                    <p>Sign in to choose the experience that fits the story you want to tell.</p>
-                </div>
-                <div class="public-product-grid">
-                    <article class="public-product-card public-product-legacy">
-                        <div class="public-product-icon" aria-hidden="true">✦</div>
-                        <p class="public-product-label">Preserve</p><h3>Legacy Builder</h3>
-                        <p>Capture stories through guided conversations, organize meaningful memories and create a memory-grounded AI Companion.</p>
-                        <ul><li>Guided Stories</li><li>Memory extraction</li><li>Structured memory preservation</li><li>Companion conversations</li></ul>
-                        <a class="public-button public-button-card" href="login.html">Explore Legacy Builder <span aria-hidden="true">→</span></a>
-                    </article>
-                    <article class="public-product-card public-product-creative">
-                        <div class="public-product-icon" aria-hidden="true">◇</div>
-                        <p class="public-product-label">Create</p><h3>Creative Studio</h3>
-                        <p>Transform memories into meaningful creative experiences through future voice, video and visual storytelling tools.</p>
-                        <ul><li>Creative storytelling</li><li>Voice experiences</li><li>Video creation</li><li>Memory visualizations</li></ul>
-                        <a class="public-button public-button-card" href="login.html">Explore Creative Studio <span aria-hidden="true">→</span></a>
-                    </article>
-                </div>
-            </div>
-        </section>
+      <section class="section process-section" id="how-it-works" aria-labelledby="process-title">
+        <div class="section-inner">
+          <div class="section-heading reveal"><p class="eyebrow">How it works</p><h2 id="process-title">A legacy grows through conversation.</h2></div>
+          <ol class="process-flow">
+            <li class="reveal"><span>01</span><h3>Share</h3><p>Tell <span class="rya-glow">Rya</span> memories, stories, relationships, and experiences in your own words.</p></li>
+            <li class="reveal"><span>02</span><h3>Remember</h3><p><span class="legarya-word"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span> organizes what is shared into a growing, personal memory.</p></li>
+            <li class="reveal"><span>03</span><h3>Learn</h3><p>Over time, <span class="rya-glow">Rya</span> learns how that person remembers, speaks, and relates to others.</p></li>
+            <li class="reveal"><span>04</span><h3>Preserve</h3><p>Keep that legacy available for the people and generations who matter.</p></li>
+          </ol>
+        </div>
+      </section>
 
-        <section class="public-section public-responsible" id="responsible-ai">
-            <div class="public-section-inner public-responsible-card">
-                <div class="public-responsible-mark wb-brand__mark" aria-hidden="true">
-                    <img src="assets/waffle-berry-mascot.png" alt="" class="wb-brand__mascot" width="44" height="44">
-                </div>
-                <div><p class="public-eyebrow">Responsible AI</p><h2>Grounded in memory. Guided by care.</h2></div>
-                <div class="public-responsible-copy">
-                    <p>Personal memories are grounded in information provided by the user. WaffleBerry should not fabricate personal history.</p>
-                    <p>Psychological safety matters. Every experience is designed to complement—not replace—real human relationships.</p>
-                </div>
-            </div>
-        </section>
+      <section class="section dimensions-section" aria-labelledby="dimensions-title">
+        <div class="section-inner">
+          <div class="section-heading reveal"><p class="eyebrow">A fuller picture</p><h2 id="dimensions-title">The details that make a person unmistakably themselves.</h2></div>
+          <div class="dimension-grid">
+            <article class="dimension reveal"><span>01</span><h3>Memories</h3><p>Moments recalled with the meaning and emotion behind them.</p></article>
+            <article class="dimension reveal"><span>02</span><h3>Stories</h3><p>Experiences told in the words and perspective of the person who lived them.</p></article>
+            <article class="dimension reveal"><span>03</span><h3>Relationships</h3><p>The names, bonds, and shared history that give a life its shape.</p></article>
+            <article class="dimension reveal"><span>04</span><h3>Family History</h3><p>Origins and traditions carried forward instead of lost between generations.</p></article>
+            <article class="dimension reveal"><span>05</span><h3>Personality</h3><p>Values, preferences, humor, and the small patterns that feel familiar.</p></article>
+            <article class="dimension reveal"><span>06</span><h3>Voice</h3><p>A future dimension of <span class="legarya-word"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span>, used only with clear permission and care.</p></article>
+          </div>
+        </div>
+      </section>
 
-        <section class="public-final-cta">
-            <div class="public-section-inner">
-                <p class="public-eyebrow">Your story begins here</p><h2>Begin preserving what matters.</h2>
-                <p>Give the moments, memories and voices you treasure a place to endure.</p>
-                <div class="public-button-row public-button-row-center">
-                    <a class="public-button" href="login.html">Create Account</a>
-                    <a class="public-button public-button-secondary" href="login.html">Sign In</a>
-                </div>
-            </div>
-        </section>
+      <section class="emotional-section" aria-labelledby="emotional-title">
+        <div class="section-inner reveal"><p class="eyebrow">What remains</p><h2 id="emotional-title">People leave more behind than photographs.</h2><p>A story can be retold. A voice can be remembered. The meaning held between people can keep moving forward.</p></div>
+      </section>
 
-        <section class="public-section public-contact" id="contact">
-            <div class="public-section-inner">
-                <div class="public-section-heading">
-                    <p class="public-eyebrow">Connect with WaffleBerry</p>
-                    <h2>Support &amp; Contact</h2>
-                    <p>We're here to help, collaborate and grow with you.</p>
-                </div>
-                <div class="public-contact-grid">
-                    <article class="public-contact-card">
-                        <div class="public-contact-icon" aria-hidden="true">?</div>
-                        <h3>Support</h3>
-                        <p>Technical support, account assistance and product questions.</p>
-                        <a href="mailto:support@waffleberry.app">support@waffleberry.app</a>
-                    </article>
-                    <article class="public-contact-card">
-                        <div class="public-contact-icon" aria-hidden="true">✦</div>
-                        <h3>Feedback</h3>
-                        <p>Ideas, feature requests and product feedback.</p>
-                        <a href="mailto:feedback@waffleberry.app">feedback@waffleberry.app</a>
-                    </article>
-                    <article class="public-contact-card">
-                        <div class="public-contact-icon" aria-hidden="true">◇</div>
-                        <h3>Careers</h3>
-                        <p>Interested in joining WaffleBerry? We'd love to hear from you.</p>
-                        <a href="mailto:careers@waffleberry.app">careers@waffleberry.app</a>
-                    </article>
-                    <article class="public-contact-card">
-                        <div class="public-contact-icon" aria-hidden="true">&lt;/&gt;</div>
-                        <h3>Engineering</h3>
-                        <p>Technical partnerships and engineering collaboration.</p>
-                        <a href="mailto:engineering@waffleberry.app">engineering@waffleberry.app</a>
-                    </article>
-                    <article class="public-contact-card">
-                        <div class="public-contact-icon" aria-hidden="true">◎</div>
-                        <h3>Marketing</h3>
-                        <p>Brand partnerships, media and marketing enquiries.</p>
-                        <a href="mailto:marketing@waffleberry.app">marketing@waffleberry.app</a>
-                    </article>
-                    <article class="public-contact-card">
-                        <div class="public-contact-icon" aria-hidden="true">§</div>
-                        <h3>Legal</h3>
-                        <p>Legal enquiries, intellectual property and compliance.</p>
-                        <a href="mailto:legal@waffleberry.app">legal@waffleberry.app</a>
-                    </article>
-                    <article class="public-contact-card">
-                        <div class="public-contact-icon" aria-hidden="true">↗</div>
-                        <h3>Investors</h3>
-                        <p>Investor relations and strategic partnerships.</p>
-                        <a href="mailto:investors@waffleberry.app">investors@waffleberry.app</a>
-                    </article>
-                    <article class="public-contact-card">
-                        <div class="public-contact-icon" aria-hidden="true">¤</div>
-                        <h3>Accounts</h3>
-                        <p>Billing, finance and payment enquiries.</p>
-                        <a href="mailto:accounts@waffleberry.app">accounts@waffleberry.app</a>
-                    </article>
-                </div>
-            </div>
-        </section>
+      <section class="section trust-section" id="trust" aria-labelledby="trust-title">
+        <div class="section-inner trust-layout">
+          <div class="section-copy reveal">
+            <p class="eyebrow">Privacy and trust</p><h2 id="trust-title">Personal by nature. Guided by care.</h2>
+            <p class="section-lede">A digital legacy asks for trust. <span class="legarya-word"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span> is being shaped around meaningful choice, responsible AI, and emotional wellbeing.</p>
+            <p class="beta-note"><span aria-hidden="true"></span> <span class="legarya-word"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span> is currently evolving as a beta product.</p>
+          </div>
+          <div class="trust-principles">
+            <article class="reveal"><span>01</span><div><h3>Your legacy, your memories</h3><p>The memories you share belong with the Legacy they were entrusted to.</p></div></article>
+            <article class="reveal"><span>02</span><div><h3>You choose what to share</h3><p>Preservation begins with information intentionally provided by people.</p></div></article>
+            <article class="reveal"><span>03</span><div><h3>Permission matters</h3><p>Voice and likeness should only be used with appropriate permission.</p></div></article>
+            <article class="reveal"><span>04</span><div><h3>Grounded, not fabricated</h3><p><span class="rya-glow">Rya</span> should remain grounded in shared memories and should not fabricate personal history.</p></div></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section plans-section" id="plans" aria-labelledby="plans-title">
+        <div class="section-inner plans-layout reveal">
+          <div><p class="eyebrow">Plans</p><h2 id="plans-title">Begin with what matters.</h2><p><span class="legarya-word"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></span> is currently in beta. Plans will evolve alongside the ways people choose to build and preserve a Legacy.</p></div>
+          <div class="plans-action"><span>Private beta access</span><a class="button" href="auth.html?mode=register">Get Started <span aria-hidden="true">&#8599;</span></a></div>
+        </div>
+      </section>
+
+      <section class="final-cta" aria-labelledby="final-title">
+        <div class="section-inner reveal">
+          <p class="eyebrow">Your story begins here</p><h2 id="final-title">Begin your Legacy.</h2><p>Give the memories, relationships, and stories you treasure a place to endure.</p>
+          <div class="button-row button-row-center"><a class="button" href="auth.html?mode=register">Get Started <span aria-hidden="true">&#8599;</span></a><a class="button button-secondary" href="#plans">Explore Plans</a></div>
+        </div>
+      </section>
     </main>
 
-    <footer class="public-footer">
-        <div class="public-section-inner public-footer-inner">
-            <p class="public-footer-brand">WaffleBerry</p>
-            <p class="public-footer-motto">
-                <span>No one is truly gone</span>
-                <span>while their story can still be told.</span>
-            </p>
-            <p class="public-footer-copyright">
-                <span>© 2026 WaffleBerry.</span>
-                <span>All rights reserved.</span>
-            </p>
-            <div class="public-footer-legal" aria-label="Legal information">
-                <a href="privacy.html">Privacy Policy</a>
-                <span>Terms of Service</span>
-            </div>
-        </div>
+    <footer class="site-footer">
+      <div class="footer-main">
+        <div><a class="footer-brand legarya-brand legarya-brand-footer" href="#home" aria-label="LegaRya home"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></a><p>Remember You, Always.</p></div>
+        <nav aria-label="Footer navigation">
+          <a href="#home">Home</a><a href="#mission">Mission</a><a href="#plans">Plans</a><a href="terms.html">Terms &amp; Conditions</a><a href="privacy.html">Privacy Policy</a>
+        </nav>
+        <div class="footer-contact"><span>Contact</span><a href="mailto:waffleberry.app@gmail.com">waffleberry.app@gmail.com</a><a href="https://www.waffleberry.app">waffleberry.app</a></div>
+      </div>
+      <div class="footer-bottom"><span>&copy; <span data-year>2026</span> LegaRya</span><span>Remember You, Always.</span></div>
     </footer>
-</body>
+
+    <button class="soundscape-toggle" type="button" data-soundscape-toggle aria-label="Turn ambient sound off" aria-pressed="true" data-enabled="true" data-active="false" data-tooltip="Sound off">
+      <svg class="soundscape-icon soundscape-icon--on" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 10v4h3l4 3V7l-4 3H5Z"></path>
+        <path d="M15.5 9.2c.8.7 1.2 1.6 1.2 2.8s-.4 2.1-1.2 2.8M18.1 6.8a7 7 0 0 1 0 10.4"></path>
+      </svg>
+      <svg class="soundscape-icon soundscape-icon--off" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 10v4h3l4 3V7l-4 3H5Z"></path>
+        <path d="m16 10 4 4m0-4-4 4"></path>
+      </svg>
+    </button>
+
+    <noscript><p class="fallback"><span class="rya-glow">Rya</span> needs JavaScript to become visible.</p></noscript>
+    <script type="module" src="js/rya.js?v=6.7" onerror="window.__ryaDiagnostics.errors.push('Rya module failed to load'); window.__reportRya('module-failure')"></script>
+    <script defer src="js/site.js?v=1.1"></script>
+    <script defer src="js/legarya-soundscape.js?v=3.1"></script>
+    <script defer src="js/rya-speech-state.js?v=1.0"></script>
+    <script defer src="js/rya-intro.js?v=1.3"></script>
+    <script defer src="js/rya-touch-reactions.js?v=1.0"></script>
+    <script type="module" src="js/memory-earth.js?v=1.1"></script>
+  </body>
 </html>

@@ -1,0 +1,65 @@
+.rya-core-icon {
+  display: block;
+  width: var(--rya-core-size, 26px);
+  height: var(--rya-core-size, 26px);
+  flex: 0 0 var(--rya-core-size, 26px);
+  border-radius: 20%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 5px rgba(255, 226, 168, 0.16));
+  transform: translateZ(0);
+  transition:
+    filter 320ms ease,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rya-core-icon--brand { --rya-core-size: 26px; }
+.rya-core-icon--header { --rya-core-size: 26px; }
+.rya-core-icon--message { --rya-core-size: 24px; }
+
+:is(.wordmark, .brand, .rya-heading, .message-label-assistant):hover .rya-core-icon,
+.rya-core-icon:hover {
+  filter:
+    drop-shadow(0 0 6px rgba(255, 238, 200, 0.26))
+    drop-shadow(0 0 11px rgba(243, 201, 130, 0.15));
+  transform: scale(1.045);
+}
+
+.message-pending .rya-core-icon--message {
+  animation: rya-core-thinking 2.4s ease-in-out infinite;
+}
+
+.rya-generating .rya-core-icon--header {
+  filter:
+    drop-shadow(0 0 6px rgba(255, 238, 200, 0.26))
+    drop-shadow(0 0 11px rgba(243, 201, 130, 0.15));
+  transform: scale(1.045);
+}
+
+@keyframes rya-core-thinking {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(243, 201, 130, 0.16));
+    transform: scale(0.985);
+  }
+  52% {
+    filter:
+      drop-shadow(0 0 6px rgba(255, 238, 200, 0.26))
+      drop-shadow(0 0 11px rgba(243, 201, 130, 0.15));
+    transform: scale(1.035);
+  }
+}
+
+@media (max-width: 840px) {
+  .rya-core-icon--brand { --rya-core-size: 24px; }
+}
+
+@media (max-width: 520px) {
+  .rya-core-icon--header { --rya-core-size: 24px; }
+  .rya-core-icon--message { --rya-core-size: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rya-core-icon {
+    animation: none !important;
+    transition: none;
+  }
+}

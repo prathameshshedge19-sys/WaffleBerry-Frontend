@@ -1,72 +1,85 @@
 "use strict";
-(function () {
-const { ApiError, apiRequest, storeAuthenticatedSession } = window.WaffleBerryApi;
-const email = new URLSearchParams(window.location.search).get("email")?.trim();
-const otpForm = document.getElementById("verificationForm");
-const passwordForm = document.getElementById("passwordCreationForm");
-const otp = document.getElementById("otpInput");
-const password = document.getElementById("passwordInput");
-const confirmation = document.getElementById("confirmPasswordInput");
-const resend = document.getElementById("resendOtpButton");
-const output = document.getElementById("verificationMessage");
-const description = document.getElementById("verificationDescription");
-let authorization = null;
-let submitting = false;
-const show = (text, error = false) => {
-    output.textContent = text;
-    output.classList.toggle("error-state", error);
-};
-const failure = (error, fallback) => show(error instanceof ApiError ? error.message : fallback, true);
-if (!email) { show("Please start registration again.", true); return; }
-description.textContent = `We sent a 6-digit OTP to ${email}.`;
-otp.addEventListener("input", () => { otp.value = otp.value.replace(/\D/g, ""); });
-otpForm.addEventListener("submit", async (event) => {
+
+(() => {
+  const { ApiError, apiRequest, storeAuthenticatedSession } = window.LegaryaAuthApi;
+  const config = window.LEGARYA_AUTH_CONFIG;
+  const email = new URLSearchParams(location.search).get("email")?.trim();
+  const verificationForm = document.querySelector("#verificationForm");
+  const passwordForm = document.querySelector("#passwordCreationForm");
+  const otpInput = document.querySelector("#otpInput");
+  const passwordInput = document.querySelector("#passwordInput");
+  const confirmationInput = document.querySelector("#confirmPasswordInput");
+  const resend = document.querySelector("#resendOtpButton");
+  const resendRow = document.querySelector("#resendRow");
+  const message = document.querySelector("#authMessage");
+  const description = document.querySelector("#verificationDescription");
+  let authorization = null;
+  let submitting = false;
+
+  const show = (text, error = false) => {
+    message.textContent = text;
+    message.classList.toggle("error-state", error);
+  };
+  const fail = (error, fallback) => show(error instanceof ApiError ? error.message : fallback, true);
+
+  if (!email) {
+    show("Please start registration again.", true);
+    [...verificationForm.elements].forEach((control) => { control.disabled = true; });
+    return;
+  }
+  description.textContent = `We sent a six-digit code to ${email}.`;
+  otpInput.addEventListener("input", () => { otpInput.value = otpInput.value.replace(/\D/g, ""); });
+
+  verificationForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (submitting) return;
-    if (!/^\d{6}$/.test(otp.value.trim())) return show("Please enter the 6-digit verification code.", true);
+    const otp = otpInput.value.trim();
+    if (!/^\d{6}$/.test(otp)) return show("Please enter the six-digit verification code.", true);
     submitting = true;
+    show("Verifying your email...");
     try {
-        const result = await apiRequest("/verify-email", {
-            method: "POST", authenticated: false, body: { email, otp: otp.value.trim() }
-        });
-        authorization = result.authorization;
-        otpForm.hidden = true;
-        resend.parentElement.hidden = true;
-        passwordForm.hidden = false;
-        password.focus();
-        show("Email verified. Create your password to finish registration.");
-    } catch (error) { failure(error, "Unable to verify your email."); }
+      const result = await apiRequest("/auth/verify-email", { method: "POST", body: { email, otp } });
+      authorization = result.authorization;
+      verificationForm.hidden = true;
+      resendRow.hidden = true;
+      passwordForm.hidden = false;
+      passwordInput.focus();
+      show("Email verified. Create your password to finish registration.");
+    } catch (error) { fail(error, "Unable to verify your email."); }
     finally { submitting = false; }
-});
-passwordForm.addEventListener("submit", async (event) => {
+  });
+
+  passwordForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (submitting) return;
-    if (password.value !== confirmation.value) return show("Passwords do not match.", true);
-    if (password.value.length < 8 || !/[A-Za-z]/.test(password.value) || !/\d/.test(password.value)) {
-        return show("Password must be at least 8 characters and include a letter and number.", true);
+    const password = passwordInput.value;
+    if (password !== confirmationInput.value) return show("Passwords do not match.", true);
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      return show("Password must be at least eight characters and include a letter and number.", true);
     }
     submitting = true;
+    show("Creating your account...");
     try {
-        const result = await apiRequest("/complete-registration", {
-            method: "POST", authenticated: false,
-            body: { verification_token: authorization, password: password.value }
-        });
-        storeAuthenticatedSession(result);
-        authorization = null;
-        window.location.href = "experience.html";
-    } catch (error) { failure(error, "Unable to create your account."); }
+      const result = await apiRequest("/auth/complete-registration", {
+        method: "POST",
+        body: { verification_token: authorization, password },
+      });
+      storeAuthenticatedSession(result);
+      authorization = null;
+      location.href = config.successUrl;
+    } catch (error) { fail(error, "Unable to create your account."); }
     finally { submitting = false; }
-});
-resend.addEventListener("click", async () => {
+  });
+
+  resend.addEventListener("click", async () => {
     if (submitting) return;
     submitting = true;
+    resend.disabled = true;
+    show("Sending a new code...");
     try {
-        const result = await apiRequest("/resend-otp", {
-            method: "POST", authenticated: false,
-            body: { email, purpose: "email_verification" }
-        });
-        show(result.message || "A new verification code has been sent.");
-    } catch (error) { failure(error, "Unable to resend the code."); }
-    finally { submitting = false; }
-});
+      const result = await apiRequest("/auth/resend-otp", { method: "POST", body: { email, purpose: "registration" } });
+      show(result?.message || "A new verification code has been sent.");
+    } catch (error) { fail(error, "Unable to resend the code."); }
+    finally { submitting = false; resend.disabled = false; }
+  });
 })();

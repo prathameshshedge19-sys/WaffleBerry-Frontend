@@ -1,113 +1,34 @@
 "use strict";
 
-(function initializeForgotPasswordPage() {
+(() => {
+  const { ApiError, apiRequest } = window.LegaryaAuthApi;
+  const form = document.querySelector("#forgotPasswordForm");
+  const emailInput = document.querySelector("#emailInput");
+  const submit = document.querySelector("#submitButton");
+  const message = document.querySelector("#authMessage");
+  let submitting = false;
 
-const {
-    ApiError,
-    apiRequest
-} = window.WaffleBerryApi;
+  const show = (text, error = false) => {
+    message.textContent = text;
+    message.classList.toggle("error-state", error);
+  };
 
-const forgotPasswordForm =
-    document.getElementById("forgotPasswordForm");
-
-const emailInput =
-    document.getElementById("emailInput");
-
-const loginMessage =
-    document.getElementById("loginMessage");
-
-const backToLoginButton =
-    document.getElementById("backToLoginButton");
-
-const authSubmitButton =
-    document.getElementById("authSubmitButton");
-
-function setMessage(message, type = "") {
-
-    loginMessage.textContent = message;
-
-    loginMessage.classList.toggle(
-        "error-state",
-        type === "error"
-    );
-}
-
-if (backToLoginButton) {
-
-    backToLoginButton.addEventListener(
-        "click",
-        () => {
-            window.location.href = "login.html";
-        }
-    );
-}
-
-if (forgotPasswordForm) {
-
-    forgotPasswordForm.addEventListener(
-        "submit",
-        async (event) => {
-
-            event.preventDefault();
-
-            const email =
-                emailInput.value.trim();
-
-            if (!email) {
-
-                setMessage(
-                    "Please enter your email address.",
-                    "error"
-                );
-
-                return;
-            }
-
-            authSubmitButton.disabled = true;
-
-            setMessage(
-                "Sending OTP..."
-            );
-
-            try {
-
-                await apiRequest(
-                    "/forgot-password",
-                    {
-                        method: "POST",
-                        authenticated: false,
-                        body: {
-                            email
-                        }
-                    }
-                );
-
-                window.location.href =
-                    `verify-reset-otp.html?email=${encodeURIComponent(email)}`;
-
-            } catch (error) {
-
-                if (error instanceof ApiError) {
-
-                    setMessage(
-                        error.message,
-                        "error"
-                    );
-
-                } else {
-
-                    setMessage(
-                        "Something went wrong.",
-                        "error"
-                    );
-                }
-
-            } finally {
-
-                authSubmitButton.disabled = false;
-            }
-        }
-    );
-}
-
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (submitting) return;
+    const email = emailInput.value.trim();
+    if (!email) return show("Please enter your email address.", true);
+    submitting = true;
+    submit.disabled = true;
+    show("Sending your verification code...");
+    try {
+      await apiRequest("/auth/forgot-password", { method: "POST", body: { email } });
+      location.href = `verify-reset-otp.html?${new URLSearchParams({ email })}`;
+    } catch (error) {
+      show(error instanceof ApiError ? error.message : "Unable to send the verification code.", true);
+    } finally {
+      submitting = false;
+      submit.disabled = false;
+    }
+  });
 })();
