@@ -676,6 +676,47 @@ button { font: inherit; }
 .footer-contact { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; text-align: right; }
 .footer-bottom { display: flex; justify-content: space-between; width: min(100%, var(--content)); margin: 65px auto 0; padding-top: 22px; border-top: 1px solid rgba(235, 211, 172, 0.08); color: rgba(157, 147, 134, 0.58); font-size: 10px; }
 
+.soundscape-awaken {
+  position: fixed;
+  right: 18px;
+  bottom: 76px;
+  z-index: 44;
+  margin: 0;
+  padding: 8px 11px;
+  border: 1px solid rgba(221, 196, 147, 0.24);
+  border-radius: 999px;
+  color: rgba(244, 232, 207, 0.82);
+  background: rgba(17, 24, 29, 0.78);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.soundscape-awaken[hidden] {
+  display: block;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+@media (max-width: 520px) {
+  .soundscape-awaken {
+    right: 14px;
+    bottom: 68px;
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .soundscape-awaken {
+    transition: none;
+  }
+}
+
 .soundscape-toggle {
   position: fixed;
   z-index: 45;

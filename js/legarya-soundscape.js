@@ -1,7 +1,13 @@
 "use strict";
 
 (() => {
-  const control = document.querySelector("[data-soundscape-toggle]");
+const control = document.querySelector("[data-soundscape-toggle]");
+const awakenCue = document.querySelector("[data-soundscape-awaken]");
+
+function setAwakenCue(visible) {
+  if (!awakenCue) return;
+  awakenCue.hidden = !visible;
+}
   if (!control) return;
 
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -23,11 +29,19 @@
   let masterGain = null;
   let ambienceGain = null;
   let arcSparkBuffers = [];
-  let enabled = readPreference() !== false;
-  let hasInteracted = false;
-  let active = false;
-  let awaitingGesture = false;
-  let activationPromise = null;
+const audioState = {
+  soundEnabledByUser: readPreference() !== false,
+  audioContextState: "uninitialized",
+  ambienceState: "notStarted",
+  unlockState: "notNeeded",
+  hasInteracted: false,
+  activationInFlight: false,
+  unlockListenersInstalled: false,
+};
+let activationPromise = null;
+
+const isSoundEnabled = () => audioState.soundEnabledByUser;
+const isAmbienceRunning = () => audioState.ambienceState === "running";
   let pluckTimer = 0;
   let resonanceTimer = 0;
   let suspendTimer = 0;
@@ -57,20 +71,24 @@
     if (!AudioContextClass) {
       control.dataset.enabled = "false";
       control.dataset.active = "false";
+      control.dataset.awaitingGesture = "false";
       control.setAttribute("aria-pressed", "false");
       control.setAttribute("aria-label", "Ambient sound unavailable");
       control.dataset.tooltip = "Sound unavailable";
+      setAwakenCue(false);
       return;
     }
-    control.dataset.enabled = String(enabled);
-    control.dataset.active = String(active);
+    const awaitingGesture = audioState.unlockState === "required";
+    control.dataset.enabled = String(audioState.soundEnabledByUser);
+    control.dataset.active = String(isAmbienceRunning());
     control.dataset.awaitingGesture = String(awaitingGesture);
-    control.setAttribute("aria-pressed", String(enabled));
+    control.setAttribute("aria-pressed", String(audioState.soundEnabledByUser));
     control.setAttribute(
       "aria-label",
-      enabled && !active ? "Start ambient sound" : enabled ? "Turn ambient sound off" : "Turn ambient sound on",
+      audioState.soundEnabledByUser ? "Mute sound" : "Turn sound on",
     );
-    control.dataset.tooltip = awaitingGesture ? "Tap to awaken Rya" : enabled && !active ? "Start sound" : enabled ? "Sound off" : "Sound on";
+    control.dataset.tooltip = awaitingGesture ? "Tap to awaken Rya" : audioState.soundEnabledByUser ? "Mute sound" : "Turn sound on";
+    setAwakenCue(audioState.soundEnabledByUser && awaitingGesture && !document.hidden);
   }
 
   function trackPersistent(source) {
@@ -127,6 +145,7 @@
 
     try {
       audioContext = new AudioContextClass({ latencyHint: "playback" });
+      audioState.audioContextState = audioContext.state;
     } catch {
       return false;
     }
@@ -232,7 +251,7 @@
   }
 
   function playArcAccent(detail = {}) {
-    if (!enabled || !active || document.hidden || !audioContext || !masterGain || !arcSparkBuffers.length) return;
+    if (!isSoundEnabled() || !isAmbienceRunning() || document.hidden || !audioContext || !masterGain || !arcSparkBuffers.length) return;
     if (audioContext.state !== "running" || arcVoices.size >= ARC_MAX_VOICES) return;
     const eventAt = performance.now();
     const sinceLastAccent = eventAt - lastArcAccentAt;
@@ -291,7 +310,7 @@
 
   function scheduleResonance() {
     clearTimeout(resonanceTimer);
-    if (!active || !enabled || document.hidden || !audioContext) return;
+    if (!isAmbienceRunning() || !isSoundEnabled() || document.hidden || !audioContext) return;
     const delay = RESONANCE_MIN_DELAY + Math.random() * (RESONANCE_MAX_DELAY - RESONANCE_MIN_DELAY);
     resonanceTimer = window.setTimeout(() => {
       playResonance();
@@ -301,7 +320,7 @@
 
   function schedulePluck() {
     clearTimeout(pluckTimer);
-    if (!active || !enabled || document.hidden || !audioContext) return;
+    if (!isAmbienceRunning() || !isSoundEnabled() || document.hidden || !audioContext) return;
     const delay = PLUCK_MIN_DELAY + Math.random() * (PLUCK_MAX_DELAY - PLUCK_MIN_DELAY);
     pluckTimer = window.setTimeout(() => {
       playPluck();
@@ -310,7 +329,7 @@
   }
 
   function playPluck() {
-    if (!active || !masterGain || audioContext.state !== "running") return;
+    if (!isAmbienceRunning() || !masterGain || audioContext.state !== "running") return;
     const openTones = [110, 146.83, 164.81, 220, 293.66];
     const frequency = openTones[Math.floor(Math.random() * openTones.length)];
     const startAt = audioContext.currentTime + 0.035;
@@ -359,7 +378,7 @@
   }
 
   function playResonance() {
-    if (!active || !masterGain || audioContext.state !== "running") return;
+    if (!isAmbienceRunning() || !masterGain || audioContext.state !== "running") return;
     const ancientIntervals = [220, 246.94, 293.66, 329.63];
     const baseFrequency = ancientIntervals[Math.floor(Math.random() * ancientIntervals.length)];
     const startAt = audioContext.currentTime + 0.04;
@@ -406,26 +425,32 @@
     if (activationPromise) return activationPromise;
     const attempt = (async () => {
       clearTimeout(suspendTimer);
-      if (!enabled || document.hidden || !buildSoundscape()) return false;
-      if (active && audioContext.state === "running") return true;
+      if (!isSoundEnabled() || document.hidden || !buildSoundscape()) return false;
+      if (isAmbienceRunning() && audioContext.state === "running") return true;
+      audioState.activationInFlight = true;
+      audioState.ambienceState = "starting";
       try {
         await audioContext.resume();
       } catch {
-        active = false;
+        audioState.audioContextState = audioContext?.state || "suspended";
+        audioState.ambienceState = "notStarted";
         return false;
       }
-      if (!enabled || document.hidden || audioContext.state !== "running") {
-        active = false;
+      audioState.audioContextState = audioContext.state;
+      if (!isSoundEnabled() || document.hidden || audioContext.state !== "running") {
+        audioState.ambienceState = "notStarted";
         return false;
       }
-      active = true;
-      awaitingGesture = false;
+      audioState.ambienceState = "running";
+      audioState.unlockState = "unlocked";
       holdAndRamp(masterGain.gain, MASTER_VOLUME, fadeDuration);
       schedulePluck();
       scheduleResonance();
       updateControl();
       return true;
-    })();
+    })().finally(() => {
+      audioState.activationInFlight = false;
+    });
     activationPromise = attempt;
     attempt.then(
       () => { if (activationPromise === attempt) activationPromise = null; },
@@ -435,7 +460,7 @@
   }
 
   function deactivate(fadeDuration = 0.65) {
-    active = false;
+    audioState.ambienceState = "notStarted";
     clearTimeout(pluckTimer);
     clearTimeout(resonanceTimer);
     clearTimeout(suspendTimer);
@@ -445,7 +470,7 @@
     }
     holdAndRamp(masterGain.gain, 0, fadeDuration);
     suspendTimer = window.setTimeout(() => {
-      if (!active && audioContext?.state === "running") audioContext.suspend().catch(() => {});
+      if (!isAmbienceRunning() && audioContext?.state === "running") audioContext.suspend().catch(() => {});
     }, fadeDuration * 1000 + 100);
     updateControl();
   }
@@ -464,20 +489,31 @@
     ["pointerdown", "touchstart", "click", "keydown"].forEach((eventName) => {
       document.removeEventListener(eventName, onFirstInteraction, true);
     });
+    audioState.unlockListenersInstalled = false;
+  }
+
+  function installFirstInteractionListeners() {
+    if (audioState.unlockListenersInstalled) return;
+    ["pointerdown", "touchstart", "click", "keydown"].forEach((eventName) => {
+      document.addEventListener(eventName, onFirstInteraction, true);
+    });
+    audioState.unlockListenersInstalled = true;
   }
 
   async function onFirstInteraction(event) {
     if (control.contains(event.target)) return;
-    hasInteracted = true;
-    if (!enabled) return;
-    awaitingGesture = true;
+    audioState.hasInteracted = true;
+    if (!isSoundEnabled()) return;
+    audioState.unlockState = "required";
     updateControl();
     if (await activate(2.4)) removeFirstInteractionListeners();
     else updateControl();
   }
 
   function teardown() {
-    active = false;
+    audioState.ambienceState = "notStarted";
+    audioState.audioContextState = "closed";
+    audioState.unlockState = "notNeeded";
     clearTimeout(pluckTimer);
     clearTimeout(resonanceTimer);
     clearTimeout(suspendTimer);
@@ -501,53 +537,54 @@
   }
 
   control.addEventListener("click", async () => {
-    hasInteracted = true;
-    if (enabled && !active) {
-      storePreference(true);
-      if (await activate(1.8)) removeFirstInteractionListeners();
-      updateControl();
-      return;
-    }
-    enabled = !enabled;
-    storePreference(enabled);
-    if (enabled) {
-      if (await activate(1.8)) removeFirstInteractionListeners();
-    } else {
-      awaitingGesture = false;
+    audioState.hasInteracted = true;
+    if (isSoundEnabled()) {
+      audioState.soundEnabledByUser = false;
+      audioState.unlockState = "notNeeded";
+      storePreference(false);
       window.dispatchEvent(new Event("legarya-sound-muted"));
       removeFirstInteractionListeners();
       deactivate(0.65);
+      updateControl();
+      return;
     }
+    audioState.soundEnabledByUser = true;
+    audioState.unlockState = "required";
+    storePreference(true);
+    installFirstInteractionListeners();
     updateControl();
+    if (await activate(1.8)) removeFirstInteractionListeners();
+    else {
+      audioState.unlockState = "required";
+      updateControl();
+    }
   });
 
-  ["pointerdown", "touchstart", "click", "keydown"].forEach((eventName) => {
-    document.addEventListener(eventName, onFirstInteraction, true);
-  });
+  installFirstInteractionListeners();
   window.addEventListener("rya-energy-arc", (event) => playArcAccent(event.detail));
   window.addEventListener("legarya-rya-speech", (event) => setSpeechDucking(event.detail?.active));
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) deactivate(0.6);
-    else if (enabled && hasInteracted) activate(1.5);
+    else if (isSoundEnabled() && audioState.hasInteracted) activate(1.5);
   });
   window.addEventListener("pagehide", (event) => {
     if (event.persisted) deactivate(0.25);
     else teardown();
   });
   window.addEventListener("pageshow", (event) => {
-    if (event.persisted && enabled && hasInteracted) activate(1.5);
+    if (event.persisted && isSoundEnabled() && audioState.hasInteracted) activate(1.5);
   });
 
   if (!AudioContextClass) {
-    enabled = false;
+    audioState.soundEnabledByUser = false;
     control.disabled = true;
   }
   updateControl();
-  if (enabled) {
-    awaitingGesture = true;
+  if (isSoundEnabled()) {
+    audioState.unlockState = "required";
     updateControl();
     void activate(2.4).then((started) => {
-      awaitingGesture = enabled && !started;
+      audioState.unlockState = isSoundEnabled() && !started ? "required" : "unlocked";
       if (started) removeFirstInteractionListeners();
       updateControl();
     });
