@@ -64,3 +64,16 @@ test("voice settings expose only Marin and Cedar with accessible controls", () =
     assert.match(markup, /data-preview-voice="marin"[^>]*aria-label="Preview Marin voice"/);
   }
 });
+
+test("initial assistant controls and microphone use the canonical SVG renderer", () => {
+  for (const markup of [html, legacyHtml]) {
+    assert.match(markup, /id="microphoneButton"[^>]*>\s*<span class="voice-icon" data-voice-icon/);
+  }
+  assert.ok(voice.includes(`button.innerHTML = '<span class="voice-icon" data-voice-icon aria-hidden="true"></span>';`));
+  assert.match(voice, /setIcon\(button, "speaker"\);/);
+  assert.match(voice, /setIcon\(microphone, recording \? "stop" : transcribing \? "loading" : "microphone"\);/);
+  assert.match(chat, /attachAssistant\(row, messageId\)/);
+  assert.match(legacy, /attachAssistant\(row,messageId\)/);
+  const playSection = voice.match(/const play = async[\s\S]*?const attachAssistant/)?.[0] || "";
+  assert.doesNotMatch(playSection, /button\.innerHTML/);
+});

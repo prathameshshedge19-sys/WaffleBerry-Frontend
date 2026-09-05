@@ -55,6 +55,7 @@
     microphone.title = recording ? "Stop recording" : transcribing ? "Transcribing..." : "Voice input";
     setIcon(microphone, recording ? "stop" : transcribing ? "loading" : "microphone");
     microphone.querySelector("span").textContent = recording ? "■" : transcribing ? "…" : "🎙";
+    setIcon(microphone, recording ? "stop" : transcribing ? "loading" : "microphone");
     document.body.dataset.voiceState = state;
   };
 
@@ -242,6 +243,8 @@
       button.querySelector("span")?.classList.add("voice-icon");
       setIcon(button, "speaker");
     button.innerHTML = "<span aria-hidden=\"true\">♪</span>";
+    button.innerHTML = '<span class="voice-icon" data-voice-icon aria-hidden="true"></span>';
+    setIcon(button, "speaker");
     button.addEventListener("click", () => void play(button, "/voice/synthesize", { message_id: Number(messageId), voice: selectedVoice }, `${messageId}:${selectedVoice}`));
     row.querySelector(".message-label")?.append(button);
     if (autoPlay) void play(button, "/voice/synthesize", { message_id: Number(messageId), voice: selectedVoice }, `${messageId}:${selectedVoice}`);
