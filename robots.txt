@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /auth.html
+Disallow: /chat.html
+Disallow: /gateway.html
+Disallow: /legacy-chat.html
+Disallow: /invite.html
+Disallow: /forgot-password.html
+Disallow: /reset-password.html
+Disallow: /verify-email.html
+Disallow: /verify-reset-otp.html
+
+Sitemap: https://waffleberry.app/sitemap.xml
