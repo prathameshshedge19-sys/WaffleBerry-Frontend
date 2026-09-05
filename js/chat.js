@@ -314,7 +314,7 @@
     }, 380);
   };
 
-  const addMessage = (role, content, pending = false) => {
+  const addMessage = (role, content, pending = false, messageId = null) => {
     messages.hidden = false;
     const row = document.createElement("article");
     row.className = `message message-${role}${pending ? " message-pending" : ""}`;
@@ -340,6 +340,7 @@
     inner.append(label, body);
     row.append(inner);
     messages.append(row);
+    if (role === "assistant" && !pending && messageId) window.LegaryaVoice?.attachAssistant(row, messageId);
     messages.scrollTop = messages.scrollHeight;
     return row;
   };
@@ -353,6 +354,7 @@
   const setSending = (active) => {
     sending = active;
     setRyaGenerating(active);
+    window.LegaryaVoice?.setChatBusy(active);
     input.disabled = active;
     sendButton.classList.toggle("is-stopping", active);
     sendButton.setAttribute("aria-label", active ? "Stop generating" : "Send message");
@@ -703,6 +705,7 @@
   };
 
   const loadConversation = async (id) => {
+    window.LegaryaVoice?.stopAll();
     if (sending) detachActiveStream();
     if (id === chatSession.activeConversationId && !messages.hidden) {
       setDrawer(false);
@@ -727,7 +730,7 @@
       messages.replaceChildren();
       if (history.length) {
         hideEmptyState(true);
-        history.forEach((message) => addMessage(message.role, message.content));
+        history.forEach((message) => addMessage(message.role, message.content, false, message.id));
       }
       else showEmptyState();
       renderConversationList();
@@ -753,6 +756,7 @@
     if (preparingSend) return;
     reportLocalChatState("new-chat-click-before");
     detachActiveStream();
+    window.LegaryaVoice?.stopAll();
     chatSession.beginNewChat();
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_CONVERSATION_ID);
     renderConversationList();
@@ -821,7 +825,8 @@
       resizeInput();
       messages.replaceChildren();
       hideEmptyState(false);
-      addMessage("assistant", result.rya_message.content);
+      const seededRyaMessage = addMessage("assistant", result.rya_message.content);
+      window.LegaryaVoice?.attachAssistant(seededRyaMessage, result.rya_message.id);
       setChatStatus();
       window.dispatchEvent(new CustomEvent("legarya-daily-prompt-started", {
         detail: { legacyId, promptId, conversationId: result.conversation.id },
@@ -875,6 +880,7 @@
       stopActiveStream();
       return;
     }
+    if (window.LegaryaVoice?.isCapturing()) return;
     const content = input.value.trim();
     if (!content) return;
     if (!chatSession.selectedLegacyId) {
@@ -900,6 +906,8 @@
       setChatStatus("Choose a Legacy before sending a message.", true);
       return;
     }
+    window.LegaryaVoice?.stopSpeech();
+    const voiceOrigin = window.LegaryaVoice?.consumeVoiceOrigin() === true;
     setChatStatus();
     hideEmptyState(false);
     const optimisticUserMessage = addMessage("user", content);
@@ -914,6 +922,7 @@
     let streamStarted = false;
     let doneReceived = false;
     let preservationAcknowledgement = "";
+    let completedMessageId = null;
     let failureStage = "stream-start";
     activeStream = {
       requestId,
@@ -933,7 +942,7 @@
       failureStage = "stream-start";
       const response = await streamRequest(`/conversations/${requestConversationId}/messages/stream?legacy_id=${chatSession.selectedLegacyId}&timezone=${encodeURIComponent(localTimezone)}`, {
         method: "POST",
-        body: { content },
+        body: { content, input_mode: voiceOrigin ? "voice" : "text" },
         authenticated: true,
         signal: controller.signal,
       });
@@ -952,6 +961,7 @@
           renderer.queue(data.delta);
         } else if (eventName === "done") {
           doneReceived = true;
+          completedMessageId = Number(data.message_id) || null;
           window.dispatchEvent(new CustomEvent("legarya-progress-update", { detail: data }));
           if (data.today_just_completed) {
             const days = data.streak?.current_streak_days || 1;
@@ -969,6 +979,7 @@
         throw new ApiError("Rya's response ended before completion.", { kind: "stream_interrupted" });
       }
       renderer.complete();
+      window.LegaryaVoice?.attachAssistant(pending, completedMessageId, { autoPlay: voiceOrigin });
       await fetchLegacyContext({ preserveSelection: true });
       await fetchConversations();
       setChatStatus(preservationAcknowledgement);
@@ -996,6 +1007,7 @@
         optimisticUserMessage.remove();
         showEmptyState();
         input.value = content;
+        if (voiceOrigin) window.LegaryaVoice?.restoreVoiceOrigin();
         resizeInput();
         setChatStatus("Couldn\u2019t start a new conversation. Try again.", true);
       } else {
@@ -1046,6 +1058,7 @@
       return;
     }
     if (sending) detachActiveStream();
+    window.LegaryaVoice?.stopAll();
     setChatStatus("Switching Legacy...");
     try {
       await apiRequest(`/legacies/${legacyId}/select`, { method: "POST", authenticated: true });

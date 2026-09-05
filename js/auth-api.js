@@ -194,6 +194,30 @@
     return response;
   };
 
+  const authenticatedFetch = async (path, options = {}, retry = true) => {
+    if (!accessToken && retry && await refreshSession()) return authenticatedFetch(path, options, false);
+    if (!accessToken) throw new ApiError("Please sign in to continue.", { status: 401, kind: "authentication" });
+    let response;
+    try {
+      const headers = new Headers(options.headers || {});
+      headers.set("Authorization", `Bearer ${accessToken}`);
+      response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers, credentials: "include" });
+    } catch (error) {
+      if (error?.name === "AbortError") throw error;
+      throw new ApiError("Unable to reach Legarya. Please try again.", { kind: "network" });
+    }
+    if (response.status === 401 && retry && await refreshSession()) return authenticatedFetch(path, options, false);
+    if (!response.ok) {
+      const data = await parseResponse(response);
+      throw new ApiError(errorMessage(response.status, data), {
+        status: response.status,
+        kind: errorKind(response.status, data),
+        details: data,
+      });
+    }
+    return response;
+  };
+
   const authenticateUser = async (email, password, rememberMe = false) => {
     const response = await apiRequest("/auth/login", {
       method: "POST",
@@ -236,6 +260,7 @@
     STORAGE_KEYS,
     ApiError,
     apiRequest,
+    authenticatedFetch,
     streamRequest,
     authenticateUser,
     authenticateWithGoogle,

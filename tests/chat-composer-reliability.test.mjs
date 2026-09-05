@@ -20,8 +20,8 @@ test("New Chat empty state cannot cover the composer send control", () => {
   assert.match(chatCss, /\.empty-state \{[^}]*z-index: 2;/);
   assert.match(chatCss, /\.composer-wrap \{ position: relative; width:/);
   assert.match(chatCss, /\.composer \{ position: relative; z-index: 3;/);
-  assert.match(html, /css\/chat\.css\?v=3\.4/);
-  assert.match(legacyHtml, /css\/chat\.css\?v=3\.4/);
+  assert.match(html, /css\/chat\.css\?v=4\.0/);
+  assert.match(legacyHtml, /css\/chat\.css\?v=4\.0/);
 });
 
 test("New Chat clears a stale sending lock even without an active stream", () => {
@@ -42,7 +42,7 @@ test("first builder load bootstraps one pending Legacy before send validation", 
   assert.match(chat, /if \(!chatSession\.canSend\(content, sending\)\) \{/);
   assert.match(chat, /legacy_setup_bootstrap_failed/);
   assert.match(chat, /Rya couldn\u2019t start the Legacy setup\. Try again\./);
-  assert.match(html, /js\/chat\.js\?v=5\.0/);
+  assert.match(html, /js\/chat\.js\?v=6\.0/);
 });
 
 test("onboarding quick replies immediately use the normal composer submit flow", () => {
