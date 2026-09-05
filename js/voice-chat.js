@@ -33,6 +33,13 @@
   let contextVersion = 0;
   const playbackAudio = new Audio();
   const audioCache = new Map();
+  const icons = Object.freeze({
+    microphone: '<svg viewBox="0 0 24 24" focusable="false"><rect x="8" y="3" width="8" height="12" rx="4"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"></path></svg>',
+    speaker: '<svg viewBox="0 0 24 24" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4Z"></path><path d="M16 9.5a4 4 0 0 1 0 5M18.5 7a7.5 7.5 0 0 1 0 10"></path></svg>',
+    stop: '<svg viewBox="0 0 24 24" focusable="false"><rect x="7" y="7" width="10" height="10" rx="1.2"></rect></svg>',
+    loading: '<svg class="voice-spinner" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8"></circle></svg>',
+  });
+  const setIcon = (element, name) => { const target = element?.querySelector("[data-voice-icon], .voice-icon, span"); if (target) { target.classList.add("voice-icon"); target.innerHTML = icons[name]; } };
 
   const setStatus = (text = "", error = false) => {
     status.textContent = text;
@@ -46,6 +53,7 @@
     microphone.disabled = chatBusy || transcribing;
     microphone.setAttribute("aria-label", recording ? "Stop recording" : transcribing ? "Transcribing recording" : "Start voice input");
     microphone.title = recording ? "Stop recording" : transcribing ? "Transcribing..." : "Voice input";
+    setIcon(microphone, recording ? "stop" : transcribing ? "loading" : "microphone");
     microphone.querySelector("span").textContent = recording ? "■" : transcribing ? "…" : "🎙";
     document.body.dataset.voiceState = state;
   };
@@ -58,6 +66,9 @@
     if (playing.button) {
       playing.button.setAttribute("aria-label", "Play voice response");
       playing.button.title = "Play response";
+      playing.button.setAttribute("aria-label", playing.button.dataset.hasPlayed ? "Replay response" : "Play response");
+      playing.button.title = playing.button.dataset.hasPlayed ? "Replay response" : "Play response";
+      setIcon(playing.button, "speaker");
     }
     playing = null;
     document.body.classList.remove("rya-speaking");
@@ -194,6 +205,9 @@
     stopSpeech();
     try {
       button?.classList.add("is-loading");
+      button?.setAttribute("aria-label", "Loading audio");
+      if (button) button.title = "Loading audio";
+      setIcon(button, "loading");
       const url = await fetchAudio(path, body, key);
       if (expectedContext !== contextVersion) return;
       const audio = playbackAudio;
@@ -201,6 +215,8 @@
       playing = { audio, button };
       button?.classList.remove("is-loading");
       button?.classList.add("is-playing");
+      if (button) button.dataset.hasPlayed = "true";
+      setIcon(button, "stop");
       button?.setAttribute("aria-label", "Stop speaking");
       if (button) button.title = "Stop speaking";
       document.body.classList.add("rya-speaking");
@@ -221,8 +237,10 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "message-speech-button";
-    button.setAttribute("aria-label", "Play voice response");
-    button.title = "Play response";
+      button.setAttribute("aria-label", "Play voice response");
+      button.title = "Play response";
+      button.querySelector("span")?.classList.add("voice-icon");
+      setIcon(button, "speaker");
     button.innerHTML = "<span aria-hidden=\"true\">♪</span>";
     button.addEventListener("click", () => void play(button, "/voice/synthesize", { message_id: Number(messageId), voice: selectedVoice }, `${messageId}:${selectedVoice}`));
     row.querySelector(".message-label")?.append(button);
