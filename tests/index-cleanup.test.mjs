@@ -24,8 +24,8 @@ test("crawler controls leave noindex pages crawlable and obsolete route redirect
   const vercel = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
   assert.match(robots, /Allow: \/\n/);
   assert.doesNotMatch(robots, /Disallow:/);
-  assert.match(sitemap, /<loc>https:\/\/waffleberry\.app\/<\/loc>/);
-  assert.doesNotMatch(sitemap, /www\.waffleberry\.app|experience\.html|auth\.html|chat\.html/);
-  assert.ok(vercel.redirects.some((rule) => rule.source === "/experience.html" && rule.destination === "https://waffleberry.app/" && rule.permanent));
-  assert.ok(vercel.redirects.some((rule) => rule.has?.some((condition) => condition.value === "www.waffleberry.app") && rule.destination === "https://waffleberry.app/$1" && rule.permanent));
+  assert.match(sitemap, /<loc>https:\/\/www\.waffleberry\.app\/<\/loc>/);
+  assert.doesNotMatch(sitemap, /experience\.html|auth\.html|chat\.html/);
+  assert.ok(vercel.redirects.some((rule) => rule.source === "/experience.html" && rule.destination === "https://www.waffleberry.app/" && rule.permanent));
+  assert.ok(!vercel.redirects.some((rule) => rule.has?.some((condition) => condition.value === "www.waffleberry.app") && rule.destination === "https://waffleberry.app/$1"));
 });

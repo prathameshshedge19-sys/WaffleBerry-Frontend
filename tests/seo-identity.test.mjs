@@ -12,8 +12,8 @@ test("homepage presents LegaRya as the product and WaffleBerry as the organizati
   assert.match(homepage, /property="og:site_name" content="LegaRya"/);
   assert.match(homepage, /property="og:title" content="LegaRya — Remember You, Always"/);
   assert.match(homepage, /name="twitter:title" content="LegaRya — Remember You, Always"/);
-  assert.match(homepage, /rel="canonical" href="https:\/\/waffleberry\.app\/"/);
-  assert.match(homepage, /https:\/\/waffleberry\.app\//);
+  assert.match(homepage, /rel="canonical" href="https:\/\/www\.waffleberry\.app\/"/);
+  assert.match(homepage, /https:\/\/www\.waffleberry\.app\//);
 });
 
 test("homepage structured data separates product and company identities", () => {
@@ -26,8 +26,8 @@ test("homepage structured data separates product and company identities", () => 
 
 test("robots and sitemap index only the public homepage", () => {
   assert.match(robots, /Allow: \/\n/);
-  assert.match(robots, /Disallow: \/chat\.html/);
-  assert.match(robots, /Sitemap: https:\/\/waffleberry\.app\/sitemap\.xml/);
-  assert.match(sitemap, /<loc>https:\/\/waffleberry\.app\/<\/loc>/);
-  assert.doesNotMatch(sitemap, /www\.waffleberry\.app|chat\.html|gateway\.html/);
+  assert.doesNotMatch(robots, /Disallow:/);
+  assert.match(robots, /Sitemap: https:\/\/www\.waffleberry\.app\/sitemap\.xml/);
+  assert.match(sitemap, /<loc>https:\/\/www\.waffleberry\.app\/<\/loc>/);
+  assert.doesNotMatch(sitemap, /chat\.html|gateway\.html/);
 });

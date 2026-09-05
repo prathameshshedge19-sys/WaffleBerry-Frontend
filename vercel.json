@@ -20,18 +20,7 @@
     },
     {
       "source": "/experience.html",
-      "destination": "https://waffleberry.app/",
-      "permanent": true
-    },
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.waffleberry.app"
-        }
-      ],
-      "destination": "https://waffleberry.app/$1",
+      "destination": "https://www.waffleberry.app/",
       "permanent": true
     }
   ]
