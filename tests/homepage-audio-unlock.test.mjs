@@ -33,12 +33,19 @@ test("homepage mute, unmute, and preserved speech integrations remain explicit",
 
 test("homepage bubble timing is independent from mobile audio unlock listeners", () => {
   assert.match(soundscape, /function showAwakenBubble\(\)/);
-  assert.match(soundscape, /}, 1800\);/);
+  assert.match(soundscape, /}, 2600\);/);
   assert.match(soundscape, /hideAwakenBubble\(\);/);
   assert.match(soundscape, /installFirstInteractionListeners\(\)/);
   assert.match(soundscape, /activate\(2\.4, \{ fromGesture: true \}\)/);
   assert.match(soundscape, /activate\(1\.8, \{ fromGesture: true \}\)/);
   assert.match(soundscape, /audioContext\.resume\(\)/);
+});
+
+test("homepage awaken bubble is centered, tappable, and keeps the shared unlock path", () => {
+  assert.match(homepage, /<button class="soundscape-awaken" type="button" data-soundscape-awaken/);
+  assert.match(homepage, /aria-label="Tap to awaken Rya"/);
+  assert.match(soundscape, /if \(control\.contains\(event\.target\)\) return;/);
+  assert.match(soundscape, /activate\(2\.4, \{ fromGesture: true \}\)/);
 });
 
 test("homepage avoids audio for muted users and keeps one audio graph", () => {

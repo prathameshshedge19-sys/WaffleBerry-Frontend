@@ -21,7 +21,7 @@ function showAwakenBubble() {
   setAwakenCue(true);
   awakenBubbleTimer = window.setTimeout(() => {
     hideAwakenBubble();
-  }, 1800);
+  }, 2600);
 }
   if (!control) return;
 
