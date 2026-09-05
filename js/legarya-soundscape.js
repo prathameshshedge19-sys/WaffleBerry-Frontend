@@ -26,6 +26,8 @@
   let enabled = readPreference() !== false;
   let hasInteracted = false;
   let active = false;
+  let awaitingGesture = false;
+  let activationPromise = null;
   let pluckTimer = 0;
   let resonanceTimer = 0;
   let suspendTimer = 0;
@@ -62,12 +64,13 @@
     }
     control.dataset.enabled = String(enabled);
     control.dataset.active = String(active);
+    control.dataset.awaitingGesture = String(awaitingGesture);
     control.setAttribute("aria-pressed", String(enabled));
     control.setAttribute(
       "aria-label",
       enabled && !active ? "Start ambient sound" : enabled ? "Turn ambient sound off" : "Turn ambient sound on",
     );
-    control.dataset.tooltip = enabled && !active ? "Start sound" : enabled ? "Sound off" : "Sound on";
+    control.dataset.tooltip = awaitingGesture ? "Tap to awaken Rya" : enabled && !active ? "Start sound" : enabled ? "Sound off" : "Sound on";
   }
 
   function trackPersistent(source) {
@@ -399,27 +402,36 @@
     });
   }
 
-  async function activate(fadeDuration = 1.8) {
-    clearTimeout(suspendTimer);
-    if (!enabled || document.hidden || !buildSoundscape()) return false;
-    try {
-      await audioContext.resume();
-    } catch {
-      active = false;
+  function activate(fadeDuration = 1.8) {
+    if (activationPromise) return activationPromise;
+    const attempt = (async () => {
+      clearTimeout(suspendTimer);
+      if (!enabled || document.hidden || !buildSoundscape()) return false;
+      if (active && audioContext.state === "running") return true;
+      try {
+        await audioContext.resume();
+      } catch {
+        active = false;
+        return false;
+      }
+      if (!enabled || document.hidden || audioContext.state !== "running") {
+        active = false;
+        return false;
+      }
+      active = true;
+      awaitingGesture = false;
+      holdAndRamp(masterGain.gain, MASTER_VOLUME, fadeDuration);
+      schedulePluck();
+      scheduleResonance();
       updateControl();
-      return false;
-    }
-    if (!enabled || document.hidden || audioContext.state !== "running") {
-      active = false;
-      updateControl();
-      return false;
-    }
-    active = true;
-    holdAndRamp(masterGain.gain, MASTER_VOLUME, fadeDuration);
-    schedulePluck();
-    scheduleResonance();
-    updateControl();
-    return true;
+      return true;
+    })();
+    activationPromise = attempt;
+    attempt.then(
+      () => { if (activationPromise === attempt) activationPromise = null; },
+      () => { if (activationPromise === attempt) activationPromise = null; },
+    );
+    return attempt;
   }
 
   function deactivate(fadeDuration = 0.65) {
@@ -449,14 +461,19 @@
   }
 
   function removeFirstInteractionListeners() {
-    document.removeEventListener("pointerdown", onFirstInteraction, true);
-    document.removeEventListener("keydown", onFirstInteraction, true);
+    ["pointerdown", "touchstart", "click", "keydown"].forEach((eventName) => {
+      document.removeEventListener(eventName, onFirstInteraction, true);
+    });
   }
 
   async function onFirstInteraction(event) {
     if (control.contains(event.target)) return;
     hasInteracted = true;
-    if (enabled && await activate(2.4)) removeFirstInteractionListeners();
+    if (!enabled) return;
+    awaitingGesture = true;
+    updateControl();
+    if (await activate(2.4)) removeFirstInteractionListeners();
+    else updateControl();
   }
 
   function teardown() {
@@ -496,6 +513,7 @@
     if (enabled) {
       if (await activate(1.8)) removeFirstInteractionListeners();
     } else {
+      awaitingGesture = false;
       window.dispatchEvent(new Event("legarya-sound-muted"));
       removeFirstInteractionListeners();
       deactivate(0.65);
@@ -503,8 +521,9 @@
     updateControl();
   });
 
-  document.addEventListener("pointerdown", onFirstInteraction, true);
-  document.addEventListener("keydown", onFirstInteraction, true);
+  ["pointerdown", "touchstart", "click", "keydown"].forEach((eventName) => {
+    document.addEventListener(eventName, onFirstInteraction, true);
+  });
   window.addEventListener("rya-energy-arc", (event) => playArcAccent(event.detail));
   window.addEventListener("legarya-rya-speech", (event) => setSpeechDucking(event.detail?.active));
   document.addEventListener("visibilitychange", () => {
@@ -524,5 +543,13 @@
     control.disabled = true;
   }
   updateControl();
-  if (enabled) void activate(2.4);
+  if (enabled) {
+    awaitingGesture = true;
+    updateControl();
+    void activate(2.4).then((started) => {
+      awaitingGesture = enabled && !started;
+      if (started) removeFirstInteractionListeners();
+      updateControl();
+    });
+  }
 })();
