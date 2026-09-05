@@ -8,15 +8,15 @@ const homepage = await readFile(new URL("../index.html", import.meta.url), "utf8
 test("homepage uses one lifecycle state and retries ambience from broad user gestures", () => {
   assert.match(soundscape, /void activate\(2\.4\)\.then\(\(started\) =>/);
   assert.match(soundscape, /\["pointerdown", "touchstart", "click", "keydown"\]\.forEach/);
-  assert.match(soundscape, /if \(activationPromise\) return activationPromise;/);
-  assert.match(soundscape, /await audioContext\.resume\(\)/);
+  assert.match(soundscape, /if \(activationPromise\) \{/);
+  assert.match(soundscape, /audioContext\.resume\(\)/);
   assert.match(soundscape, /const audioState = \{/);
   assert.match(soundscape, /audioState\.ambienceState = "running"/);
   assert.match(soundscape, /audioState\.unlockState = isSoundEnabled\(\) && !started \? "required" : "unlocked"/);
 });
 
 test("homepage exposes the awaken cue and keeps one versioned soundscape asset", () => {
-  assert.match(homepage, /js\/legarya-soundscape\.js\?v=3\.4/);
+  assert.match(homepage, /js\/legarya-soundscape\.js\?v=3\.5/);
   assert.match(homepage, /data-soundscape-awaken/);
   assert.match(soundscape, /if \(audioContext \|\| !AudioContextClass\) return Boolean\(audioContext\);/);
   assert.match(soundscape, /audioState\.soundEnabledByUser = false/);
@@ -29,4 +29,21 @@ test("homepage mute, unmute, and preserved speech integrations remain explicit",
   assert.match(soundscape, /window\.dispatchEvent\(new Event\("legarya-sound-muted"\)\)/);
   assert.match(soundscape, /window\.addEventListener\("rya-energy-arc",/);
   assert.match(soundscape, /window\.addEventListener\("legarya-rya-speech",/);
+});
+
+test("homepage bubble timing is independent from mobile audio unlock listeners", () => {
+  assert.match(soundscape, /function showAwakenBubble\(\)/);
+  assert.match(soundscape, /}, 1800\);/);
+  assert.match(soundscape, /hideAwakenBubble\(\);/);
+  assert.match(soundscape, /installFirstInteractionListeners\(\)/);
+  assert.match(soundscape, /activate\(2\.4, \{ fromGesture: true \}\)/);
+  assert.match(soundscape, /activate\(1\.8, \{ fromGesture: true \}\)/);
+  assert.match(soundscape, /audioContext\.resume\(\)/);
+});
+
+test("homepage avoids audio for muted users and keeps one audio graph", () => {
+  assert.match(soundscape, /if \(!isSoundEnabled\(\) \|\| !awakenCue\) return;/);
+  assert.match(soundscape, /if \(audioContext \|\| !AudioContextClass\) return Boolean\(audioContext\);/);
+  assert.match(soundscape, /audioState\.unlockListenersInstalled/);
+  assert.match(soundscape, /persistentSources = new Set\(\)/);
 });

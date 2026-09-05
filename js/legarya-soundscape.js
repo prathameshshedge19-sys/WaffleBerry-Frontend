@@ -6,7 +6,22 @@ const awakenCue = document.querySelector("[data-soundscape-awaken]");
 
 function setAwakenCue(visible) {
   if (!awakenCue) return;
+  audioState.bubbleVisible = visible;
   awakenCue.hidden = !visible;
+}
+
+function hideAwakenBubble() {
+  clearTimeout(awakenBubbleTimer);
+  setAwakenCue(false);
+}
+
+function showAwakenBubble() {
+  if (!isSoundEnabled() || !awakenCue) return;
+  clearTimeout(awakenBubbleTimer);
+  setAwakenCue(true);
+  awakenBubbleTimer = window.setTimeout(() => {
+    hideAwakenBubble();
+  }, 1800);
 }
   if (!control) return;
 
@@ -37,8 +52,10 @@ const audioState = {
   hasInteracted: false,
   activationInFlight: false,
   unlockListenersInstalled: false,
+  bubbleVisible: false,
 };
 let activationPromise = null;
+let awakenBubbleTimer = 0;
 
 const isSoundEnabled = () => audioState.soundEnabledByUser;
 const isAmbienceRunning = () => audioState.ambienceState === "running";
@@ -88,7 +105,6 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
       audioState.soundEnabledByUser ? "Mute sound" : "Turn sound on",
     );
     control.dataset.tooltip = awaitingGesture ? "Tap to awaken Rya" : audioState.soundEnabledByUser ? "Mute sound" : "Turn sound on";
-    setAwakenCue(audioState.soundEnabledByUser && awaitingGesture && !document.hidden);
   }
 
   function trackPersistent(source) {
@@ -421,16 +437,29 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
     });
   }
 
-  function activate(fadeDuration = 1.8) {
-    if (activationPromise) return activationPromise;
+  function activate(fadeDuration = 1.8, { fromGesture = false } = {}) {
+    let gestureResumeFailed = false;
+    let gestureResumePromise = null;
+    if (fromGesture && !document.hidden && isSoundEnabled() && buildSoundscape()) {
+      try {
+        gestureResumePromise = audioContext.resume();
+      } catch {
+        gestureResumeFailed = true;
+      }
+    }
+    if (activationPromise) {
+      gestureResumePromise?.catch(() => {});
+      return activationPromise;
+    }
     const attempt = (async () => {
       clearTimeout(suspendTimer);
       if (!isSoundEnabled() || document.hidden || !buildSoundscape()) return false;
       if (isAmbienceRunning() && audioContext.state === "running") return true;
+      if (gestureResumeFailed) return false;
       audioState.activationInFlight = true;
       audioState.ambienceState = "starting";
       try {
-        await audioContext.resume();
+        await (gestureResumePromise || audioContext.resume());
       } catch {
         audioState.audioContextState = audioContext?.state || "suspended";
         audioState.ambienceState = "notStarted";
@@ -503,10 +532,11 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
   async function onFirstInteraction(event) {
     if (control.contains(event.target)) return;
     audioState.hasInteracted = true;
+    hideAwakenBubble();
     if (!isSoundEnabled()) return;
     audioState.unlockState = "required";
     updateControl();
-    if (await activate(2.4)) removeFirstInteractionListeners();
+    if (await activate(2.4, { fromGesture: true })) removeFirstInteractionListeners();
     else updateControl();
   }
 
@@ -514,6 +544,7 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
     audioState.ambienceState = "notStarted";
     audioState.audioContextState = "closed";
     audioState.unlockState = "notNeeded";
+    hideAwakenBubble();
     clearTimeout(pluckTimer);
     clearTimeout(resonanceTimer);
     clearTimeout(suspendTimer);
@@ -538,9 +569,11 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
 
   control.addEventListener("click", async () => {
     audioState.hasInteracted = true;
+    hideAwakenBubble();
     if (isSoundEnabled()) {
       audioState.soundEnabledByUser = false;
       audioState.unlockState = "notNeeded";
+      hideAwakenBubble();
       storePreference(false);
       window.dispatchEvent(new Event("legarya-sound-muted"));
       removeFirstInteractionListeners();
@@ -553,7 +586,7 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
     storePreference(true);
     installFirstInteractionListeners();
     updateControl();
-    if (await activate(1.8)) removeFirstInteractionListeners();
+    if (await activate(1.8, { fromGesture: true })) removeFirstInteractionListeners();
     else {
       audioState.unlockState = "required";
       updateControl();
@@ -582,6 +615,7 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
   updateControl();
   if (isSoundEnabled()) {
     audioState.unlockState = "required";
+    showAwakenBubble();
     updateControl();
     void activate(2.4).then((started) => {
       audioState.unlockState = isSoundEnabled() && !started ? "required" : "unlocked";
