@@ -35,6 +35,18 @@ test("New Chat invalidates an automatic conversation choice still initializing",
   assert.equal(session.isNewChat, true);
 });
 
+test("repeated New Chat clicks remain unsaved and retain the selected Legacy", () => {
+  const session = createChatSession();
+  session.selectLegacy(12);
+  session.beginNewChat();
+  session.beginNewChat();
+  session.beginNewChat();
+
+  assert.equal(session.selectedLegacyId, 12);
+  assert.equal(session.activeConversationId, null);
+  assert.equal(session.isNewChat, true);
+});
+
 test("first send creates exactly once and the second send reuses the conversation", async () => {
   const session = createChatSession();
   session.selectLegacy(12);
@@ -59,6 +71,34 @@ test("first send creates exactly once and the second send reuses the conversatio
   assert.equal(second.created, false);
   assert.equal(session.activeConversationId, 56);
   assert.equal(session.isNewChat, false);
+});
+
+test("the returned conversation id is active before the first message can send", async () => {
+  const session = createChatSession();
+  session.selectLegacy(12);
+  session.beginNewChat();
+  const lifecycle = [];
+
+  await session.ensureConversation(async (legacyId) => {
+    lifecycle.push(["create", legacyId]);
+    return { id: 56, legacy_id: legacyId, title: "New chat" };
+  });
+  lifecycle.push(["send", session.activeConversationId, session.selectedLegacyId]);
+
+  assert.deepEqual(lifecycle, [["create", 12], ["send", 56, 12]]);
+});
+
+test("a failed first conversation creation clears the in-flight guard for retry", async () => {
+  const session = createChatSession();
+  session.selectLegacy(12);
+  session.beginNewChat();
+
+  await assert.rejects(session.ensureConversation(async () => { throw new Error("creation failed"); }), /creation failed/);
+  assert.equal(session.pendingConversation, null);
+  assert.equal(session.activeConversationId, null);
+
+  const retry = await session.ensureConversation(async (legacyId) => ({ id: 57, legacy_id: legacyId }));
+  assert.equal(retry.conversationId, 57);
 });
 
 test("send requires text and a selected Legacy, never a conversation id", () => {

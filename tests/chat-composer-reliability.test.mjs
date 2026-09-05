@@ -4,7 +4,9 @@ import test from "node:test";
 
 const chat = await readFile(new URL("../js/chat.js", import.meta.url), "utf8");
 const html = await readFile(new URL("../chat.html", import.meta.url), "utf8");
+const legacyHtml = await readFile(new URL("../legacy-chat.html", import.meta.url), "utf8");
 const visitorChat = await readFile(new URL("../js/legacy-chat.js", import.meta.url), "utf8");
+const chatCss = await readFile(new URL("../css/chat.css", import.meta.url), "utf8");
 
 test("composer click always reaches live-state validation", () => {
   const sendMarkup = html.match(/<button id="sendButton"[^>]*>/)?.[0] || "";
@@ -12,6 +14,13 @@ test("composer click always reaches live-state validation", () => {
   assert.match(sendMarkup, /aria-disabled="true"/);
   assert.match(chat, /sendButton\.disabled = false;/);
   assert.match(chat, /sendButton\.setAttribute\("aria-disabled", String\(!available\)\);/);
+});
+
+test("New Chat empty state cannot cover the composer send control", () => {
+  assert.match(chatCss, /\.empty-state \{[^}]*z-index: 2;/);
+  assert.match(chatCss, /\.composer-wrap \{ position: relative; z-index: 3;/);
+  assert.match(html, /css\/chat\.css\?v=3\.3/);
+  assert.match(legacyHtml, /css\/chat\.css\?v=3\.3/);
 });
 
 test("New Chat clears a stale sending lock even without an active stream", () => {
@@ -49,6 +58,16 @@ test("collaborator and visitor workspaces do not run owner bootstrap", () => {
 
 test("Create Another Legacy keeps the explicit new pending setup endpoint", () => {
   assert.match(chat, /createLegacyButton\.addEventListener\("click"[\s\S]*?apiRequest\("\/legacies\/setup", \{ method: "POST", authenticated: true \}\)/);
+});
+
+test("conversation creation failure restores the draft and always releases sending state", () => {
+  assert.match(chat, /if \(failureStage === "create-conversation"\) \{[\s\S]*?input\.value = content;/);
+  assert.match(chat, /setChatStatus\("Couldn\\u2019t start a new conversation\. Try again\."/);
+  assert.match(chat, /finally \{[\s\S]*?setSending\(false\);[\s\S]*?input\.focus\(\);/);
+});
+
+test("visitor first send awaits conversation creation before streaming", () => {
+  assert.match(visitorChat, /const id=await ensureConversation\(\);const response=await streamRequest\(`\/legacy-conversations\/\$\{id\}\/messages\/stream/);
 });
 
 test("Rya visual failures cannot strand composer state", () => {
