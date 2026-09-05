@@ -14,7 +14,7 @@ test("homepage attempts ambience on load and retries from broad user gestures", 
 });
 
 test("homepage keeps one soundscape asset version and guarded audio graph", () => {
-  assert.match(homepage, /js\/legarya-soundscape\.js\?v=3\.2/);
+  assert.match(homepage, /js\/legarya-soundscape\.js\?v=3\.3/);
   assert.match(soundscape, /if \(audioContext \|\| !AudioContextClass\) return Boolean\(audioContext\);/);
   assert.match(soundscape, /if \(!enabled\) return;/);
   assert.match(soundscape, /storePreference\(enabled\)/);
