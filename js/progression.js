@@ -16,7 +16,6 @@
   const rings = document.querySelectorAll("[data-preservation-ring]");
   const answer = document.querySelector("#answerDailyQuestion");
   const skip = document.querySelector("#skipDailyQuestion");
-  const input = document.querySelector("#messageInput");
   if (!summary || !card) return;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   let legacy = null;
@@ -69,19 +68,25 @@
   };
 
   answer.addEventListener("click", () => {
-    input.value = journey?.daily_prompt?.prompt_text || "";
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    input.focus();
-    input.setSelectionRange(input.value.length, input.value.length);
+    const prompt = journey?.daily_prompt;
+    if (!legacy?.id || !prompt || prompt.status !== "pending") return;
+    answer.disabled = true;
+    skip.disabled = true;
+    window.dispatchEvent(new CustomEvent("legarya-daily-prompt-request", {
+      detail: { legacyId: legacy.id, promptId: prompt.id },
+    }));
   });
   skip.addEventListener("click", async () => {
     if (!journey?.daily_prompt) return;
+    answer.disabled = true;
     skip.disabled = true;
     try {
       await apiRequest(`/progress/${legacy.id}/daily-prompt/${journey.daily_prompt.id}/skip?timezone=${encodeURIComponent(timezone)}`, { method: "POST", authenticated: true });
       await load();
-    } finally { skip.disabled = false; }
+    } finally { answer.disabled = skip.disabled = false; }
   });
+  window.addEventListener("legarya-daily-prompt-started", () => { dailyPrompt.hidden = true; });
+  window.addEventListener("legarya-daily-prompt-failed", () => { answer.disabled = skip.disabled = false; });
   window.addEventListener("legarya-legacy-change", (event) => { legacy = event.detail.legacy; priorProgress = null; void load(); });
   window.addEventListener("legarya-progress-update", (event) => {
     if (event.detail?.today_just_completed) rings.forEach((ring) => { ring.classList.add("is-completing"); window.setTimeout(() => ring.classList.remove("is-completing"), 900); });

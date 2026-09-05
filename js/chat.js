@@ -750,6 +750,7 @@
   };
 
   const beginNewConversation = () => {
+    if (preparingSend) return;
     reportLocalChatState("new-chat-click-before");
     detachActiveStream();
     chatSession.beginNewChat();
@@ -781,6 +782,64 @@
     recentChats.scrollTop = 0;
     return result;
   };
+
+  window.addEventListener("legarya-daily-prompt-request", async (event) => {
+    const legacyId = Number(event.detail?.legacyId);
+    const promptId = Number(event.detail?.promptId);
+    if (preparingSend || sending) return;
+    if (
+      legacyId !== chatSession.selectedLegacyId
+      || !Number.isInteger(promptId)
+      || promptId < 1
+      || !chatSession.isNewChat
+      || chatSession.activeConversationId
+    ) {
+      window.dispatchEvent(new CustomEvent("legarya-daily-prompt-failed"));
+      return;
+    }
+    const navigationVersion = chatSession.navigationVersion;
+    preparingSend = true;
+    updateSendState();
+    setChatStatus("Rya is opening today’s question...");
+    try {
+      const result = await apiRequest("/conversations/from-daily-prompt", {
+        method: "POST",
+        body: { legacy_id: legacyId, prompt_id: promptId },
+        authenticated: true,
+      });
+      if (
+        navigationVersion !== chatSession.navigationVersion
+        || legacyId !== chatSession.selectedLegacyId
+        || !chatSession.isNewChat
+      ) throw new ApiError("The chat selection changed while opening today’s question.", { kind: "stale_chat_state" });
+      chatSession.activateConversation(result.conversation.id, result.conversation.legacy_id);
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_CONVERSATION_ID, String(result.conversation.id));
+      conversations = [result.conversation, ...conversations.filter((item) => item.id !== result.conversation.id)];
+      renderConversationList();
+      recentChats.scrollTop = 0;
+      input.value = "";
+      resizeInput();
+      messages.replaceChildren();
+      hideEmptyState(false);
+      addMessage("assistant", result.rya_message.content);
+      setChatStatus();
+      window.dispatchEvent(new CustomEvent("legarya-daily-prompt-started", {
+        detail: { legacyId, promptId, conversationId: result.conversation.id },
+      }));
+      reportLocalChatState("daily-prompt-started");
+    } catch (error) {
+      logChatFailure("daily-prompt-start", error, { legacyId, promptId });
+      if (error instanceof ApiError && error.status === 401) return redirectToAuth();
+      setChatStatus(error.message || "Rya couldn’t open today’s question. Try again.", true);
+      window.dispatchEvent(new CustomEvent("legarya-daily-prompt-failed", {
+        detail: { legacyId, promptId },
+      }));
+    } finally {
+      preparingSend = false;
+      updateSendState();
+      input.focus();
+    }
+  });
 
   const deleteConversation = async (conversation) => {
     if (sending) return;
