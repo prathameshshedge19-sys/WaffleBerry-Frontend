@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/rya-core.css?v=1.0" />
-    <link rel="stylesheet" href="css/chat.css?v=4.0" />
+    <link rel="stylesheet" href="css/chat.css?v=4.1" />
   </head>
   <body>
     <div class="workspace">
@@ -83,7 +83,7 @@
           </button>
           <div id="accountMenu" class="account-menu" hidden>
             <p id="userEmail"></p>
-            <button id="voiceSettingsButton" type="button"><span aria-hidden="true">&#9835;</span> Voice Settings</button>
+          <button id="voiceSettingsButton" type="button">Voice Settings</button>
             <button id="logoutButton" type="button"><span aria-hidden="true">&#8594;</span> Log out</button>
           </div>
         </div>
@@ -127,7 +127,7 @@
 
           <div class="composer-wrap">
             <form id="composer" class="composer">
-              <button id="microphoneButton" class="microphone-button" type="button" aria-label="Start voice input" title="Voice input"><span aria-hidden="true">&#127897;</span></button>
+              <button id="microphoneButton" class="microphone-button" type="button" aria-label="Start voice input" title="Voice input"><span class="voice-icon" data-voice-icon aria-hidden="true"></span></button>
               <label class="sr-only" for="messageInput">Message Rya</label>
               <textarea id="messageInput" rows="1" maxlength="12000" placeholder="Message Rya..." required></textarea>
               <button id="sendButton" class="send-button" type="submit" aria-label="Send message" aria-disabled="true" title="Send message">
@@ -212,7 +212,7 @@
     <script src="js/markdown.js?v=1.0"></script>
     <script src="js/auth-config.js?v=1.1"></script>
     <script src="js/auth-api.js?v=1.5"></script>
-    <script src="js/voice-chat.js?v=1.0"></script>
+    <script src="js/voice-chat.js?v=1.1"></script>
     <script src="js/workspace-role.js?v=1.0"></script>
     <script type="module" src="js/rya.js?v=5.7"></script>
     <script src="js/chat-session.js?v=1.0"></script>

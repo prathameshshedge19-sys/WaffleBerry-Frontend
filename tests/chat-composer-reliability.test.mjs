@@ -20,8 +20,8 @@ test("New Chat empty state cannot cover the composer send control", () => {
   assert.match(chatCss, /\.empty-state \{[^}]*z-index: 2;/);
   assert.match(chatCss, /\.composer-wrap \{ position: relative; width:/);
   assert.match(chatCss, /\.composer \{ position: relative; z-index: 3;/);
-  assert.match(html, /css\/chat\.css\?v=4\.0/);
-  assert.match(legacyHtml, /css\/chat\.css\?v=4\.0/);
+  assert.match(html, /css\/chat\.css\?v=4\.1/);
+  assert.match(legacyHtml, /css\/chat\.css\?v=4\.1/);
 });
 
 test("New Chat clears a stale sending lock even without an active stream", () => {
