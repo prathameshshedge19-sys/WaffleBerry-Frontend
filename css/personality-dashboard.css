@@ -1,0 +1,47 @@
+.personality-presence {
+  --presence-ink: #eee7d9;
+  --presence-muted: #b7aea0;
+  --presence-gold: #cdb58a;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid rgba(205, 181, 138, .19);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(205, 181, 138, .055), transparent 65%), rgba(9, 10, 12, .65);
+  color: var(--presence-ink);
+  font: inherit;
+  overflow-wrap: anywhere;
+}
+.personality-presence *, .personality-presence *::before, .personality-presence *::after { box-sizing: border-box; min-width: 0; }
+.personality-presence-title { margin: 0 0 8px; font-size: 1.05rem; font-weight: 500; letter-spacing: .025em; }
+.personality-presence-intro, .personality-presence-empty, .personality-presence-state, .personality-presence-note, .personality-context {
+  color: var(--presence-muted); font-size: .82rem; line-height: 1.65; margin: 8px 0;
+}
+.personality-observation { padding: 16px 0; border-bottom: 1px solid rgba(205, 181, 138, .13); }
+.personality-observation-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; font-size: .72rem; line-height: 1.5; }
+.personality-dimension { color: var(--presence-gold); letter-spacing: .04em; }
+.personality-confidence { color: var(--presence-muted); }
+.personality-description { margin: 8px 0; font-size: .95rem; line-height: 1.65; }
+.personality-evidence { margin-top: 10px; color: var(--presence-muted); font-size: .78rem; }
+.personality-evidence summary { cursor: pointer; padding: 6px 0; line-height: 1.6; }
+.personality-evidence[open] summary { color: var(--presence-gold); }
+.personality-evidence-links { list-style: none; margin: 6px 0 0; padding: 0; }
+.personality-evidence-link, .personality-presence-refresh {
+  display: block; max-width: 100%; padding: 8px 0; background: transparent; border: 0;
+  color: var(--presence-gold); font: inherit; text-align: left; cursor: pointer;
+  white-space: normal; overflow-wrap: anywhere; line-height: 1.6;
+}
+.personality-evidence-link:hover, .personality-presence-refresh:hover { color: var(--presence-ink); text-decoration: underline; text-underline-offset: 4px; }
+.personality-presence :focus-visible, .memory-card[data-memory-id]:focus { outline: 1px solid #cdb58a; outline-offset: 4px; border-radius: 4px; }
+.personality-signatures { margin-top: 20px; }
+.personality-signatures h4 { margin: 0 0 12px; font-size: .88rem; font-weight: 500; color: var(--presence-ink); }
+.personality-expression { padding: 10px 0; }
+.personality-expression-wording { display: block; max-width: 100%; color: var(--presence-gold); font-size: 1rem; line-height: 1.8; white-space: normal; overflow-wrap: anywhere; }
+.personality-presence-note { margin-top: 20px; font-size: .75rem; }
+@media (max-width: 600px) {
+  .personality-presence { padding: 14px; margin-top: 18px; }
+  .personality-observation-meta { align-items: flex-start; }
+  .personality-evidence summary, .personality-evidence-link, .personality-presence-refresh { min-height: 44px; }
+}

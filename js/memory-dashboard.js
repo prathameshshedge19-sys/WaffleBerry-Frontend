@@ -10,6 +10,19 @@
   const status = document.querySelector("#memoryDashboardStatus");
   if (!openButton || !dashboard) return;
 
+  const personalityPanel = window.LegaRyaPersonalityDashboard?.create({
+    document, dashboard, content,
+    request: (path, options) => apiRequest(path, { ...options, authenticated: true }),
+    onEvidence: (memoryId) => {
+      const card = content.querySelector(`[data-memory-id="${memoryId}"]`);
+      if (!card) return false;
+      card.setAttribute("tabindex", "-1");
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      card.focus({ preventScroll: true });
+      return true;
+    },
+  });
+
   const groups = [
     ["Identity", ["personal_detail"]],
     ["Family & Relationships", ["relationship"]],
@@ -34,6 +47,7 @@
   };
 
   const close = () => {
+    personalityPanel?.close();
     dashboard.hidden = true;
     document.body.classList.remove("memory-dashboard-open");
     openButton.focus();
@@ -94,6 +108,7 @@
 
   const memoryCard = (memory) => {
     const card = document.createElement("article"); card.className = "memory-card";
+    card.dataset.memoryId = String(memory.id);
     const copy = document.createElement("div"); copy.className = "memory-card-copy";
     const text = document.createElement("p"); text.textContent = memory.canonical_text;
     const meta = document.createElement("small"); meta.textContent = metadata(memory); copy.append(text, meta);
@@ -123,7 +138,7 @@
       content.append(overview);
     }
     if (!memories.length) {
-      const empty = document.createElement("p"); empty.className = "memory-empty"; empty.textContent = "No memories yet. A meaningful Legacy begins in conversation."; content.append(empty); return;
+      const empty = document.createElement("p"); empty.className = "memory-empty"; empty.textContent = "No memories yet. A meaningful Legacy begins in conversation."; content.append(empty); personalityPanel?.mount(content); return;
     }
     const used = new Set();
     groups.forEach(([title, categories]) => {
@@ -135,9 +150,11 @@
       const list = document.createElement("div"); list.className = "memory-group-list";
       items.forEach((item) => list.append(memoryCard(item))); section.append(heading, list); content.append(section);
     });
+    personalityPanel?.mount(content);
   }
 
   async function load() {
+    const personalityToken = personalityPanel?.begin();
     const context = await apiRequest("/legacies", { authenticated: true });
     legacyId = context.active_legacy_id;
     accessRole = context.legacies.find((legacy) => legacy.id === legacyId)?.access_role || "owner";
@@ -147,6 +164,8 @@
       apiRequest(`/progress/${legacyId}?timezone=${encodeURIComponent(timezone)}`, { authenticated: true }),
     ]);
     render();
+    // Deliberately not awaited: representation must never delay memory actions.
+    personalityPanel?.load({ legacyId, role: accessRole, memories }, personalityToken);
   }
 
   openButton.addEventListener("click", async () => {
