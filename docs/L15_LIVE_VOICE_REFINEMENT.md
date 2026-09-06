@@ -1,0 +1,13 @@
+# L15 live voice visual refinement
+
+The separate call icon sits immediately to the right of the existing composer. Dictation remains inside the composer on the left, and the send control keeps its original layout. Both chat modes expose the same accessible call label.
+
+`rya-renderer.mjs` contains the existing homepage scene, shaders, particle geometry, idle motion and arc generation. `rya.js` remains the homepage/sidebar bootstrap. Live Voice creates a scoped instance of this same renderer and pauses the sidebar instance while it is open. It disposes the WebGL resources, animation frame, resize observer and listeners when the call ends.
+
+Live playback energy uses the existing L15 `output_energy` signal, emitted on the running browser audio clock. The renderer caps its added activity at 0.38 and smooths it with 70ms attack / 180ms release. Idle motion continues unchanged. Playback clear/interruption resets the added activity immediately; reduced motion ignores the added motion. No provider-generation animation signal is introduced.
+
+The existing `legarya-soundscape.js` now exposes a scoped live lease. Its original synthesized drone, plucks, resonance and arc sounds are reused; there are no new sound assets and no intro narration. A page shares one soundscape engine. Live ambience uses 12% of the homepage master level, falling to 2.5% during actual assistant playback with a 40ms duck and 550ms restoration. Existing ambience/arc speech attenuation also remains in effect. Ducking the master covers arc sounds already playing. The existing `legarya_ambient_enabled` preference is retained; the ambient toggle is independent of microphone mute. Ending a live-only lease stops sources, timers and listeners and closes its audio context.
+
+Validation before release: all 128 frontend tests passed, including five new behavioral audio lifecycle tests. Controlled desktop and mobile homepage frames were pixel-identical before/after extraction. The homepage synthesis graph and mute/unmute levels were unchanged. Browser checks covered live amplitude response, reduced-motion stability, renderer disposal, call controls, reconnect, background ending, both real chat-page integrations and preservation of drafts/saved messages. No backend, database, transport, transcript, brain, auth, persistence or L12 implementation changed.
+
+Browser automation used isolated Chromium with synthetic microphone audio. It does not constitute a fresh physical iOS/Android or subjective speaker-volume acceptance. The user confirmed functional production L15 acceptance before this refinement. No L15 checkpoint tag is part of this release.

@@ -1,8 +1,14 @@
 "use strict";
 
 (() => {
-const control = document.querySelector("[data-soundscape-toggle]");
-const awakenCue = document.querySelector("[data-soundscape-awaken]");
+if (window.LegaryaSoundscape) return; // Classic homepage script and module consumers share one engine.
+let sharedEngine = null;
+function createSoundscape(control, { liveOnly = false } = {}) {
+const listeners = new AbortController();
+const controls = new Set([control]);
+let disposed = false, liveOwner = false;
+const awakenCue = liveOnly ? null : document.querySelector("[data-soundscape-awaken]");
+const masterVolume = () => MASTER_VOLUME * (liveOwner ? (speechActive ? .025 : .12) : 1);
 
 function setAwakenCue(visible) {
   if (!awakenCue) return;
@@ -84,7 +90,8 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
     }
   }
 
-  function updateControl() {
+  function updateControl() { controls.forEach(syncControl); }
+  function syncControl(control) {
     if (!AudioContextClass) {
       control.dataset.enabled = "false";
       control.dataset.active = "false";
@@ -105,6 +112,10 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
       audioState.soundEnabledByUser ? "Mute sound" : "Turn sound on",
     );
     control.dataset.tooltip = awaitingGesture ? "Tap to awaken Rya" : audioState.soundEnabledByUser ? "Mute sound" : "Turn sound on";
+    if(control.hasAttribute("data-live-ambience")) {
+      control.textContent = audioState.soundEnabledByUser ? "Ambient sound on" : "Ambient sound off";
+      control.setAttribute("aria-label", audioState.soundEnabledByUser ? "Mute ambient sound" : "Turn ambient sound on");
+    }
   }
 
   function trackPersistent(source) {
@@ -440,6 +451,7 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
   function activate(fadeDuration = 1.8, { fromGesture = false } = {}) {
     let gestureResumeFailed = false;
     let gestureResumePromise = null;
+    if (disposed) return Promise.resolve(false);
     if (fromGesture && !document.hidden && isSoundEnabled() && buildSoundscape()) {
       try {
         gestureResumePromise = audioContext.resume();
@@ -465,6 +477,7 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
         audioState.ambienceState = "notStarted";
         return false;
       }
+      if (disposed || !audioContext) return false;
       audioState.audioContextState = audioContext.state;
       if (!isSoundEnabled() || document.hidden || audioContext.state !== "running") {
         audioState.ambienceState = "notStarted";
@@ -472,7 +485,7 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
       }
       audioState.ambienceState = "running";
       audioState.unlockState = "unlocked";
-      holdAndRamp(masterGain.gain, MASTER_VOLUME, fadeDuration);
+      holdAndRamp(masterGain.gain, masterVolume(), fadeDuration);
       schedulePluck();
       scheduleResonance();
       updateControl();
@@ -506,6 +519,8 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
 
   function setSpeechDucking(isSpeaking) {
     speechActive = Boolean(isSpeaking);
+    // Live ducking covers the whole graph, including already-playing arc accents.
+    if(liveOwner && masterGain && isAmbienceRunning()) holdAndRamp(masterGain.gain,masterVolume(),speechActive?.04:.55);
     if (!audioContext || !ambienceGain || audioContext.state === "closed") return;
     holdAndRamp(
       ambienceGain.gain,
@@ -567,7 +582,7 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
     arcSparkBuffers = [];
   }
 
-  control.addEventListener("click", async () => {
+  async function toggleSound() {
     audioState.hasInteracted = true;
     hideAwakenBubble();
     if (isSoundEnabled()) {
@@ -591,29 +606,30 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
       audioState.unlockState = "required";
       updateControl();
     }
-  });
+  }
+  control.addEventListener("click", toggleSound, {signal:listeners.signal});
 
-  installFirstInteractionListeners();
-  window.addEventListener("rya-energy-arc", (event) => playArcAccent(event.detail));
-  window.addEventListener("legarya-rya-speech", (event) => setSpeechDucking(event.detail?.active));
+  if(!liveOnly) installFirstInteractionListeners();
+  window.addEventListener("rya-energy-arc", (event) => {if(!liveOwner)playArcAccent(event.detail);}, {signal:listeners.signal});
+  window.addEventListener("legarya-rya-speech", (event) => {if(!liveOwner)setSpeechDucking(event.detail?.active);}, {signal:listeners.signal});
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) deactivate(0.6);
-    else if (isSoundEnabled() && audioState.hasInteracted) activate(1.5);
-  });
+    else if (!liveOnly && isSoundEnabled() && audioState.hasInteracted) activate(1.5);
+  }, {signal:listeners.signal});
   window.addEventListener("pagehide", (event) => {
     if (event.persisted) deactivate(0.25);
-    else teardown();
-  });
+    else api.dispose();
+  }, {signal:listeners.signal});
   window.addEventListener("pageshow", (event) => {
-    if (event.persisted && isSoundEnabled() && audioState.hasInteracted) activate(1.5);
-  });
+    if (!liveOnly && event.persisted && isSoundEnabled() && audioState.hasInteracted) activate(1.5);
+  }, {signal:listeners.signal});
 
   if (!AudioContextClass) {
     audioState.soundEnabledByUser = false;
     control.disabled = true;
   }
   updateControl();
-  if (isSoundEnabled()) {
+  if (!liveOnly && isSoundEnabled()) {
     audioState.unlockState = "required";
     showAwakenBubble();
     updateControl();
@@ -623,4 +639,34 @@ const isAmbienceRunning = () => audioState.ambienceState === "running";
       updateControl();
     });
   }
+  const api = {
+    acquireLive(button) {
+      if(liveOwner) throw new Error("Ambient sound is already attached to a call.");
+      liveOwner=true; speechActive=false;
+      audioState.soundEnabledByUser=readPreference()!==false;
+      controls.add(button);
+      if(button!==control)button.addEventListener("click",toggleSound);
+      // Resume synchronously in the call-button gesture; never start intro narration.
+      void activate(.8,{fromGesture:true});
+      if(masterGain && isAmbienceRunning())holdAndRamp(masterGain.gain,masterVolume(),.04);
+      updateControl();
+      let released=false;
+      return {
+        arc:detail=>{if(!released)playArcAccent(detail);},
+        speaking:value=>{if(!released)setSpeechDucking(value);},
+        release(){if(released)return;released=true;liveOwner=false;speechActive=false;
+          if(button!==control){button.removeEventListener("click",toggleSound);controls.delete(button);}
+          if(liveOnly)api.dispose();else {setSpeechDucking(false);if(masterGain&&isAmbienceRunning())holdAndRamp(masterGain.gain,masterVolume(),.55);}
+        },
+      };
+    },
+    dispose(){if(disposed)return;disposed=true;listeners.abort();teardown();controls.clear();if(sharedEngine===api)sharedEngine=null;},
+  };
+  return api;
+}
+window.LegaryaSoundscape=Object.freeze({
+  acquireLive(control){sharedEngine ||= createSoundscape(control,{liveOnly:true});return sharedEngine.acquireLive(control);},
+});
+const homepageControl=document.querySelector("[data-soundscape-toggle]");
+if(homepageControl)sharedEngine=createSoundscape(homepageControl);
 })();

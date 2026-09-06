@@ -16,7 +16,7 @@ test("homepage uses one lifecycle state and retries ambience from broad user ges
 });
 
 test("homepage exposes the awaken cue and keeps one versioned soundscape asset", () => {
-  assert.match(homepage, /js\/legarya-soundscape\.js\?v=3\.5/);
+  assert.match(homepage, /js\/legarya-soundscape\.js\?v=3\.6/);
   assert.match(homepage, /data-soundscape-awaken/);
   assert.match(soundscape, /if \(audioContext \|\| !AudioContextClass\) return Boolean\(audioContext\);/);
   assert.match(soundscape, /audioState\.soundEnabledByUser = false/);

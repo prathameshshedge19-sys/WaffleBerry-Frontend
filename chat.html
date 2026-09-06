@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="css/rya-core.css?v=1.0" />
     <link rel="stylesheet" href="css/chat.css?v=4.1" />
       <link rel="stylesheet" href="css/personality-dashboard.css?v=l13d1">
-<link rel="stylesheet" href="css/live-voice.css?v=l15f1">
+<link rel="stylesheet" href="css/live-voice.css?v=l15ui1">
 </head>
   <body>
     <div class="workspace">
@@ -128,14 +128,14 @@
           <div id="messages" class="messages" role="log" aria-live="polite" aria-label="Conversation with Rya" hidden></div>
 
           <div class="composer-wrap">
-            <div class="live-voice-entry"><button id="startVoiceConversation" type="button" aria-describedby="liveVoiceAvailability" disabled>Start Voice Conversation</button><small id="liveVoiceAvailability" role="status"></small></div><form id="composer" class="composer">
+            <div class="composer-call-row"><form id="composer" class="composer">
               <button id="microphoneButton" class="microphone-button" type="button" aria-label="Start voice input" title="Voice input"><span class="voice-icon" data-voice-icon aria-hidden="true"></span></button>
               <label class="sr-only" for="messageInput">Message Rya</label>
               <textarea id="messageInput" rows="1" maxlength="12000" placeholder="Message Rya..." required></textarea>
               <button id="sendButton" class="send-button" type="submit" aria-label="Send message" aria-disabled="true" title="Send message">
                 <span aria-hidden="true">&#8593;</span>
               </button>
-            </form>
+            </form><button id="startVoiceConversation" class="live-call-button" type="button" aria-label="Start voice conversation" title="Start voice conversation" aria-describedby="liveVoiceAvailability" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.2 3.5 4.6 4.8c-.8.4-1.2 1.3-1 2.2 1.5 6.8 6.5 11.8 13.3 13.3.9.2 1.8-.2 2.2-1l1.3-2.6c.3-.6.1-1.3-.5-1.6l-3.1-1.7c-.5-.3-1.1-.2-1.5.2l-1.4 1.4a13.4 13.4 0 0 1-5-5l1.4-1.4c.4-.4.5-1 .2-1.5L8.8 4c-.3-.6-1-.8-1.6-.5Z"/></svg></button></div><small id="liveVoiceAvailability" class="sr-only" role="status"></small>
             <p id="chatStatus" class="chat-status" aria-live="polite"></p>
           </div>
         </section>
@@ -218,7 +218,7 @@
     <script src="js/audio-ownership.js?v=l15d1"></script>
     <script src="js/voice-chat.js?v=l15f1"></script>
     <script src="js/workspace-role.js?v=1.0"></script>
-    <script type="module" src="js/rya.js?v=5.7"></script>
+    <script type="module" src="js/rya.js?v=6.8"></script>
     <script src="js/chat-session.js?v=1.0"></script>
     <script src="js/chat.js?v=l15f1"></script>
     <script src="js/progress-presentation.js?v=1.0"></script>
@@ -226,6 +226,6 @@
     <script src="js/personality-dashboard.js?v=l13d1"></script>
     <script src="js/memory-dashboard.js?v=l13d1"></script>
     <script src="js/access-management.js?v=1.0"></script>
-  <script type="module" src="js/live-voice.mjs?v=l15f1"></script>
+  <script type="module" src="js/live-voice.mjs?v=l15ui1"></script>
 </body>
 </html>

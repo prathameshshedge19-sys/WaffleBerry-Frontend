@@ -1,5 +1,7 @@
 import { RealtimeClient } from "./realtime-client.mjs";
 import { liveVoiceAvailability, liveVoiceError, liveWebsocketUrl } from "./live-voice-policy.mjs";
+import { createRyaRenderer } from "./rya-renderer.mjs";
+import "./legarya-soundscape.js?v=3.6";
 
 const adapter = window.LegaryaLiveChat;
 const entry = document.querySelector("#startVoiceConversation");
@@ -10,7 +12,7 @@ if (adapter && entry) {
   dialog.setAttribute("aria-describedby", "liveCallDisclosure");
   dialog.innerHTML = `<div class="live-call-panel">
     <header class="live-call-heading"><span class="live-call-eyebrow">LegaRya · Live Voice</span><span class="live-call-privacy">A space to remember</span></header>
-    <div class="live-call-presence" aria-hidden="true"><div class="live-call-orbit"></div><div class="live-call-core"></div></div>
+    <div class="live-call-presence" data-rya-section-host aria-hidden="true"></div>
     <h1 id="liveCallTitle">Rya</h1><p id="liveCallDisclosure" class="live-call-disclosure">Your AI companion for preserving memories</p>
     <p class="live-call-state" role="status" aria-live="polite" aria-atomic="true">Connecting</p>
     <p class="live-call-help">You can speak naturally and interrupt at any time.</p>
@@ -18,6 +20,7 @@ if (adapter && entry) {
     <div class="live-call-controls"><button type="button" data-live-mute aria-pressed="false">Mute microphone</button><button type="button" data-live-stop>Stop speaking</button><button type="button" data-live-end class="live-call-end">End call</button></div>
     <button type="button" data-live-resume hidden>Resume microphone</button>
     <button type="button" data-live-close hidden>Return to chat</button>
+    <button type="button" data-live-ambience aria-pressed="true">Ambient sound on</button>
     <p class="live-call-footnote">Keep this page open. Switching apps or locking your screen ends the call.</p>
   </div>`;
   document.body.append(dialog);
@@ -29,6 +32,14 @@ if (adapter && entry) {
   let context = null, state = "ended", boundId = null, serial = 0, restoreFocus = null;
   let refreshQueue = Promise.resolve();
   const partials = new Map();
+  let presence = null, ambience = null, previousPresenceActive = false;
+  function releasePresence() {
+    presence?.dispose(); presence = null;
+    ambience?.release(); ambience = null;
+    if (previousPresenceActive) window.RyaEnergyControl?.setActive(true);
+    previousPresenceActive = false;
+    find("[data-live-ambience]").hidden = true;
+  }
   const refresh = () => {
     const snapshot = context, id = boundId;
     if (!snapshot || !id) return Promise.resolve();
@@ -36,6 +47,8 @@ if (adapter && entry) {
     return refreshQueue;
   };
   function show(next, message) {
+    if (next !== "speaking") presence?.setPlaybackEnergy(0);
+    ambience?.speaking(next === "speaking");
     state = next;
     dialog.dataset.state = next;
     stateLabel.textContent = next === "listening" && client.muted ? "Microphone muted" : next.charAt(0).toUpperCase() + next.slice(1);
@@ -48,7 +61,7 @@ if (adapter && entry) {
     if (!active || finished || (finishing && event.type !== "transcript_final")) return;
     if (event.type === "input_energy" || event.type === "output_energy") {
       if ((event.type === "input_energy" && state === "listening") || (event.type === "output_energy" && state === "speaking")) {
-        dialog.style.setProperty("--live-energy", String(Math.max(0, Math.min(1, event.value))));
+        if (event.type === "output_energy") presence?.setPlaybackEnergy(event.value);
       }
       return;
     }
@@ -106,6 +119,7 @@ if (adapter && entry) {
     finishing = true; ++serial;
     resume.hidden = true;
     show("ending", "Ending your call and returning to your saved conversation.");
+    releasePresence();
     await client.stop();
     try { await refresh(); } catch { message = "Your call has ended. Refresh the chat to load saved messages."; error = true; }
     finishing = false; finished = true;
@@ -130,6 +144,25 @@ if (adapter && entry) {
     dialog.dataset.mode = context.mode;
     adapter.setLive(true);
     dialog.showModal();
+    const visual = find(".live-call-presence"), soundButton = find("[data-live-ambience]");
+    visual.replaceChildren();
+    soundButton.hidden = context.mode !== "rya";
+    if (context.mode === "rya") {
+      previousPresenceActive = Boolean(window.RyaEnergyControl?.active);
+      window.RyaEnergyControl?.setActive(false);
+      try {
+        ambience = window.LegaryaSoundscape.acquireLive(soundButton);
+        presence = createRyaRenderer(visual, { live: true, onArc: detail => ambience?.arc(detail) });
+      } catch {
+        // Optional atmosphere must not prevent a usable voice call.
+        releasePresence();
+      }
+    } else {
+      const initial = document.createElement("span");
+      initial.className = "live-legacy-presence";
+      initial.textContent = (context.name || "L").trim().slice(0, 1);
+      visual.append(initial);
+    }
     show("connecting", "Preparing your microphone and voice connection.");
     end.focus();
     try {
@@ -152,13 +185,13 @@ if (adapter && entry) {
   });
   dialog.addEventListener("cancel", (event) => { event.preventDefault(); if (finished) close.click(); else void finish(); });
   document.addEventListener("visibilitychange", () => { if (document.hidden && active) void finish("Call ended because this page went into the background. Your saved messages remain in chat."); });
-  window.addEventListener("pagehide", () => { if (active) { ++serial; client.invalidate(); } });
+  window.addEventListener("pagehide", () => { if (active) { ++serial; releasePresence(); client.invalidate(); } });
   window.addEventListener("popstate", () => { if (active) void finish("The page changed. Saved messages remain in their original chat."); });
   window.addEventListener("legarya:session-expired", () => { if (active) void finish("Please sign in again. Your saved messages remain in chat.", true); });
   function updateEntry() {
     const reason = liveVoiceAvailability(adapter.context(), enabled);
     entry.disabled = Boolean(reason) || active;
-    entry.title = reason || "Start a continuous voice conversation";
+    entry.title = reason || "Start voice conversation";
     document.querySelector("#liveVoiceAvailability").textContent = reason;
   }
   window.addEventListener("legarya:chat-context", updateEntry);
