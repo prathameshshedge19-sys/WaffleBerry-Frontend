@@ -32,6 +32,7 @@
   let playing = null;
   let contextVersion = 0;
   const playbackAudio = new Audio();
+  window.LegaryaAudioOwnership?.protect(playbackAudio);
   const audioCache = new Map();
   const icons = Object.freeze({
     microphone: '<svg viewBox="0 0 24 24" focusable="false"><rect x="8" y="3" width="8" height="12" rx="4"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"></path></svg>',
@@ -284,6 +285,15 @@
 
   window.LegaryaVoice = Object.freeze({
     attachAssistant,
+    async prepareLive() {
+      stopSpeech();
+      if (state === "recording") stopRecording();
+      const deadline = Date.now() + 35000;
+      while (state === "transcribing") {
+        if (Date.now() > deadline) throw new Error("Your dictation is still being prepared. Please try Live Voice again shortly.");
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    },
     consumeVoiceOrigin() { const result = voiceDraft; voiceDraft = false; state = "idle"; renderState(); return result; },
     restoreVoiceOrigin() { voiceDraft = true; state = "ready_to_review"; renderState(); },
     isCapturing() { return state === "recording" || state === "transcribing"; },

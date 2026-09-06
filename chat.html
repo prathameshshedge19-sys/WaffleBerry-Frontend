@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/rya-core.css?v=1.0" />
     <link rel="stylesheet" href="css/chat.css?v=4.1" />
       <link rel="stylesheet" href="css/personality-dashboard.css?v=l13d1">
+<link rel="stylesheet" href="css/live-voice.css?v=l15f1">
 </head>
   <body>
     <div class="workspace">
@@ -127,7 +128,7 @@
           <div id="messages" class="messages" role="log" aria-live="polite" aria-label="Conversation with Rya" hidden></div>
 
           <div class="composer-wrap">
-            <form id="composer" class="composer">
+            <div class="live-voice-entry"><button id="startVoiceConversation" type="button" aria-describedby="liveVoiceAvailability" disabled>Start Voice Conversation</button><small id="liveVoiceAvailability" role="status"></small></div><form id="composer" class="composer">
               <button id="microphoneButton" class="microphone-button" type="button" aria-label="Start voice input" title="Voice input"><span class="voice-icon" data-voice-icon aria-hidden="true"></span></button>
               <label class="sr-only" for="messageInput">Message Rya</label>
               <textarea id="messageInput" rows="1" maxlength="12000" placeholder="Message Rya..." required></textarea>
@@ -213,15 +214,18 @@
     <script src="js/markdown.js?v=1.0"></script>
     <script src="js/auth-config.js?v=1.1"></script>
     <script src="js/auth-api.js?v=1.5"></script>
-    <script src="js/voice-chat.js?v=1.2"></script>
+    <script src="js/microphone-ownership.js?v=l15c1"></script>
+    <script src="js/audio-ownership.js?v=l15d1"></script>
+    <script src="js/voice-chat.js?v=l15f1"></script>
     <script src="js/workspace-role.js?v=1.0"></script>
     <script type="module" src="js/rya.js?v=5.7"></script>
     <script src="js/chat-session.js?v=1.0"></script>
-    <script src="js/chat.js?v=6.0"></script>
+    <script src="js/chat.js?v=l15f1"></script>
     <script src="js/progress-presentation.js?v=1.0"></script>
     <script src="js/progression.js?v=1.3"></script>
     <script src="js/personality-dashboard.js?v=l13d1"></script>
     <script src="js/memory-dashboard.js?v=l13d1"></script>
     <script src="js/access-management.js?v=1.0"></script>
-  </body>
+  <script type="module" src="js/live-voice.mjs?v=l15f1"></script>
+</body>
 </html>

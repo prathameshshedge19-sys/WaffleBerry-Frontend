@@ -39,6 +39,7 @@
   const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   let conversations = [];
   let sending = false;
+  let liveActive = false;
   let preparingSend = false;
   let openConversationMenu = null;
   let renamingConversationId = null;
@@ -346,6 +347,7 @@
   };
 
   const updateSendState = () => {
+    window.dispatchEvent(new Event("legarya:chat-context"));
     const available = sending || (!preparingSend && chatSession.canSend(input.value, sending));
     sendButton.disabled = false;
     sendButton.setAttribute("aria-disabled", String(!available));
@@ -706,6 +708,7 @@
 
   const loadConversation = async (id) => {
     window.LegaryaVoice?.stopAll();
+    window.LegaryaLiveVoice?.invalidate();
     if (sending) detachActiveStream();
     if (id === chatSession.activeConversationId && !messages.hidden) {
       setDrawer(false);
@@ -754,6 +757,7 @@
 
   const beginNewConversation = () => {
     if (preparingSend) return;
+    window.LegaryaLiveVoice?.invalidate();
     reportLocalChatState("new-chat-click-before");
     detachActiveStream();
     window.LegaryaVoice?.stopAll();
@@ -1053,6 +1057,7 @@
     legacyButton.setAttribute("aria-expanded", String(open));
   });
   const switchLegacy = async (legacyId) => {
+    window.LegaryaLiveVoice?.invalidate();
     if (legacyId === chatSession.selectedLegacyId) {
       closeLegacyMenu();
       return;
@@ -1190,4 +1195,35 @@
   updateSendState();
   initialize();
   window.LegaryaWorkspace = Object.freeze({ getActiveLegacy: activeLegacy });
+  window.LegaryaLiveChat = Object.freeze({
+    context() {
+      const legacy = activeLegacy();
+      return { legacyId: chatSession.selectedLegacyId, conversationId: chatSession.activeConversationId,
+        mode: "rya", name: "Rya", ready: legacy?.setup_status === "active",
+        busy: sending || preparingSend || Boolean(chatSession.pendingConversation), version: chatSession.navigationVersion };
+    },
+    setLive(value) { liveActive = value; window.LegaryaVoice?.setChatBusy(value || sending); },
+    accept(snapshot, event) {
+      if (snapshot.version !== chatSession.navigationVersion || snapshot.legacyId !== chatSession.selectedLegacyId
+          || event.legacy_id !== snapshot.legacyId || event.mode !== "rya"
+          || (chatSession.activeConversationId && chatSession.activeConversationId !== event.conversation_id)) return false;
+      chatSession.activateConversation(event.conversation_id, event.legacy_id);
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_CONVERSATION_ID, String(event.conversation_id));
+      return true;
+    },
+    async refresh(snapshot, id) {
+      if (snapshot.version !== chatSession.navigationVersion || snapshot.legacyId !== chatSession.selectedLegacyId) return;
+      const history = await apiRequest(`/conversations/${id}/messages?legacy_id=${snapshot.legacyId}`, { authenticated: true });
+      if (snapshot.version !== chatSession.navigationVersion || snapshot.legacyId !== chatSession.selectedLegacyId) return;
+      chatSession.activateConversation(id, snapshot.legacyId);
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_CONVERSATION_ID, String(id));
+      messages.replaceChildren(); hideEmptyState(true);
+      history.forEach((message) => addMessage(message.role, message.content, false, message.id));
+      await fetchConversations();
+      window.dispatchEvent(new CustomEvent("legarya:activity-changed", { detail: { legacyId: snapshot.legacyId } }));
+    },
+  });
+  composer.addEventListener("submit", (event) => {
+    if (liveActive) { event.preventDefault(); event.stopImmediatePropagation(); }
+  }, true);
 })();

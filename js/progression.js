@@ -85,6 +85,7 @@
       await load();
     } finally { answer.disabled = skip.disabled = false; }
   });
+  window.addEventListener("legarya:activity-changed", (event) => { if (event.detail.legacyId === legacy?.id) void load(); });
   window.addEventListener("legarya-daily-prompt-started", () => { dailyPrompt.hidden = true; });
   window.addEventListener("legarya-daily-prompt-failed", () => { answer.disabled = skip.disabled = false; });
   window.addEventListener("legarya-legacy-change", (event) => { legacy = event.detail.legacy; priorProgress = null; void load(); });

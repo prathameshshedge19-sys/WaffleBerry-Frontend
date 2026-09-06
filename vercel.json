@@ -22,6 +22,11 @@
       "source": "/experience.html",
       "destination": "https://www.waffleberry.app/",
       "permanent": true
+    },
+    {
+      "source": "/realtime-dev.html",
+      "destination": "/gateway.html",
+      "permanent": false
     }
   ]
 }

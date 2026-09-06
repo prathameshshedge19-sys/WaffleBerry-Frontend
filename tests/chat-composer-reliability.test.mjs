@@ -42,7 +42,7 @@ test("first builder load bootstraps one pending Legacy before send validation", 
   assert.match(chat, /if \(!chatSession\.canSend\(content, sending\)\) \{/);
   assert.match(chat, /legacy_setup_bootstrap_failed/);
   assert.match(chat, /Rya couldn\u2019t start the Legacy setup\. Try again\./);
-  assert.match(html, /js\/chat\.js\?v=6\.0/);
+  assert.match(html, /js\/chat\.js\?v=l15f1/);
 });
 
 test("onboarding quick replies immediately use the normal composer submit flow", () => {

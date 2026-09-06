@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><title>Live speech development test | LegaRya</title>
+  <style>body{font:16px system-ui;max-width:820px;margin:40px auto;padding:20px;background:#faf7f0;color:#20332c}label{display:block;margin:14px 0}input,select,button{font:inherit;padding:9px;border:1px solid #89978d;border-radius:6px}button{cursor:pointer;margin:4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:18px;background:white}#partial{color:#646b67;min-height:2em}a{color:#23533e}</style>
+</head>
+<body>
+  <h1>Live speech test</h1>
+  <p>Use a disposable Legacy. Speak to Rya, interrupt by speaking, or use Stop speaking. Only fully played assistant responses are saved. End the call, then refresh saved messages to check the result.</p>
+  <p id="authStatus" role="status">Checking the local session…</p>
+  <details id="signIn" open><summary>Sign in to the local test account</summary>
+    <p>The disposable local backend uses its own test database. Use <code>l15-mic@example.com</code> and the test password provided with the local acceptance instructions.</p>
+    <label>Email <input id="email" type="email" autocomplete="username"></label>
+    <label>Password <input id="password" type="password" autocomplete="current-password"></label>
+    <button id="login" disabled>Sign in</button>
+  </details>
+  <label>Legacy ID <input id="legacy" type="number" min="1" value="1"></label>
+  <label>Existing conversation ID (leave empty for New Chat) <input id="conversation" type="number" min="1"></label>
+  <label>Mode <select id="mode"><option value="rya">Rya builder</option><option value="legacy">Legacy viewer</option></select></label>
+  <button id="start" disabled>Start microphone</button><button id="stopSpeaking">Stop speaking</button><button id="end">End call</button>
+  <button id="reconnect" disabled>Reconcile dropped connection</button><button id="refresh" disabled>Refresh saved messages</button>
+  <p id="status" role="status">Ready to test.</p>
+  <p id="partial" aria-live="polite"></p>
+  <h2>Saved speech</h2><pre id="saved">No finalized speech yet.</pre>
+  <p><a href="chat.html">Open normal Rya chat</a> · <a href="legacy-chat.html">Open normal Legacy chat</a></p>
+  <script src="js/auth-config.js?v=1.1"></script><script src="js/auth-api.js?v=1.5"></script>
+  <script src="js/microphone-ownership.js?v=l15c1"></script>
+  <script src="js/audio-ownership.js?v=l15d1"></script>
+  <script type="module" src="js/realtime-dev.mjs?v=l15d1"></script>
+</body>
+</html>
