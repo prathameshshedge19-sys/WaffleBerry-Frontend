@@ -194,19 +194,19 @@
     return response;
   };
 
-  const authenticatedFetch = async (path, options = {}, retry = true) => {
-    if (!accessToken && retry && await refreshSession()) return authenticatedFetch(path, options, false);
+  const fetchWithToken = async (path, options = {}, retry = true, baseUrl = API_BASE_URL) => {
+    if (!accessToken && retry && await refreshSession()) return fetchWithToken(path, options, false, baseUrl);
     if (!accessToken) throw new ApiError("Please sign in to continue.", { status: 401, kind: "authentication" });
     let response;
     try {
       const headers = new Headers(options.headers || {});
       headers.set("Authorization", `Bearer ${accessToken}`);
-      response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers, credentials: "include" });
+      response = await fetch(`${baseUrl}${path}`, { ...options, headers, credentials: "include" });
     } catch (error) {
       if (error?.name === "AbortError") throw error;
       throw new ApiError("Unable to reach Legarya. Please try again.", { kind: "network" });
     }
-    if (response.status === 401 && retry && await refreshSession()) return authenticatedFetch(path, options, false);
+    if (response.status === 401 && retry && await refreshSession()) return fetchWithToken(path, options, false, baseUrl);
     if (!response.ok) {
       const data = await parseResponse(response);
       throw new ApiError(errorMessage(response.status, data), {
@@ -216,6 +216,17 @@
       });
     }
     return response;
+  };
+
+  const authenticatedFetch = (path, options = {}, retry = true) => fetchWithToken(path, options, retry);
+  const authenticatedMediaFetch = (path, options = {}) => {
+    if (!/^\/legacies\/\d+\/sources\/[a-zA-Z0-9-]+\/content$/.test(path)) {
+      throw new ApiError("Invalid source request.", { kind: "validation" });
+    }
+    const mediaBase = config.mediaBaseUrl || API_BASE_URL;
+    const permitted = mediaBase === API_BASE_URL || mediaBase === "https://89-167-14-211.sslip.io/api/v1";
+    if (!permitted) throw new ApiError("Source transfers are not configured.", { kind: "configuration" });
+    return fetchWithToken(path, options, true, mediaBase);
   };
 
   const authenticateUser = async (email, password, rememberMe = false) => {
@@ -261,6 +272,7 @@
     ApiError,
     apiRequest,
     authenticatedFetch,
+    authenticatedMediaFetch,
     streamRequest,
     authenticateUser,
     authenticateWithGoogle,

@@ -112,6 +112,18 @@
     const copy = document.createElement("div"); copy.className = "memory-card-copy";
     const text = document.createElement("p"); text.textContent = memory.canonical_text;
     const meta = document.createElement("small"); meta.textContent = metadata(memory); copy.append(text, meta);
+    (memory.source_provenance || []).forEach((source) => {
+      const note = document.createElement(source.can_open ? "button" : "small");
+      note.className = "memory-source-provenance";
+      note.textContent = source.state === "unavailable" ? "Original source no longer available."
+        : source.state === "stale" ? "Historical source · memory wording has changed"
+        : source.filename ? `Source: ${source.filename} · ${window.LegaryaMedia?.locatorLabel(source.locator || {}) || "Source evidence"}` : "Preserved from a private source";
+      if (source.can_open) {
+        note.type = "button";
+        note.addEventListener("click", () => { close(); window.LegaryaMediaPanel?.open(legacyId, source.source_id, openButton); });
+      }
+      copy.append(note);
+    });
     const actions = document.createElement("div"); actions.className = "memory-card-actions";
     const edit = document.createElement("button"); edit.type = "button"; edit.textContent = "Edit";
     const remove = document.createElement("button"); remove.type = "button"; remove.className = "memory-delete"; remove.textContent = "Delete";

@@ -137,7 +137,7 @@ test("mobile layout wraps expressions, uses practical tap targets and no score w
 });
 test("versioned isolated assets load before the existing dashboard without frozen-controller integration", () => {
   assert.match(html, /css\/personality-dashboard\.css\?v=l13d1/);
-  assert.ok(html.indexOf("js/personality-dashboard.js?v=l13d1") < html.indexOf("js/memory-dashboard.js?v=l13d1"));
+  assert.ok(html.indexOf("js/personality-dashboard.js?v=l13d1") < html.indexOf("js/memory-dashboard.js?v=l16d1"));
   assert.match(bridge, /personalityPanel\?\.load\(\{ legacyId, role: accessRole, memories \}/);
   assert.doesNotMatch(source, /selectedLegacyId|activeConversationId|localStorage|sessionStorage/);
 });

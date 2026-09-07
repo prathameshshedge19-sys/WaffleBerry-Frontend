@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="css/chat.css?v=4.1" />
       <link rel="stylesheet" href="css/personality-dashboard.css?v=l13d1">
 <link rel="stylesheet" href="css/live-voice.css?v=l15ui1">
+    <link rel="stylesheet" href="css/media-sources.css?v=l16d1">
 </head>
   <body>
     <div class="workspace">
@@ -58,6 +59,9 @@
         <div class="sidebar-actions" aria-label="Legacy actions">
           <button id="openMemories" class="memories-button" type="button">
             <span class="memories-button-icon" aria-hidden="true">◇</span><span>Memories</span>
+          </button>
+          <button id="openMediaSources" class="memories-button" type="button" hidden>
+            <span class="memories-button-icon" aria-hidden="true">▤</span><span>Media &amp; Sources</span>
           </button>
 
           <button id="openCollaborators" class="memories-button" type="button" hidden>
@@ -212,8 +216,8 @@
     <script src="js/vendor/marked.umd.js?v=18.0.11"></script>
     <script src="js/vendor/purify.min.js?v=3.4.14"></script>
     <script src="js/markdown.js?v=1.0"></script>
-    <script src="js/auth-config.js?v=1.1"></script>
-    <script src="js/auth-api.js?v=1.5"></script>
+    <script src="js/auth-config.js?v=l16d1"></script>
+    <script src="js/auth-api.js?v=l16d1"></script>
     <script src="js/microphone-ownership.js?v=l15c1"></script>
     <script src="js/audio-ownership.js?v=l15d1"></script>
     <script src="js/voice-chat.js?v=l15f1"></script>
@@ -224,7 +228,9 @@
     <script src="js/progress-presentation.js?v=1.0"></script>
     <script src="js/progression.js?v=1.3"></script>
     <script src="js/personality-dashboard.js?v=l13d1"></script>
-    <script src="js/memory-dashboard.js?v=l13d1"></script>
+    <script src="js/memory-dashboard.js?v=l16d1"></script>
+    <script src="js/media-client.js?v=l16d1"></script>
+    <script src="js/media-sources.js?v=l16d1"></script>
     <script src="js/access-management.js?v=1.0"></script>
   <script type="module" src="js/live-voice.mjs?v=l15ui1"></script>
 </body>
