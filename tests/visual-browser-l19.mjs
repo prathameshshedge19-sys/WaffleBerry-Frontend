@@ -90,5 +90,33 @@ try {
  assert.equal(await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.includes("/sources")&&c.method==="DELETE").length),0);results.checks.push("delete-retains-original");
  await page.locator("[data-close]").click();assert.equal(await page.locator(".visual-presence-canvas").count(),0);assert.equal(await page.locator(".visual-crop-canvas").count(),0);
  const before=await page.evaluate(()=>window.__visualQA.calls.length);await page.evaluate(()=>{window.__visualQA.legacy={...window.__visualQA.legacy,access_role:"collaborator"};dispatchEvent(new Event("legarya-legacy-change"));});await page.locator("#openVisualPresence").click();await page.getByText(/Visual Presence is managed by the Legacy owner/).waitFor();assert.equal(await page.evaluate(()=>window.__visualQA.calls.length),before);results.checks.push("collaborator-no-owner-api","close-disposal");
+ for(const legacyId of [2,3]) {
+   await page.evaluate(id=>{window.__visualQA.legacy={id,subject_name:`New synthetic Legacy ${id}`,access_role:"owner",setup_status:"collecting_identity"};dispatchEvent(new Event("legarya-legacy-change"));},legacyId);
+   assert.equal(await page.locator("#openVisualPresence").isVisible(),true);
+   const requestCount=await page.evaluate(()=>window.__visualQA.calls.length);
+   await page.locator("#openVisualPresence").click();
+   await page.getByText(/Finish this Legacy's identity setup with Rya/).waitFor();
+   assert.equal(await page.locator("[data-manage]").isVisible(),false);
+   assert.equal(await page.evaluate(()=>window.__visualQA.calls.length),requestCount);
+   results.checks.push(`new-legacy-${legacyId}-visible-setup-guidance-no-api`);
+ }
+ await page.evaluate(()=>{window.__visualQA.legacy.setup_status="active";dispatchEvent(new Event("legarya-legacy-change"));});
+ assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
+ await page.locator("#openVisualPresence").click();await page.locator("[data-manage]").waitFor({state:"visible"});
+ assert.ok(await page.evaluate(()=>window.__visualQA.calls.some(c=>c.route==="/legacies/3/visual-companion/capabilities")));
+ assert.equal(await page.locator("[data-source] option").count(),1);
+ results.checks.push("setup-completion-unlocks-current-legacy-only");
+ await page.evaluate(()=>{window.__visualQA.legacy={id:4,subject_name:"Another completed Legacy",access_role:"owner",setup_status:"active"};dispatchEvent(new Event("legarya-legacy-change"));});
+ assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
+ assert.equal(await page.locator("#openVisualPresence").isVisible(),true);
+ await page.locator("#openVisualPresence").click();await page.locator("[data-manage]").waitFor({state:"visible"});
+ assert.ok(await page.evaluate(()=>window.__visualQA.calls.some(c=>c.route==="/legacies/4/sources")));
+ results.checks.push("second-completed-legacy-visible-scoped");
+ for(const legacy of [{id:5,access_role:"viewer",setup_status:"active"},null]) {
+   await page.evaluate(value=>{window.__visualQA.legacy=value;dispatchEvent(new Event("legarya-legacy-change"));},legacy);
+   assert.equal(await page.locator("#openVisualPresence").isVisible(),false);
+   assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
+ }
+ results.checks.push("viewer-and-missing-legacy-hidden");
  assert.deepEqual(errors,[]);results.pageErrors=0;console.log(JSON.stringify(results,null,2));await context.close();
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}

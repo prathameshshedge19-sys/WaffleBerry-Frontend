@@ -29,10 +29,14 @@
     async function open(sourceId = null) {
       close();
       const legacy = getLegacy();
-      if (!legacy || !["owner", "collaborator"].includes(legacy.access_role) || legacy.setup_status !== "active") return false;
+      if (!legacy || !["owner", "collaborator"].includes(legacy.access_role)) return false;
       state.legacy = { ...legacy }; state.open = true; state.loading = true; state.message = "Loading your sources…"; state.error = false; state.capabilities = null; polls = 0; abort = new AbortController();
       const token = epoch; emit();
       try {
+        if (legacy.setup_status !== "active") {
+          notice("Finish this Legacy's identity setup with Rya in the chat, then return here to add photos, letters and documents.");
+          return false;
+        }
         const capabilities = await client.capabilities(legacy.id, abort.signal);
         if (!current(token)) return false;
         state.capabilities = capabilities;
@@ -232,7 +236,7 @@
     entry.addEventListener("click", () => { opener = entry; panel.open(); });
     dialog.addEventListener("cancel", (event) => { event.preventDefault(); panel.close(); });
     dialog.addEventListener("click", (event) => { if (event.target === dialog) panel.close(); });
-    const contextChanged = () => { const legacy = getLegacy(); entry.hidden = !legacy || legacy.setup_status !== "active" || !["owner", "collaborator"].includes(legacy.access_role); if (panel.state.open && (entry.hidden || legacy?.id !== panel.state.legacy?.id || legacy?.access_role !== panel.state.legacy?.access_role)) panel.close(); };
+    const contextChanged = () => { const legacy = getLegacy(); entry.hidden = !legacy || !["owner", "collaborator"].includes(legacy.access_role); if (panel.state.open && (entry.hidden || legacy?.id !== panel.state.legacy?.id || legacy?.access_role !== panel.state.legacy?.access_role || legacy?.setup_status !== panel.state.legacy?.setup_status)) panel.close(); };
     root.addEventListener("legarya-legacy-change", contextChanged);
     root.addEventListener("pagehide", () => panel.close());
     document.addEventListener("visibilitychange", () => { if (document.hidden) panel.close(); });

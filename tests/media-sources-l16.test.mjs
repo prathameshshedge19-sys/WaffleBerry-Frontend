@@ -83,7 +83,8 @@ class Element {
 function ui(role = 'owner', rows = [source], transfer = async () => ({ blob: async () => new Blob(['image']) })) {
   const entry = new Element('button'), body = new Element('body');
   const doc = { body, createElement: (tag) => new Element(tag), querySelector: () => entry, addEventListener() {} };
-  const win = { LegaryaMedia: media, addEventListener() {} };
+  const events = {};
+  const win = { LegaryaMedia: media, addEventListener(name, fn) { events[name] = fn; } };
   const urls = { created: [], revoked: [] };
   const sandbox = { module: { exports: {} }, window: win, AbortController, setTimeout, clearTimeout, crypto: { randomUUID: () => 'request-key' }, URL: { createObjectURL: (blob) => { urls.created.push(blob); return 'blob:private-preview'; }, revokeObjectURL: (url) => urls.revoked.push(url) } };
   vm.runInNewContext(read('js/media-sources.js'), sandbox);
@@ -96,9 +97,35 @@ function ui(role = 'owner', rows = [source], transfer = async () => ({ blob: asy
     if (path.endsWith('/evidence')) return candidate.evidence;
     return rows;
   } };
-  const panel = sandbox.module.exports.mount(doc, auth, () => ({ id: 1, setup_status: 'active', access_role: role }));
-  return { panel, body, entry, calls, urls, find: (text) => body.all().find((n) => n.tagName === 'button' && n.textContent === text) };
+  let legacy = { id: 1, setup_status: 'active', access_role: role };
+  const panel = sandbox.module.exports.mount(doc, auth, () => legacy);
+  return { panel, body, entry, calls, urls, setLegacy(value) { legacy = value; events['legarya-legacy-change'](); }, find: (text) => body.all().find((n) => n.tagName === 'button' && n.textContent === text) };
 }
+
+test('new Legacy shows Media entry and setup guidance without fetching or uploading', async () => {
+  const s = ui(); s.setLegacy({ id: 2, setup_status: 'collecting_identity', access_role: 'owner' });
+  assert.equal(s.entry.hidden, false); await s.panel.open();
+  assert.equal(s.body.querySelector('dialog').open, true);
+  assert.match(s.body.text(), /Finish.*identity setup.*Rya/i);
+  assert.equal(s.calls.length, 0);
+  assert.equal(s.body.all().some(n => n.tagName === 'input'), false);
+  assert.equal(await s.panel.upload(file), false); assert.equal(s.calls.length, 0); s.panel.close();
+});
+
+test('media entry follows every Legacy and setup completion without exposing old panel state', async () => {
+  const s = ui(); await s.panel.open();
+  s.setLegacy({ id: 2, setup_status: 'collecting_identity', access_role: 'owner' });
+  assert.equal(s.entry.hidden, false); assert.equal(s.panel.state.open, false);
+  await s.panel.open(); s.setLegacy({ id: 2, setup_status: 'active', access_role: 'owner' });
+  assert.equal(s.panel.state.open, false); await s.panel.open();
+  assert.ok(s.calls.some(([route]) => route === '/legacies/2/sources'));
+  s.setLegacy({ id: 3, setup_status: 'active', access_role: 'owner' });
+  assert.equal(s.entry.hidden, false); assert.equal(s.panel.state.open, false);
+  await s.panel.open(); assert.ok(s.calls.some(([route]) => route === '/legacies/3/sources'));
+  s.setLegacy({ id: 4, setup_status: 'active', access_role: 'viewer' });
+  assert.equal(s.entry.hidden, true); assert.equal(s.panel.state.open, false);
+  s.setLegacy(null); assert.equal(s.entry.hidden, true);
+});
 test('actual panel renderer shows empty state and labeled file picker', async () => { const s = ui('owner', []); await s.panel.open(); assert.match(s.body.text(), /Start with a letter/); assert.ok(s.body.all().some((n) => n.tagName === 'input' && n.attributes['aria-label'] === 'Add a source file')); s.panel.close(); });
 test('owner rendering contains evidence, original access and review controls', async () => { const s = ui('owner', [{ ...source, safety_state: 'clean' }]); await s.panel.open(); await s.panel.select(source.id); assert.match(s.body.text(), /Asha grew jasmine/); assert.match(s.body.text(), /Page 2/); assert.ok(s.find('Preserve') && s.find('Edit') && s.find('Skip') && s.find('Download original')); s.panel.close(); });
 test('collaborator rendering removes all owner review controls', async () => { const s = ui('collaborator'); await s.panel.open(); await s.panel.select(source.id); for (const label of ['Preserve', 'Edit', 'Skip', 'Delete source']) assert.equal(s.find(label), undefined); assert.match(s.body.text(), /owner can read your uploads/); s.panel.close(); });

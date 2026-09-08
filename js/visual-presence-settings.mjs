@@ -102,6 +102,7 @@ if (auth && entry && window.LegaryaMedia) {
     find("[data-manage]").hidden=true;find("[data-delete-confirm]").hidden=true;find("[data-candidate]").hidden=true;find("[data-chooser]").hidden=false;
     find("[data-subject]").textContent=legacy.subject_name || "Selected Legacy";
     if(legacy.access_role!=="owner"){notice("Visual Presence is managed by the Legacy owner. You cannot prepare, preview or change their portrait.");return;}
+    if(legacy.setup_status!=="active"){notice("Finish this Legacy's identity setup with Rya in the chat, then return here to choose a photo and prepare its Visual Presence.");return;}
     await perform(async()=>{
       const available=await client.capabilities(legacy.id,abort.signal);if(!current(token))return;capabilities=available;
       if(!capabilities.enabled){notice("Visual Presence is not enabled for this Legacy yet.");return;}
@@ -160,7 +161,7 @@ if (auth && entry && window.LegaryaMedia) {
   }));
   find("[data-close]").addEventListener("click",close); dialog.addEventListener("cancel",event=>{event.preventDefault();close();});
   entry.addEventListener("click",()=>void open());
-  function updateEntry(){if(dialog.open)close();const active=getLegacy();entry.hidden=!active||active.setup_status!=="active"||!["owner","collaborator"].includes(active.access_role);entry.title=active?.access_role==="collaborator"?"Managed by the Legacy owner":"Manage Visual Presence";}
+  function updateEntry(){if(dialog.open)close();const active=getLegacy();entry.hidden=!active||!["owner","collaborator"].includes(active.access_role);entry.title=active?.access_role==="collaborator"?"Managed by the Legacy owner":"Manage Visual Presence";}
   window.addEventListener("legarya-legacy-change",updateEntry);window.addEventListener("legarya:session-expired",close);window.addEventListener("pagehide",close);
   window.addEventListener("legarya:session-ending",close);
   document.addEventListener("visibilitychange",()=>{if(document.hidden&&dialog.open)close();});updateEntry();
