@@ -7,9 +7,9 @@ const assert = (valid) => { if (!valid) throw new Error("Visual bundle unavailab
 export const visualError = (error) => {
   const code = error?.details?.detail?.code || error?.code;
   if (["visual_needs_recrop", "visual_image_dimensions", "visual_crop_invalid"].includes(code)) return "Please reposition the person inside the square frame, or choose another clear photo.";
-  return ({ 401: "Please sign in again.", 403: "Visual Presence is managed by the Legacy owner.",
+  return ({ 401: "Please sign in again.", 403: "Face recreation is managed by the Legacy owner.",
     404: "This visual is no longer available.", 409: "This Legacy changed. Refresh and review the current version before trying again.",
-    429: "The preparation limit has been reached. Please try again later." })[error?.status] || "Visual Presence is temporarily unavailable. Your memories and voice conversations are unaffected.";
+    429: "The preparation limit has been reached. Please try again later." })[error?.status] || "Face recreation is temporarily unavailable. Your memories and voice conversations are unaffected.";
 };
 
 export function validateManifest(data, id, version = null) {

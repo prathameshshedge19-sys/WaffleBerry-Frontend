@@ -1,4 +1,4 @@
-import { createVisualClient, visualError } from "./visual-presence-client.mjs?v=l19c1";
+import { createVisualClient, visualError } from "./visual-presence-client.mjs?v=face1";
 import { mountCropControls } from "./visual-crop.mjs?v=l19c1";
 import { createVisualPresence } from "./visual-presence-controller.mjs?v=l19c1";
 import { createPortraitRenderer } from "./legacy-portrait-renderer.mjs?v=l19c1";
@@ -9,15 +9,15 @@ if (auth && entry && window.LegaryaMedia) {
   const client = createVisualClient(auth), media = window.LegaryaMedia.createClient(auth);
   const dialog = document.createElement("dialog"); dialog.className = "visual-settings";
   dialog.setAttribute("aria-labelledby", "visualTitle");
-  dialog.innerHTML = `<header><div><p class="visual-eyebrow">Legacy settings</p><h2 id="visualTitle">Visual Presence</h2></div><button type="button" data-close aria-label="Close Visual Presence">Close</button></header>
+  dialog.innerHTML = `<header><div><p class="visual-eyebrow">Legacy settings</p><h2 id="visualTitle">Recreate Legacy's Face</h2></div><button type="button" data-close aria-label="Close Recreate Legacy's Face">Close</button></header>
     <p data-subject class="visual-subject"></p>
-    <p class="visual-intro">A gentle, animated portrait for Legacy voice calls. Your memories remain the source of what is said. Visual Presence never creates facts or changes a voice.</p>
+    <p class="visual-intro">Create an animated portrait from a photo, even before identity setup. Your memories remain the source of what is said. Recreating a face never creates facts or changes a voice.</p>
     <p data-notice role="status" aria-live="polite"></p>
     <section data-manage hidden><div class="visual-current"><h3>Current portrait</h3><p data-current></p><div class="visual-actions"><button type="button" data-view-current>Preview current</button><button type="button" data-toggle>Disable</button><button type="button" data-replace>Replace photo</button><button type="button" data-regenerate>Regenerate</button><button type="button" data-remove>Delete Visual Companion</button></div></div>
     <div data-delete-confirm hidden class="visual-warning"><p>Delete the Visual Companion and its prepared portraits? The original photo stays in Media &amp; Sources. Memories, Timeline, Stories and conversations are unchanged.</p><button type="button" data-delete-yes>Delete prepared portraits</button><button type="button" data-delete-no>Keep portraits</button></div>
     <div data-chooser><h3>Choose a photo</h3><p>Use one clear face with room around the head. For a group photo, manually frame only the intended person. Faded, grayscale and old photographs are welcome.</p><label>Existing Media &amp; Sources image<select data-source><option value="">Choose an image</option></select></label><p class="visual-or">or</p><label class="visual-upload">Upload a portrait<input data-upload type="file" accept="image/jpeg,image/png,image/webp"></label><p class="visual-hint">JPEG, PNG or WebP · up to 20 MB. New portrait uploads are private visual references: no memory suggestions or factual extraction.</p></div>
     <section data-crop-section hidden><h3>Frame one person</h3><p>Drag to position, use Zoom, or focus the image and use arrow keys. The square shown here is the exact crop used.</p><div data-crop></div>
-    <label class="visual-confirm"><input type="checkbox" data-confirm><span data-consent></span></label><button type="button" data-generate disabled>Prepare private preview</button></section>
+    <label class="visual-confirm"><input type="checkbox" data-confirm><span data-consent></span></label><button type="button" data-generate aria-describedby="visualPrepareHelp" disabled>Prepare private preview</button><p id="visualPrepareHelp" data-prepare-help class="visual-hint" role="status"></p></section>
     <section data-candidate hidden><h3>Private preview</h3><p data-candidate-status></p><div class="visual-preview" data-preview aria-hidden="true"></div><p>AI-animated portrait, not a recording. Movement is approximate. Live calls use the existing standard AI voice, not the person's recorded voice.</p><label><input type="checkbox" data-static>Show static photo</label><div class="visual-actions"><button type="button" data-approve disabled>Approve &amp; use in Legacy calls</button><button type="button" data-refresh>Refresh preparation status</button></div><p class="visual-hint">Nothing is shown to visitors until you approve this exact preview. Your current approved portrait stays active while a replacement is prepared.</p></section>
     </section>`;
   document.body.append(dialog);
@@ -36,6 +36,7 @@ if (auth && entry && window.LegaryaMedia) {
     find("[data-crop]").inert=value;
     for(const button of dialog.querySelectorAll("[data-manage] button, [data-manage] select, [data-upload], [data-confirm]")) button.disabled=value;
     find("[data-generate]").disabled=value || !crop || !find("[data-confirm]").checked || !capabilities?.can_prepare;
+    find("[data-prepare-help]").textContent=value ? "Please wait…" : !capabilities?.can_prepare ? "Face preparation is temporarily unavailable. Your photo is saved; close and reopen this panel to try again." : !find("[data-confirm]").checked ? "Tick the permission box above, then prepare your private preview. Identity setup is not required." : "Next: prepare your private preview, inspect it, then approve it. Identity setup is not required.";
     find("[data-approve]").disabled=value || !preview?.approval() || candidate?.id===profile?.current_version_id;
     find("[data-toggle]").disabled=value || !profile?.current_version_id || profile.deleted;
     find("[data-regenerate]").disabled=value || !profile?.current_version_id || !capabilities?.can_prepare;
@@ -84,11 +85,11 @@ if (auth && entry && window.LegaryaMedia) {
     const decoded=await createImageBitmap(blob,{imageOrientation:"from-image"});
     if(!current(token)||chosen!==selection){decoded.close();return;}
     bitmap=decoded;source=row;
-    try { crop=mountCropControls(find("[data-crop]"),bitmap,{initial,onChange:()=>{pending=null;find("[data-confirm]").checked=false;find("[data-generate]").disabled=true;}}); }
+    try { crop=mountCropControls(find("[data-crop]"),bitmap,{initial,onChange:()=>{pending=null;find("[data-confirm]").checked=false;lock(busy);}}); }
     catch(error){clearCrop();throw error;}
     find("[data-crop-section]").hidden=false;
     find("[data-consent]").textContent=`Use this selected image for ${legacy.subject_name || "this Legacy"}'s Visual Companion. I have permission to use this likeness and understand that the animated result is an AI-generated representation, not a recording of this person.`;
-    notice(legacy.setup_status === "active" ? "" : "Your photo is saved privately. Animated portrait preparation becomes available after identity setup with Rya.");find("[data-crop-section]").scrollIntoView({block:"nearest"});
+    notice("Your photo is saved privately. Frame the face, confirm permission, then prepare your preview. Identity setup is not required.");find("[data-crop-section]").scrollIntoView({block:"nearest"});
   }
   async function sourceList(token) {
     const rows=await media.list(legacy.id,abort.signal);if(!current(token))return;
@@ -101,14 +102,14 @@ if (auth && entry && window.LegaryaMedia) {
     legacy={...legacy}; focus=document.activeElement; dialog.showModal(); abort=new AbortController(); const token=epoch;
     find("[data-manage]").hidden=true;find("[data-delete-confirm]").hidden=true;find("[data-candidate]").hidden=true;find("[data-chooser]").hidden=false;
     find("[data-subject]").textContent=legacy.subject_name || "Selected Legacy";
-    if(legacy.access_role!=="owner"){notice("Visual Presence is managed by the Legacy owner. You cannot prepare, preview or change their portrait.");return;}
+    if(legacy.access_role!=="owner"){notice("Face recreation is managed by the Legacy owner. You cannot prepare, preview or change their portrait.");return;}
     await perform(async()=>{
       const available=await client.capabilities(legacy.id,abort.signal);if(!current(token))return;capabilities=available;
-      if(!capabilities.enabled){notice("Visual Presence is not enabled for this Legacy yet.");return;}
+      if(!capabilities.enabled){notice("Face recreation is not available for this Legacy right now.");return;}
       if(!capabilities.can_manage || capabilities.confirmation_copy_version!=="l19-likeness-v1")throw new Error("Unsupported visual setup.");
       await refreshProfile(token); if(!current(token))return;
       await sourceList(token); if(!current(token))return;
-      find("[data-manage]").hidden=false;notice(legacy.setup_status !== "active" ? "Upload or choose a photo now. Animated portrait preparation becomes available after identity setup with Rya." : capabilities.can_prepare ? "" : "Preparation is temporarily unavailable. You can still manage an existing portrait.");
+      find("[data-manage]").hidden=false;notice(capabilities.can_prepare ? "Upload or choose a photo, prepare a private preview, then approve it. Identity setup is not required." : "Preparation is temporarily unavailable. You can still manage an existing portrait.");
       polls=0;if(profile.desired_version_id && profile.desired_version_id!==profile.current_version_id)await showVersion(profile.desired_version_id,token);
     });
   }
@@ -141,7 +142,7 @@ if (auth && entry && window.LegaryaMedia) {
   }));
   find("[data-toggle]").addEventListener("click",()=>void perform(async token=>{
     clearPreview();await client.toggle(legacy.id,!profile.enabled,profile.revision,abort.signal);if(!current(token))return;
-    invalidate();await refreshProfile(token);if(current(token))notice(profile.enabled?"Visual Presence enabled.":"Visual Presence disabled. Voice and memories are unchanged.");
+    invalidate();await refreshProfile(token);if(current(token))notice(profile.enabled?"Recreated face enabled.":"Recreated face disabled. Voice and memories are unchanged.");
   }));
   find("[data-replace]").addEventListener("click",()=>{clearCrop();find("[data-chooser]").hidden=false;find("[data-source]").focus();});
   find("[data-regenerate]").addEventListener("click",()=>void perform(async token=>{
@@ -160,7 +161,7 @@ if (auth && entry && window.LegaryaMedia) {
   }));
   find("[data-close]").addEventListener("click",close); dialog.addEventListener("cancel",event=>{event.preventDefault();close();});
   entry.addEventListener("click",()=>void open());
-  function updateEntry(){if(dialog.open)close();const active=getLegacy();entry.hidden=!active||!["owner","collaborator"].includes(active.access_role);entry.title=active?.access_role==="collaborator"?"Managed by the Legacy owner":"Manage Visual Presence";}
+  function updateEntry(){if(dialog.open)close();const active=getLegacy();entry.hidden=!active||!["owner","collaborator"].includes(active.access_role);entry.title=active?.access_role==="collaborator"?"Managed by the Legacy owner":"Recreate Legacy's Face";}
   window.addEventListener("legarya-legacy-change",updateEntry);window.addEventListener("legarya:session-expired",close);window.addEventListener("pagehide",close);
   window.addEventListener("legarya:session-ending",close);
   document.addEventListener("visibilitychange",()=>{if(document.hidden&&dialog.open)close();});updateEntry();

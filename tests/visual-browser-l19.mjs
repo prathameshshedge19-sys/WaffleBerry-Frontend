@@ -40,7 +40,7 @@ try {
     async apiRequest(route,options={}){
       state.calls.push({route,method:options.method||"GET",body:options.body});
       if(options.signal?.aborted)throw new DOMException("Aborted","AbortError");
-      if(route.endsWith("/capabilities"))return{enabled:true,can_manage:state.legacy.access_role==="owner",can_prepare:state.legacy.setup_status==="active",confirmation_copy_version:"l19-likeness-v1"};
+      if(route.endsWith("/capabilities"))return{enabled:true,can_manage:state.legacy.access_role==="owner",can_prepare:["active","collecting_identity"].includes(state.legacy.setup_status),confirmation_copy_version:"l19-likeness-v1"};
       if(route.endsWith("/sources")){if(options.method==="POST"){source.legacy_id=state.legacy.id;return source;}return [source];}
       if(route.endsWith("/sources/"+source.id))return source;
       if(route.endsWith("/versions")&&options.method==="POST"){
@@ -49,7 +49,7 @@ try {
       if(route.endsWith("/activate")){const b=options.body;if(b.expected_revision!==state.profile.revision||!b.approved||b.bundle_digest!==(await assets()).bundle_digest)throw new Error("Stale activation");state.profile.current_version_id=b.version_id;state.profile.enabled=true;state.profile.revision++;return{...state.profile};}
       if(route.includes("/manifest")||route.endsWith("/active-manifest")){
         if(state.revoke)denied();const b=await assets(),v=route.includes("/versions/")?route.split("/versions/")[1].split("/")[0]:state.profile.current_version_id;if(!v)denied();
-        const base=`/api/v1/legacies/1/visual-companion/${route.includes("/versions/")?"versions/"+v:"active"}/assets/`;
+        const base=`/api/v1/legacies/${state.legacy.id}/visual-companion/${route.includes("/versions/")?"versions/"+v:"active"}/assets/`;
         return{version_id:v,recipe:"portrait_2d_v1",revision:state.profile.revision,bundle_digest:b.bundle_digest,lease_seconds:15,valid_until:new Date(Date.now()+15000).toISOString(),assets:b.descriptors.map(a=>({...a,content_path:base+a.id+"/content"}))};
       }
       if(route.includes("/versions/"))return {...state.versions[route.split("/versions/")[1]]};
@@ -85,13 +85,13 @@ try {
  assert.ok(await page.evaluate(()=>document.querySelector(".visual-settings").scrollWidth<=390));results.checks.push("390px-layout");
  await page.setViewportSize({width:820,height:1180});assert.ok(await page.evaluate(()=>document.querySelector(".visual-settings").getBoundingClientRect().width<=820));results.checks.push("tablet-layout");
  await page.evaluate(()=>{window.__visualQA.revoke=true;});await page.locator(".visual-presence-poster").waitFor({state:"detached",timeout:10000});assert.equal(await page.locator("[data-approve]").isDisabled(),true);results.checks.push("lease-revocation-removes-private-bytes");
- await page.evaluate(()=>{window.__visualQA.revoke=false;});await page.locator("[data-toggle]").click();await page.getByText("Visual Presence disabled. Voice and memories are unchanged.",{exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),false);results.checks.push("owner-disable");
+ await page.evaluate(()=>{window.__visualQA.revoke=false;});await page.locator("[data-toggle]").click();await page.getByText("Recreated face disabled. Voice and memories are unchanged.",{exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),false);results.checks.push("owner-disable");
  await page.locator("[data-remove]").click();await page.locator("[data-delete-yes]").click();await page.getByText("Prepared portraits are being erased. The original photo remains in Media & Sources.",{exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.includes("/sources")&&c.method==="DELETE").length),0);results.checks.push("delete-retains-original");
  await page.locator("[data-close]").click();assert.equal(await page.locator(".visual-presence-canvas").count(),0);assert.equal(await page.locator(".visual-crop-canvas").count(),0);
- const before=await page.evaluate(()=>window.__visualQA.calls.length);await page.evaluate(()=>{window.__visualQA.legacy={...window.__visualQA.legacy,access_role:"collaborator"};dispatchEvent(new Event("legarya-legacy-change"));});await page.locator("#openVisualPresence").click();await page.getByText(/Visual Presence is managed by the Legacy owner/).waitFor();assert.equal(await page.evaluate(()=>window.__visualQA.calls.length),before);results.checks.push("collaborator-no-owner-api","close-disposal");
+ const before=await page.evaluate(()=>window.__visualQA.calls.length);await page.evaluate(()=>{window.__visualQA.legacy={...window.__visualQA.legacy,access_role:"collaborator"};dispatchEvent(new Event("legarya-legacy-change"));});await page.locator("#openVisualPresence").click();await page.getByText(/Face recreation is managed by the Legacy owner/).waitFor();assert.equal(await page.evaluate(()=>window.__visualQA.calls.length),before);results.checks.push("collaborator-no-owner-api","close-disposal");
  for(const legacyId of [2,3]) {
-   await page.evaluate(id=>{window.__visualQA.legacy={id,subject_name:`New synthetic Legacy ${id}`,access_role:"owner",setup_status:"collecting_identity"};dispatchEvent(new Event("legarya-legacy-change"));},legacyId);
+   await page.evaluate(id=>{window.__visualQA.legacy={id,subject_name:null,access_role:"owner",setup_status:"collecting_identity"};window.__visualQA.profile={revision:0,enabled:false,current_version_id:null,desired_version_id:null,deleted:false};window.__visualQA.versions={};dispatchEvent(new Event("legarya-legacy-change"));},legacyId);
    assert.equal(await page.locator("#openVisualPresence").isVisible(),true);
    const preparations=await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').length);
    await page.locator("#openVisualPresence").click();
@@ -99,16 +99,25 @@ try {
    await page.locator('[data-upload]').setInputFiles({name:'Synthetic pending photo.png',mimeType:'image/png',buffer:Buffer.from('synthetic upload adapter')});
    await page.locator('.visual-crop-canvas').waitFor();
    await page.locator('[data-confirm]').check();
-   assert.equal(await page.locator('[data-generate]').isDisabled(),true);
-   assert.equal(await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').length),preparations);
-   results.checks.push(`new-legacy-${legacyId}-real-upload-control-and-crop-no-preparation`);
+   assert.equal(await page.locator('[data-generate]').isDisabled(),false);
+   assert.match(await page.locator('[data-prepare-help]').innerText(),/Identity setup is not required/);
+   await page.locator('[data-generate]').click();
+   await page.locator('[data-approve]:not([disabled])').waitFor();
+   assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),false);
+   await page.locator('[data-approve]').click();
+   await page.getByText("Approved and enabled for authorized Legacy calls.",{exact:true}).waitFor();
+   assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),true);
+   assert.equal(await page.evaluate(()=>window.__visualQA.legacy.setup_status),'collecting_identity');
+   assert.equal(await page.evaluate(()=>window.__visualQA.legacy.subject_name),null);
+   assert.equal(await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').length),preparations+1);
+   results.checks.push(`pending-legacy-${legacyId}-prepare-preview-approve-no-identity`);
  }
  await page.evaluate(()=>{window.__visualQA.legacy.setup_status="active";dispatchEvent(new Event("legarya-legacy-change"));});
  assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
  await page.locator("#openVisualPresence").click();await page.locator("[data-manage]").waitFor({state:"visible"});
  assert.ok(await page.evaluate(()=>window.__visualQA.calls.some(c=>c.route==="/legacies/3/visual-companion/capabilities")));
  assert.equal(await page.locator("[data-source] option").count(),2);
- results.checks.push("setup-completion-unlocks-current-legacy-only");
+ results.checks.push("setup-completion-preserves-current-legacy-scope");
  await page.evaluate(()=>{window.__visualQA.legacy={id:4,subject_name:"Another completed Legacy",access_role:"owner",setup_status:"active"};dispatchEvent(new Event("legarya-legacy-change"));});
  assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
  assert.equal(await page.locator("#openVisualPresence").isVisible(),true);
