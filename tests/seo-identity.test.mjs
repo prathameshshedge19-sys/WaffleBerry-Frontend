@@ -25,7 +25,7 @@ test("homepage structured data separates product and company identities", () => 
 });
 
 test("robots and sitemap index only the public homepage", () => {
-  assert.match(robots, /Allow: \/\n/);
+  assert.match(robots, /Allow: \/\r?\n/);
   assert.doesNotMatch(robots, /Disallow:/);
   assert.match(robots, /Sitemap: https:\/\/www\.waffleberry\.app\/sitemap\.xml/);
   assert.match(sitemap, /<loc>https:\/\/www\.waffleberry\.app\/<\/loc>/);

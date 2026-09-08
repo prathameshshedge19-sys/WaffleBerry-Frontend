@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/legacy-chat.css?v=1.2" />
     <link rel="stylesheet" href="css/stories.css?v=l18c1" />
   <link rel="stylesheet" href="css/live-voice.css?v=l15ui1">
+  <link rel="stylesheet" href="css/visual-presence.css?v=l19c1">
 </head>
   <body class="legacy-persona-workspace">
     <div class="workspace">
@@ -36,8 +37,8 @@
       </main>
     </div>
     <section id="voiceSettings" class="voice-settings" role="dialog" aria-modal="true" aria-labelledby="voiceSettingsTitle" hidden><button class="voice-settings-backdrop" type="button" aria-label="Close Voice Settings"></button><div class="voice-settings-panel"><header><div><small>Voice Settings</small><h2 id="voiceSettingsTitle">Rya voice</h2></div><button type="button" data-voice-close aria-label="Close Voice Settings">&times;</button></header><p>Choose the standard voice used for Rya and this AI Legacy.</p><div class="voice-options"><article data-voice="marin"><div><strong>Marin</strong><span>Warm &middot; expressive</span></div><div><button type="button" data-preview-voice="marin" aria-label="Preview Marin voice">Preview</button><button type="button" data-select-voice="marin">Select</button></div></article><article data-voice="cedar"><div><strong>Cedar</strong><span>Calm &middot; grounded</span></div><div><button type="button" data-preview-voice="cedar" aria-label="Preview Cedar voice">Preview</button><button type="button" data-select-voice="cedar">Select</button></div></article></div><small class="voice-disclosure">This is a standard AI voice, not the preserved person&rsquo;s actual or cloned voice.</small></div></section>
-    <script src="js/vendor/marked.umd.js?v=18.0.11"></script><script src="js/vendor/purify.min.js?v=3.4.14"></script><script src="js/markdown.js?v=1.0"></script><script src="js/auth-config.js?v=1.1"></script><script src="js/auth-api.js?v=1.5"></script><script src="js/microphone-ownership.js?v=l15c1"></script><script src="js/audio-ownership.js?v=l15d1"></script><script src="js/voice-chat.js?v=l15f1"></script><script src="js/legacy-chat.js?v=l15f1"></script>
-  <script type="module" src="js/live-voice.mjs?v=l15ui1"></script>
+    <script src="js/vendor/marked.umd.js?v=18.0.11"></script><script src="js/vendor/purify.min.js?v=3.4.14"></script><script src="js/markdown.js?v=1.0"></script><script src="js/auth-config.js?v=1.1"></script><script src="js/auth-api.js?v=l19c1"></script><script src="js/microphone-ownership.js?v=l15c1"></script><script src="js/audio-ownership.js?v=l15d1"></script><script src="js/voice-chat.js?v=l15f1"></script><script src="js/legacy-chat.js?v=l15f1"></script>
+  <script type="module" src="js/live-voice.mjs?v=l19c1"></script>
     <section id="visitorStoriesPanel" class="stories-dashboard" role="dialog" aria-modal="true" aria-labelledby="visitorStoriesTitle" hidden><button class="stories-backdrop" type="button" aria-label="Close Stories" onclick="this.parentElement.hidden=true"></button><div class="stories-panel"><header class="stories-header"><div><p>Shared with you</p><h2 id="visitorStoriesTitle">Stories</h2><span>Published chapters from this Legacy.</span></div><button id="closeVisitorStories" class="stories-close" type="button" aria-label="Close Stories">&times;</button></header><div id="visitorStoriesContent" class="stories-content"></div></div></section>
     <script src="js/stories-client.js?v=l18c1"></script><script src="js/stories-visitor.js?v=l18c1"></script>
 </body>

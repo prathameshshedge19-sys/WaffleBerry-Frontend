@@ -11,6 +11,12 @@
     ACTIVE_CONVERSATION_ID: "activeConversationId",
   });
   let accessToken = null;
+  let sessionIdentity = null, sessionEpoch = 0;
+  const retirePresentation = () => {
+    ++sessionEpoch;
+    // No token/identity is exposed in this local lifecycle notification.
+    try { if (window.dispatchEvent && typeof Event === "function") window.dispatchEvent(new Event("legarya:session-ending")); } catch {}
+  };
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
 
   class ApiError extends Error {
@@ -54,12 +60,15 @@
   };
 
   const storeSession = (accessTokenValue, currentUser) => {
+    if (sessionIdentity !== currentUser?.id) retirePresentation();
+    sessionIdentity = currentUser?.id;
     accessToken = accessTokenValue;
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
   };
 
   const clearStoredSession = () => {
+    retirePresentation(); sessionIdentity = null;
     accessToken = null;
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
@@ -229,6 +238,19 @@
     return fetchWithToken(path, options, true, mediaBase);
   };
 
+  const authenticatedVisualFetch = (path, options = {}) => {
+    const uuid = "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}";
+    const route = new RegExp(`^/legacies/[1-9][0-9]*/visual-companion/(active|versions/${uuid})/assets/${uuid}/content$`);
+    if (!route.test(path) || (options.method && options.method !== "GET") || options.body) {
+      throw new ApiError("Invalid visual request.", { kind: "validation" });
+    }
+    const base = config.mediaBaseUrl || API_BASE_URL;
+    if (base !== API_BASE_URL && base !== "https://89-167-14-211.sslip.io/api/v1") {
+      throw new ApiError("Visual transfers are not configured.", { kind: "configuration" });
+    }
+    return fetchWithToken(path, { ...options, method: "GET", redirect: "error", cache: "no-store" }, true, base);
+  };
+
   const authenticateUser = async (email, password, rememberMe = false) => {
     const response = await apiRequest("/auth/login", {
       method: "POST",
@@ -250,6 +272,7 @@
   };
 
   const logout = async () => {
+    retirePresentation(); // Revoke private visuals before waiting for the network.
     try {
       await apiRequest("/auth/logout", { method: "POST" });
     } finally {
@@ -273,6 +296,7 @@
     apiRequest,
     authenticatedFetch,
     authenticatedMediaFetch,
+    authenticatedVisualFetch,
     streamRequest,
     authenticateUser,
     authenticateWithGoogle,
@@ -281,5 +305,6 @@
     logout,
     refreshSession,
     storeAuthenticatedSession,
+    getSessionEpoch: () => sessionEpoch,
   });
 })();

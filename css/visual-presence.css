@@ -1,0 +1,40 @@
+.visual-settings { box-sizing:border-box; width:min(760px,calc(100vw - 28px)); max-height:calc(100dvh - 28px); padding:28px; border:1px solid #786248; border-radius:22px; background:#15120f; color:#f4ece1; box-shadow:0 28px 110px #0009; font:15px/1.6 system-ui,sans-serif; }
+.visual-settings::backdrop { background:#080604d9; backdrop-filter:blur(8px); }
+.visual-settings [hidden] { display:none!important; }
+.visual-settings header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+.visual-settings h2 { margin:0; font:36px/1.2 "Cormorant Garamond",Georgia,serif; }
+.visual-settings h3 { margin:0 0 10px; font:26px/1.3 "Cormorant Garamond",Georgia,serif; }
+.visual-settings p { margin:10px 0; }
+.visual-settings .visual-eyebrow { margin:0 0 8px; color:#d9b982; font-size:11px; text-transform:uppercase; letter-spacing:.12em; }
+.visual-subject { font-size:18px; color:#ecd2a7; overflow-wrap:anywhere; }
+.visual-intro,.visual-settings section>p { color:#d0c4b4; }
+.visual-settings button,.visual-settings select,.visual-settings input { font:inherit; }
+.visual-settings button { min-height:44px; border:1px solid #897151; border-radius:12px; padding:9px 14px; background:#30271c; color:#f5eee4; cursor:pointer; }
+.visual-settings button:hover:not(:disabled) { background:#4b3925; }
+.visual-settings button:disabled { opacity:.5; cursor:default; }
+.visual-settings :focus-visible { outline:3px solid #ffe2a8; outline-offset:3px; }
+.visual-settings [data-generate],.visual-settings [data-approve] { background:#dfc292; color:#241b0f; font-weight:600; }
+.visual-settings [data-delete-yes] { background:#662f2a; color:#fff2ea; }
+.visual-settings select { display:block; box-sizing:border-box; width:100%; min-height:44px; padding:10px; margin:8px 0 12px; border:1px solid #897151; border-radius:8px; background:#201a14; color:#f4ece1; }
+.visual-current,[data-chooser],.visual-settings [data-crop-section],.visual-settings [data-candidate] { padding:22px 0; border-top:1px solid #80664755; margin-top:12px; }
+.visual-actions,.visual-crop-controls { display:flex; gap:10px; flex-wrap:wrap; margin:12px 0; }
+.visual-upload { display:flex; flex-wrap:wrap; gap:12px; padding:16px; border:1px dashed #998161; border-radius:12px; }
+.visual-upload input { width:100%; max-width:100%; color:#e6d2b7; }
+.visual-settings .visual-hint,.visual-settings .visual-or { color:#c0b09a; font-size:12px; }
+.visual-confirm { display:flex; gap:12px; align-items:flex-start; margin:20px 0; }
+.visual-settings input[type=checkbox] { flex:none; width:20px; height:20px; margin:4px 0 0; accent-color:#e2bd83; }
+.visual-settings [data-candidate]>label { display:flex; align-items:center; gap:9px; }
+.visual-settings input[type=range] { max-width:100%; min-height:32px; accent-color:#e2bd83; }
+.visual-crop-controls label { display:flex; align-items:center; gap:12px; }
+.visual-crop-canvas { display:block; width:min(100%,420px); height:auto; aspect-ratio:1; margin:16px auto; outline:1px solid #d4bc93; outline-offset:4px; touch-action:none; cursor:grab; }
+.visual-crop-canvas:active { cursor:grabbing; }
+.visual-preview { position:relative; display:grid; place-items:center; width:min(100%,380px); aspect-ratio:1; margin:20px auto; overflow:hidden; border-radius:14px; background:#241c13; }
+.visual-preview .visual-presence-canvas,.visual-preview .visual-presence-poster { display:block; width:100%; height:100%; object-fit:contain; grid-area:1/1; }
+.visual-warning { padding:16px; border:1px solid #b0875c; border-radius:12px; background:#5e3d1b22; }
+.visual-error { color:#ffc4b9; }
+.live-call[data-mode=legacy] .live-call-presence { width:clamp(160px,30dvh,290px); height:auto; aspect-ratio:1; margin:18px 0; border-radius:18px; overflow:hidden; }
+.live-call[data-mode=legacy] .visual-presence-canvas,.live-call[data-mode=legacy] .visual-presence-poster { display:block; grid-area:1/1; width:100%; height:100%; object-fit:contain; }
+.visual-preview [hidden],.live-call-presence [hidden] { display:none!important; }
+.live-call button[data-live-static] { min-height:40px; margin-top:8px; padding:6px 14px; border-color:transparent; background:transparent; color:#d5c2a7; font-size:12px; }
+@media(max-width:600px) { .visual-settings { width:100%; max-width:100%; max-height:100dvh; height:100dvh; border-radius:0; padding:22px 20px; } .visual-settings h2 { font-size:30px; } .visual-actions button { flex:1 1 auto; } }
+@media(prefers-reduced-motion:reduce) { .visual-settings *, .visual-preview *, .live-call[data-mode=legacy] * { animation:none!important; transition:none!important; } }

@@ -1,4 +1,4 @@
-import { RealtimePlayback } from "./realtime-playback.mjs";
+import { RealtimePlayback } from "./realtime-playback.mjs?v=l19c1";
 const validId = (id) => Number.isInteger(id) && id > 0;
 const validateScope = (scope) => {
   if (validId(scope.conversation_id) && Object.keys(scope).length === 1) return { ...scope };
@@ -7,7 +7,7 @@ const validateScope = (scope) => {
 };
 
 export class RealtimeClient {
-  constructor({ api, websocketUrl, onEvent = () => {}, environment = globalThis }) {
+  constructor({ api, websocketUrl, onEvent = () => {}, onPresentation = () => {}, environment = globalThis }) {
     this.api = api;
     this.environment = environment;
     const url = new URL(websocketUrl, environment.location.href);
@@ -17,6 +17,7 @@ export class RealtimeClient {
     }
     this.url = url.href;
     this.onEvent = onEvent;
+    this.onPresentation = onPresentation;
     this.epoch = 0;
     this.receipts = new Map();
     this.socket = null;
@@ -70,6 +71,7 @@ export class RealtimeClient {
       }
     };
     this.playback = new RealtimePlayback({ context, environment: env,
+      onPresentation: (event) => { try { this.onPresentation(event); } catch {} },
       send: (event) => this.sendPlayback(event), onState: (state) => this.onEvent({ type: state }),
       onEnergy: (value) => this.onEvent({ type: "output_energy", value }),
       onFault: (message) => this.fail(message) });
@@ -160,7 +162,7 @@ export class RealtimeClient {
     node.port.onmessage = ({ data }) => {
       if (epoch !== this.epoch || !this.stream) return;
       if (data.type === "overrun") return this.fail("Audio could not keep up. Please repeat unfinished speech.");
-      if (data.type === "speech_started") { if (!this.muted) { this.stopSpeaking(); this.onEvent({ type: "listening" }); } return; }
+      if (data.type === "speech_started") { if (!this.muted) { this.stopSpeaking(); this.onEvent({ type: "listening", source: "microphone" }); } return; }
       if (data.type === "energy") { this.onEvent({ type: "input_energy", value: this.muted ? 0 : data.value }); return; }
       if (data.type !== "pcm") return;
       const bytes = new Uint8Array(data.pcm);

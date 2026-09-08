@@ -22,7 +22,7 @@ test("crawler controls leave noindex pages crawlable and obsolete route redirect
   const robots = await readFile(new URL("../robots.txt", import.meta.url), "utf8");
   const sitemap = await readFile(new URL("../sitemap.xml", import.meta.url), "utf8");
   const vercel = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
-  assert.match(robots, /Allow: \/\n/);
+  assert.match(robots, /Allow: \/\r?\n/);
   assert.doesNotMatch(robots, /Disallow:/);
   assert.match(sitemap, /<loc>https:\/\/www\.waffleberry\.app\/<\/loc>/);
   assert.doesNotMatch(sitemap, /experience\.html|auth\.html|chat\.html/);

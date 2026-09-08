@@ -1,4 +1,4 @@
-import { RealtimeClient } from "./realtime-client.mjs";
+import { RealtimeClient } from "./realtime-client.mjs?v=l19c1";
 import { liveVoiceAvailability, liveVoiceError, liveWebsocketUrl } from "./live-voice-policy.mjs";
 import { createRyaRenderer } from "./rya-renderer.mjs";
 import "./legarya-soundscape.js?v=3.6";
@@ -21,6 +21,7 @@ if (adapter && entry) {
     <button type="button" data-live-resume hidden>Resume microphone</button>
     <button type="button" data-live-close hidden>Return to chat</button>
     <button type="button" data-live-ambience aria-pressed="true">Ambient sound on</button>
+    <button type="button" data-live-static aria-pressed="false" hidden>Show static photo</button>
     <p class="live-call-footnote">Keep this page open. Switching apps or locking your screen ends the call.</p>
   </div>`;
   document.body.append(dialog);
@@ -33,7 +34,23 @@ if (adapter && entry) {
   let refreshQueue = Promise.resolve();
   const partials = new Map();
   let presence = null, ambience = null, previousPresenceActive = false;
+  let visualPresence = null, visualEpoch = 0, staticPhoto = false;
+  function releasePortrait() { ++visualEpoch; try { visualPresence?.dispose(); } catch {} visualPresence = null; }
+  function startPortrait() {
+    releasePortrait();
+    if (context?.mode !== "legacy" || !active || finishing || finished) return;
+    const token = serial, load = visualEpoch, snapshot = context, account = window.LegaryaAuthApi.getSessionEpoch?.();
+    const guard = () => account === window.LegaryaAuthApi.getSessionEpoch?.() && token === serial && load === visualEpoch && context === snapshot && active && !finishing && !finished && context.mode === "legacy";
+    // Optional loading runs beside audio startup; failures never reach client.fail.
+    void Promise.all([import("./visual-presence-client.mjs?v=l19c1"), import("./visual-presence-controller.mjs?v=l19c1"), import("./legacy-portrait-renderer.mjs?v=l19c1")]).then(([api, controller, renderer]) => {
+      if (!guard()) return;
+      visualPresence = controller.createVisualPresence({ host: find(".live-call-presence"), client: api.createVisualClient(window.LegaryaAuthApi), legacyId: snapshot.legacyId,
+        name: snapshot.name || "L", guard, staticPhoto, rendererFactory: renderer.createPortraitRenderer });
+      return visualPresence.start();
+    }).catch(() => { if (guard()) releasePortrait(); });
+  }
   function releasePresence() {
+    releasePortrait();
     presence?.dispose(); presence = null;
     ambience?.release(); ambience = null;
     if (previousPresenceActive) window.RyaEnergyControl?.setActive(true);
@@ -47,6 +64,7 @@ if (adapter && entry) {
     return refreshQueue;
   };
   function show(next, message) {
+    try { visualPresence?.setCallState(next); } catch { releasePortrait(); }
     if (next !== "speaking") presence?.setPlaybackEnergy(0);
     ambience?.speaking(next === "speaking");
     state = next;
@@ -78,6 +96,7 @@ if (adapter && entry) {
     } else if (["thinking", "speaking", "listening"].includes(event.type)) {
       // Playback emits speaking only on the running AudioContext clock.
       if (event.type !== "listening" || client.stream) show(event.type);
+      if (event.type === "listening" && event.source === "microphone") { try { visualPresence?.setCallState("capturing"); } catch { releasePortrait(); } }
     } else if (event.type === "assistant_completed") {
       void refresh().catch(() => {});
     } else if (event.type === "utterance_failed") {
@@ -97,10 +116,12 @@ if (adapter && entry) {
     }
   }
   const client = new RealtimeClient({ api: window.LegaryaAuthApi.apiRequest,
-    websocketUrl: liveWebsocketUrl(window.LEGARYA_AUTH_CONFIG, location), onEvent });
+    websocketUrl: liveWebsocketUrl(window.LEGARYA_AUTH_CONFIG, location), onEvent,
+    onPresentation: event => { try { visualPresence?.presentation(event); } catch { releasePortrait(); } } });
   async function reconcile() {
     if (!active || finished || finishing || reconnecting) return;
     reconnecting = true;
+    releasePortrait();
     const token = serial;
     partials.clear(); preview.textContent = "";
     show("reconnecting", "Restoring your saved chat. Unfinished speech may need repeating.");
@@ -147,6 +168,8 @@ if (adapter && entry) {
     const visual = find(".live-call-presence"), soundButton = find("[data-live-ambience]");
     visual.replaceChildren();
     soundButton.hidden = context.mode !== "rya";
+    find("[data-live-static]").hidden = context.mode !== "legacy";
+    if (context.mode === "legacy") find("#liveCallDisclosure").textContent = "AI Legacy · An approved AI-animated portrait, not a recording. Standard AI voice, grounded in preserved memories.";
     if (context.mode === "rya") {
       previousPresenceActive = Boolean(window.RyaEnergyControl?.active);
       window.RyaEnergyControl?.setActive(false);
@@ -162,6 +185,7 @@ if (adapter && entry) {
       initial.className = "live-legacy-presence";
       initial.textContent = (context.name || "L").trim().slice(0, 1);
       visual.append(initial);
+      startPortrait();
     }
     show("connecting", "Preparing your microphone and voice connection.");
     end.focus();
@@ -177,7 +201,7 @@ if (adapter && entry) {
   resume.addEventListener("click", async () => {
     resume.hidden = true;
     const token = serial;
-    try { await client.resumeCapture(); if (token === serial && client.stream) show("listening", "Ready for new speech. Unfinished speech may need repeating."); }
+    try { await client.resumeCapture(); if (token === serial && client.stream) { startPortrait(); show("listening", "Ready for new speech. Unfinished speech may need repeating."); } }
     catch (error) { if (token === serial) await finish(liveVoiceError(error), true); }
   });
   close.addEventListener("click", () => {
@@ -188,6 +212,7 @@ if (adapter && entry) {
   window.addEventListener("pagehide", () => { if (active) { ++serial; releasePresence(); client.invalidate(); } });
   window.addEventListener("popstate", () => { if (active) void finish("The page changed. Saved messages remain in their original chat."); });
   window.addEventListener("legarya:session-expired", () => { if (active) void finish("Please sign in again. Your saved messages remain in chat.", true); });
+  window.addEventListener("legarya:session-ending", () => { if (active) void finish("Your account session changed. Saved messages remain in their original chat."); });
   function updateEntry() {
     const reason = liveVoiceAvailability(adapter.context(), enabled);
     entry.disabled = Boolean(reason) || active;
@@ -195,6 +220,13 @@ if (adapter && entry) {
     document.querySelector("#liveVoiceAvailability").textContent = reason;
   }
   window.addEventListener("legarya:chat-context", updateEntry);
+  find("[data-live-static]").addEventListener("click", () => {
+    staticPhoto = !staticPhoto;
+    find("[data-live-static]").setAttribute("aria-pressed", String(staticPhoto));
+    find("[data-live-static]").textContent = staticPhoto ? "Enable portrait motion" : "Show static photo";
+    try { visualPresence?.setStatic(staticPhoto); } catch { releasePortrait(); }
+  });
+  window.addEventListener("legarya:visual-invalidated", event => { if (context?.legacyId === event.detail?.legacyId) startPortrait(); });
   window.LegaryaLiveVoice = Object.freeze({ invalidate() { if (active) void finish("The chat changed. Saved speech remains in its original conversation."); } });
   updateEntry();
   window.LegaryaAuthApi.apiRequest("/realtime/capabilities", { authenticated: true }).then((result) => { enabled = result.enabled === true; updateEntry(); }).catch(() => updateEntry());

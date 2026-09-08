@@ -1,8 +1,10 @@
 // Mono PCM is scheduled on the AudioContext clock. A frame is acknowledged only
 // after its source ended AND the output latency elapsed on that same clock.
+import { outputEnvelope } from "./playback-envelope.mjs?v=l19c1";
 export class RealtimePlayback {
-  constructor({ context, environment = globalThis, send, onState = () => {}, onFault = () => {}, onEnergy = () => {} }) {
-    Object.assign(this, { context, environment, send, onState, onFault, onEnergy });
+  constructor({ context, environment = globalThis, send, onState = () => {}, onFault = () => {}, onEnergy = () => {}, onPresentation = () => {} }) {
+    Object.assign(this, { context, environment, send, onState, onFault, onEnergy, onPresentation });
+    this.playbackEpoch = 0;
     this.nodes = new Set();
     this.timers = new Set();
     this.retired = new Set();
@@ -11,15 +13,21 @@ export class RealtimePlayback {
   same(event) {
     return this.binding && Object.keys(this.binding).every((key) => this.binding[key] === event[key]);
   }
+  present(event) { try { this.onPresentation(Object.freeze(event)); } catch { /* Visual faults never own audio. */ } }
   begin(event) {
     if (this.retired.has(event.active_generation_id)) return;
     if (this.binding?.active_generation_id === event.active_generation_id) {
       if (event.response_id && this.binding.response_id && event.response_id !== this.binding.response_id) throw new Error("Response changed.");
-      if (event.response_id) this.binding.response_id = event.response_id;
+      if (event.response_id && this.binding.response_id !== event.response_id) {
+        this.binding.response_id = event.response_id;
+        this.present({ type: "playback_binding", ...this.binding, playback_epoch: this.playbackEpoch });
+      }
       return;
     }
     if (this.binding) throw new Error("Overlapping live responses.");
     this.binding = Object.fromEntries(["session_id", "generation", "turn_id", "active_generation_id", "response_id"].map((key) => [key, event[key]]));
+    ++this.playbackEpoch;
+    this.present({ type: "playback_binding", ...this.binding, playback_epoch: this.playbackEpoch });
     this.sequence = this.playedSequence = -1;
     this.samples = this.played = 0;
     this.nextTime = this.context.currentTime;
@@ -62,6 +70,16 @@ export class RealtimePlayback {
     this.sequence = event.sequence;
     const samples = this.samples, sequence = this.sequence, binding = this.binding;
     this.nodes.add(source);
+    // Observe only output samples at their scheduled device-playback time.
+    // The existing audio queue bounds these windows to <=20 seconds.
+    const playbackEpoch = this.playbackEpoch;
+    const latency = Math.max(0, this.context.outputLatency || 0) + Math.max(0, this.context.baseLatency || 0);
+    for (const point of outputEnvelope(floats)) {
+      const due = start + point.offset + latency, expires = due + point.duration;
+      this.at(due, () => this.present({ type: "playback_envelope", ...binding,
+        playback_epoch: playbackEpoch, audio_time: this.context.currentTime, due, expires,
+        value: this.context.currentTime < expires ? point.value : 0 }), binding);
+    }
     this.at(start, () => {
       this.onState("speaking");
       this.onEnergy(Math.min(1, Math.sqrt(floats.reduce((sum, n) => sum + n * n, 0) / floats.length) * 6));
@@ -99,6 +117,8 @@ export class RealtimePlayback {
   clear() {
     const previous = this.binding;
     this.binding = null; // fence callbacks before stop() triggers onended
+    // Same-task visual retirement MUST precede source.stop and transport cancel.
+    this.present({ type: "playback_reset", playback_epoch: ++this.playbackEpoch });
     if (previous) {
       this.retired.add(previous.active_generation_id);
       if (this.retired.size > 256) this.retired.delete(this.retired.values().next().value);

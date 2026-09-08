@@ -159,7 +159,7 @@ test("reconnect reconciles without reacquiring microphone or replaying frames", 
 test("worklet caps transferable messages until acknowledged", () => {
   const posts = [];
   let Processor;
-  const source = fs.readFileSync(new URL("../js/realtime-worklet.js", import.meta.url), "utf8").replace(/^import.*\n/, "");
+  const source = fs.readFileSync(new URL("../js/realtime-worklet.js", import.meta.url), "utf8").replace(/^import.*\r?\n/, "");
   vm.runInNewContext(source, { PCMResampler, sampleRate: 48000, Float32Array,
     AudioWorkletProcessor: class { constructor() { this.port = { postMessage: (data) => posts.push(data) }; } },
     registerProcessor: (_, type) => { Processor = type; } });

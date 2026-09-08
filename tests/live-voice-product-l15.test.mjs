@@ -41,7 +41,7 @@ test("mute disables capture tracks and clears worklet input at both boundaries",
 });
 test("muted worklet sends silence and never triggers barge-in or replays buffered speech", () => {
   const events=[];let Processor;
-  const source=fs.readFileSync(new URL("../js/realtime-worklet.js",import.meta.url),"utf8").replace(/^import.*\n/,"");
+  const source=fs.readFileSync(new URL("../js/realtime-worklet.js",import.meta.url),"utf8").replace(/^import.*\r?\n/,"");
   vm.runInNewContext(source,{PCMResampler,Float32Array,sampleRate:48000,AudioWorkletProcessor:class{constructor(){this.port={postMessage:e=>events.push(e)}}},registerProcessor:(_,p)=>{Processor=p}});
   const worklet=new Processor();worklet.port.onmessage({data:{type:"mute",muted:true}});
   for(let i=0;i<200;i++){worklet.process([[new Float32Array(128).fill(.5)]]);worklet.port.onmessage({data:"ack"});}
