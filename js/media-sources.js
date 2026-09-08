@@ -121,8 +121,8 @@
     const button = (text, fn, cls = "") => { const n = el("button", text, cls); n.type = "button"; n.addEventListener("click", fn); return n; };
     const dialog = el("dialog", null, "media-panel"); dialog.setAttribute("aria-labelledby", "mediaTitle");
     const header = el("header", null, "media-header"); const titleWrap = el("div"); titleWrap.append(el("small", "A place for the pieces of a life"));
-    const title = el("h2", "Media & Sources"); title.id = "mediaTitle"; titleWrap.append(title);
-    const closeButton = button("×", () => panel.close(), "media-close"); closeButton.setAttribute("aria-label", "Close Media & Sources");
+    const title = el("h2", "Photos & documents"); title.id = "mediaTitle"; titleWrap.append(title);
+    const closeButton = button("×", () => panel.close(), "media-close"); closeButton.setAttribute("aria-label", "Close photos & documents");
     header.append(titleWrap, closeButton);
     const status = el("p", null, "media-status"); status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite");
     const body = el("div", null, "media-body"); dialog.append(header, status, body); document.body.append(dialog);
