@@ -2,6 +2,7 @@ import { createVisualClient, visualError } from "./visual-presence-client.mjs?v=
 import { mountCropControls } from "./visual-crop.mjs?v=l19c1";
 import { createVisualPresence } from "./visual-presence-controller.mjs?v=l19c1";
 import { createPortraitRenderer } from "./legacy-portrait-renderer.mjs?v=l19c1";
+import { waitForVisualSource } from "./visual-source-ready.mjs?v=l19c2";
 
 const auth = window.LegaryaAuthApi, entry = document.querySelector("#openVisualPresence");
 if (auth && entry && window.LegaryaMedia) {
@@ -119,7 +120,9 @@ if (auth && entry && window.LegaryaMedia) {
     notice("Uploading a private visual reference. No memory extraction will run…");
     pendingUpload.source ||= await auth.apiRequest(`/legacies/${legacy.id}/sources`,{authenticated:true,method:"POST",signal:abort.signal,body:{filename:file.name,kind:"image",mime_type:file.type,size_bytes:file.size,upload_request_key:pendingUpload.key,processing_purpose:"visual_reference"}});
     if(!current(token))return;
-    const row=await media.upload(legacy.id,pendingUpload.source.id,file,abort.signal);if(!current(token))return;
+    const uploaded=await media.upload(legacy.id,pendingUpload.source.id,file,abort.signal);if(!current(token))return;
+    notice("Checking your private photo before opening the crop preview…");
+    const row=await waitForVisualSource(media,legacy.id,uploaded,{signal:abort.signal,current:()=>current(token)});if(!current(token))return;
     upload=null;find("[data-upload]").value="";await sourceList(token);if(current(token))await choose(row,token);
   }));
   find("[data-confirm]").addEventListener("change",()=>lock(busy));
