@@ -34,7 +34,7 @@ test("builder entry uses native dashboard and visitor markup has no source inter
 });
 for (const role of ["owner", "collaborator"]) test(`${role} opens scoped library`, async () => { const { panel } = setup(role); assert.equal(await panel.open(), true); assert.equal(panel.state.sources.length, 1); panel.close(); });
 for (const role of ["visitor", "viewer", "none"]) test(`${role} cannot open library or call API`, async () => { const { panel } = setup(role, { capabilities: () => { assert.fail("Unauthorized API call"); } }); assert.equal(await panel.open(), false); });
-test("incomplete Legacy cannot open library", async () => { const s = setup(); s.setLegacy({ id: 1, access_role: "owner", setup_status: "collecting_identity" }); assert.equal(await s.panel.open(), false); });
+test("incomplete Legacy can open library and upload immediately", async () => { const s = setup(); s.setLegacy({ id: 1, access_role: "owner", setup_status: "collecting_identity" }); assert.equal(await s.panel.open(), true); assert.equal(await s.panel.upload(file), true); s.panel.close(); });
 test("feature disabled returns explanatory state without library fetch", async () => { const { panel } = setup("owner", { capabilities: async () => ({ enabled: false }), list: () => assert.fail() }); assert.equal(await panel.open(), false); assert.match(panel.state.message, /not available/); });
 test("empty state is successful and explains explicit preservation", async () => { const { panel } = setup("owner", { list: async () => [] }); await panel.open(); assert.equal(panel.state.sources.length, 0); assert.match(read("js/media-sources.js"), /only when the owner preserves them/); });
 test("upload reserves and sends raw file independently of canonical review", async () => { const { panel, calls } = setup(); await panel.open(); assert.equal(await panel.upload(file), true); assert.deepEqual(calls.map((c) => c[0]), ["reserve", "upload"]); assert.equal(calls[1][3], file); assert.match(panel.state.message, /no memories have been saved/); });
@@ -80,7 +80,7 @@ class Element {
   all() { return [this, ...this.children.flatMap((n) => n.all())]; }
   text() { return [this.textContent, ...this.children.map((n) => n.text())].join(' '); }
 }
-function ui(role = 'owner', rows = [source], transfer = async () => ({ blob: async () => new Blob(['image']) })) {
+function ui(role = 'owner', rows = [source], transfer = async () => ({ blob: async () => new Blob(['image']), json: async () => source })) {
   const entry = new Element('button'), body = new Element('body');
   const doc = { body, createElement: (tag) => new Element(tag), querySelector: () => entry, addEventListener() {} };
   const events = {};
@@ -91,7 +91,8 @@ function ui(role = 'owner', rows = [source], transfer = async () => ({ blob: asy
   const calls = []; let candidates = [candidate];
   const auth = { authenticatedMediaFetch: transfer, apiRequest: async (path, options) => {
     calls.push([path, options]);
-    if (path.endsWith('/capabilities')) return { enabled: true, can_review: role === 'owner', formats, coverage_note: 'Scanned PDFs and audio/video are not available.' };
+    if (path.endsWith('/capabilities')) return { enabled: true, can_review: role === 'owner' && legacy.setup_status === 'active', formats, coverage_note: 'Scanned PDFs and audio/video are not available.' };
+    if (path.endsWith('/sources') && options.method === 'POST') return source;
     if (path.endsWith('/review')) { candidates = [{ ...candidate, review_state: options.body.action === 'skip' ? 'skipped' : 'preserved' }]; return candidates[0]; }
     if (path.endsWith('/candidates')) return candidates;
     if (path.endsWith('/evidence')) return candidate.evidence;
@@ -102,14 +103,21 @@ function ui(role = 'owner', rows = [source], transfer = async () => ({ blob: asy
   return { panel, body, entry, calls, urls, setLegacy(value) { legacy = value; events['legarya-legacy-change'](); }, find: (text) => body.all().find((n) => n.tagName === 'button' && n.textContent === text) };
 }
 
-test('new Legacy shows Media entry and setup guidance without fetching or uploading', async () => {
+test('new Legacy uploads and manages originals immediately without preserving memories', async () => {
   const s = ui(); s.setLegacy({ id: 2, setup_status: 'collecting_identity', access_role: 'owner' });
   assert.equal(s.entry.hidden, false); await s.panel.open();
   assert.equal(s.body.querySelector('dialog').open, true);
-  assert.match(s.body.text(), /Finish.*identity setup.*Rya/i);
-  assert.equal(s.calls.length, 0);
-  assert.equal(s.body.all().some(n => n.tagName === 'input'), false);
-  assert.equal(await s.panel.upload(file), false); assert.equal(s.calls.length, 0); s.panel.close();
+  assert.equal(s.body.all().some(n => n.tagName === 'input'), true);
+  assert.equal(await s.panel.upload(file), true);
+  await s.panel.select(source.id);
+  assert.equal(s.calls.some(([route]) => route.endsWith('/candidates')), false);
+  assert.match(s.body.text(), /files are saved privately/);
+  assert.equal(await s.panel.decide(candidate, 'preserve'), false);
+  assert.equal(await s.panel.draft(candidate, 'Edited text'), false);
+  assert.equal(s.calls.some(([route]) => route.endsWith('/review')), false);
+  assert.ok(s.find('Delete source'));
+  assert.equal(await s.panel.remove(source), true);
+  assert.ok(s.calls.some(([, options]) => options.method === 'DELETE')); s.panel.close();
 });
 
 test('media entry follows every Legacy and setup completion without exposing old panel state', async () => {

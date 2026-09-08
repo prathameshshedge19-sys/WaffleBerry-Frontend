@@ -40,8 +40,8 @@ try {
     async apiRequest(route,options={}){
       state.calls.push({route,method:options.method||"GET",body:options.body});
       if(options.signal?.aborted)throw new DOMException("Aborted","AbortError");
-      if(route.endsWith("/capabilities"))return{enabled:true,can_manage:state.legacy.access_role==="owner",can_prepare:true,confirmation_copy_version:"l19-likeness-v1"};
-      if(route.endsWith("/sources"))return options.method==="POST"?source:[source];
+      if(route.endsWith("/capabilities"))return{enabled:true,can_manage:state.legacy.access_role==="owner",can_prepare:state.legacy.setup_status==="active",confirmation_copy_version:"l19-likeness-v1"};
+      if(route.endsWith("/sources")){if(options.method==="POST"){source.legacy_id=state.legacy.id;return source;}return [source];}
       if(route.endsWith("/sources/"+source.id))return source;
       if(route.endsWith("/versions")&&options.method==="POST"){
         assertBody(options.body);const b=await assets(),v={id:id(100+state.profile.revision),state:"ready",version_number:state.profile.revision+1,source_id:source.id,crop:options.body.crop,bundle_digest:b.bundle_digest};state.versions[v.id]=v;state.profile.desired_version_id=v.id;state.profile.deleted=false;state.profile.revision++;return v;
@@ -60,7 +60,7 @@ try {
       }
       throw new Error("Unexpected synthetic API path");
     },
-    async authenticatedMediaFetch(){original ||= await picture(1200,800);return new Response(original,{headers:{"Content-Type":"image/png"}});},
+    async authenticatedMediaFetch(route,options={}){original ||= await picture(1200,800);if(options.method==="PUT")return new Response(JSON.stringify(source),{headers:{"Content-Type":"application/json"}});return new Response(original,{headers:{"Content-Type":"image/png"}});},
     async authenticatedVisualFetch(route){if(state.revoke)denied();const b=await assets(),a=b.descriptors.find(a=>route.endsWith("/"+a.id+"/content"));if(!a)denied();return new Response(b.bytes[a.role],{headers:{"Content-Type":a.mime_type}});}
    };
    function assertBody(b){if(!b.confirmed||b.confirmation_copy_version!=="l19-likeness-v1"||!b.request_key||b.expected_revision!==state.profile.revision)throw new Error("Missing explicit confirmation");}
@@ -93,24 +93,28 @@ try {
  for(const legacyId of [2,3]) {
    await page.evaluate(id=>{window.__visualQA.legacy={id,subject_name:`New synthetic Legacy ${id}`,access_role:"owner",setup_status:"collecting_identity"};dispatchEvent(new Event("legarya-legacy-change"));},legacyId);
    assert.equal(await page.locator("#openVisualPresence").isVisible(),true);
-   const requestCount=await page.evaluate(()=>window.__visualQA.calls.length);
+   const preparations=await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').length);
    await page.locator("#openVisualPresence").click();
-   await page.getByText(/Finish this Legacy's identity setup with Rya/).waitFor();
-   assert.equal(await page.locator("[data-manage]").isVisible(),false);
-   assert.equal(await page.evaluate(()=>window.__visualQA.calls.length),requestCount);
-   results.checks.push(`new-legacy-${legacyId}-visible-setup-guidance-no-api`);
+   await page.locator('[data-upload]').waitFor({state:'visible'});
+   await page.locator('[data-upload]').setInputFiles({name:'Synthetic pending photo.png',mimeType:'image/png',buffer:Buffer.from('synthetic upload adapter')});
+   await page.locator('.visual-crop-canvas').waitFor();
+   await page.locator('[data-confirm]').check();
+   assert.equal(await page.locator('[data-generate]').isDisabled(),true);
+   assert.equal(await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').length),preparations);
+   results.checks.push(`new-legacy-${legacyId}-real-upload-control-and-crop-no-preparation`);
  }
  await page.evaluate(()=>{window.__visualQA.legacy.setup_status="active";dispatchEvent(new Event("legarya-legacy-change"));});
  assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
  await page.locator("#openVisualPresence").click();await page.locator("[data-manage]").waitFor({state:"visible"});
  assert.ok(await page.evaluate(()=>window.__visualQA.calls.some(c=>c.route==="/legacies/3/visual-companion/capabilities")));
- assert.equal(await page.locator("[data-source] option").count(),1);
+ assert.equal(await page.locator("[data-source] option").count(),2);
  results.checks.push("setup-completion-unlocks-current-legacy-only");
  await page.evaluate(()=>{window.__visualQA.legacy={id:4,subject_name:"Another completed Legacy",access_role:"owner",setup_status:"active"};dispatchEvent(new Event("legarya-legacy-change"));});
  assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
  assert.equal(await page.locator("#openVisualPresence").isVisible(),true);
  await page.locator("#openVisualPresence").click();await page.locator("[data-manage]").waitFor({state:"visible"});
  assert.ok(await page.evaluate(()=>window.__visualQA.calls.some(c=>c.route==="/legacies/4/sources")));
+ assert.equal(await page.locator("[data-source] option").count(),1);
  results.checks.push("second-completed-legacy-visible-scoped");
  for(const legacy of [{id:5,access_role:"viewer",setup_status:"active"},null]) {
    await page.evaluate(value=>{window.__visualQA.legacy=value;dispatchEvent(new Event("legarya-legacy-change"));},legacy);

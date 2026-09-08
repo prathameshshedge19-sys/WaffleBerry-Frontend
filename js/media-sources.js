@@ -6,7 +6,8 @@
     const state = { open: false, legacy: null, capabilities: null, sources: [], selected: null, candidates: [], evidence: [], busy: new Set(), loading: false, message: "", error: false, upload: null };
     const emit = () => onChange(state);
     const current = (token) => state.open && epoch === token && getLegacy()?.id === state.legacy?.id;
-    const owner = () => state.legacy?.access_role === "owner" && state.capabilities?.can_review;
+    const owner = () => state.legacy?.access_role === "owner" && state.capabilities?.enabled;
+    const reviewer = () => owner() && state.capabilities?.can_review;
     const stop = () => { cancel(timer); timer = null; };
     function close() { stop(); abort?.abort(); epoch++; selection++; state.open = false; state.sources = []; state.candidates = []; state.evidence = []; state.selected = null; state.upload = null; state.busy.clear(); requests.clear(); emit(); }
     function notice(message, error = false) { state.message = message; state.error = error; emit(); }
@@ -33,10 +34,6 @@
       state.legacy = { ...legacy }; state.open = true; state.loading = true; state.message = "Loading your sources…"; state.error = false; state.capabilities = null; polls = 0; abort = new AbortController();
       const token = epoch; emit();
       try {
-        if (legacy.setup_status !== "active") {
-          notice("Finish this Legacy's identity setup with Rya in the chat, then return here to add photos, letters and documents.");
-          return false;
-        }
         const capabilities = await client.capabilities(legacy.id, abort.signal);
         if (!current(token)) return false;
         state.capabilities = capabilities;
@@ -57,7 +54,7 @@
       if (changed) { state.candidates = []; state.evidence = []; }
       if (loading) { state.message = "Opening source…"; emit(); }
       try {
-        const [candidates, evidence] = await Promise.all([client.candidates(state.legacy.id, sourceId, abort.signal), client.evidence(state.legacy.id, sourceId, abort.signal)]);
+        const [candidates, evidence] = await Promise.all([state.legacy.setup_status === "active" ? client.candidates(state.legacy.id, sourceId, abort.signal) : Promise.resolve([]), client.evidence(state.legacy.id, sourceId, abort.signal)]);
         if (!current(token) || chosen !== selection) return;
         state.candidates = candidates; state.evidence = evidence;
         if (loading) state.message = "";
@@ -104,12 +101,13 @@
       }, "Uploaded. Rya will review the source; no memories have been saved.");
     }
     async function decide(candidate, action) {
+      if (!reviewer()) return false;
       const key = `${candidate.id}:${candidate.version}:${action}`;
       if (!requests.has(key)) requests.set(key, uuid());
       return perform(candidate.id, (signal) => client.decide(state.legacy.id, candidate, action, requests.get(key), signal), action === "skip" ? "Suggestion skipped. Your source is unchanged." : "Memory preserved. It is available in Memories.", true);
     }
     return { state, open, close, select, refresh: async () => { polls = 0; try { await refresh(); notice(""); } catch (error) { notice(root.LegaryaMedia.errorMessage(error), true); } }, upload, decide, notice,
-      draft: (candidate, text) => perform(candidate.id, (signal) => client.draft(state.legacy.id, candidate, text, signal), "Check the edited wording below, then choose Preserve edited memory.", true),
+      draft: (candidate, text) => reviewer() ? perform(candidate.id, (signal) => client.draft(state.legacy.id, candidate, text, signal), "Check the edited wording below, then choose Preserve edited memory.", true) : false,
       remove: (source) => perform(source.id, (signal) => client.remove(state.legacy.id, source.id, signal), "Source removal requested. Preserved memories remain.", true),
       retry: (source) => perform(source.id, (signal) => client.retry(state.legacy.id, source.id, signal), "Processing queued again.", true),
       original: () => client.original(state.legacy.id, state.selected.id, abort.signal),
@@ -224,6 +222,7 @@
       if (confirmations.has(source.id)) { const confirmation = el("section", null, "media-confirm"); confirmation.append(el("strong", "Delete this source?"), el("p", "The original and extracted material will be removed. Already preserved memories remain, with a note that their original source is unavailable.")); const remove = button("Delete source and extracted material", () => panel.remove(source), "media-danger"); remove.disabled = state.busy.has(source.id); confirmation.append(button("Keep source", () => { confirmations.delete(source.id); render(state); }), remove); detail.append(confirmation); }
       if (preview) detail.append(preview);
       if (state.evidence.length) { const extracted = el("details", null, "media-extraction"); extracted.append(el("summary", "Extracted content · may contain errors")); state.evidence.forEach((item) => { if (item.text) extracted.append(el("small", root.LegaryaMedia.locatorLabel(item.locator)), el("p", item.text)); }); detail.append(extracted); }
+      if (state.legacy.setup_status !== "active") { detail.append(el("p", "Your files are saved privately. You can view, download or delete them now. Memory suggestion review becomes available after identity setup with Rya.", "media-note")); return; }
       if (source.state === "failed") detail.append(el("p", "We couldn't finish reviewing this file. The original remains uploaded. The owner can retry processing.", "media-note"));
       detail.append(el("h3", "Rya's suggestions"), el("p", state.capabilities.coverage_note, "media-note"));
       if (!state.candidates.length) detail.append(el("p", ["ready", "partially_ready"].includes(source.state) ? "Rya didn't find any clear memories to suggest. You can still view and manage this source." : "Suggestions will appear here after processing.", "media-empty"));

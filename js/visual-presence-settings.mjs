@@ -88,7 +88,7 @@ if (auth && entry && window.LegaryaMedia) {
     catch(error){clearCrop();throw error;}
     find("[data-crop-section]").hidden=false;
     find("[data-consent]").textContent=`Use this selected image for ${legacy.subject_name || "this Legacy"}'s Visual Companion. I have permission to use this likeness and understand that the animated result is an AI-generated representation, not a recording of this person.`;
-    notice("");find("[data-crop-section]").scrollIntoView({block:"nearest"});
+    notice(legacy.setup_status === "active" ? "" : "Your photo is saved privately. Animated portrait preparation becomes available after identity setup with Rya.");find("[data-crop-section]").scrollIntoView({block:"nearest"});
   }
   async function sourceList(token) {
     const rows=await media.list(legacy.id,abort.signal);if(!current(token))return;
@@ -102,14 +102,13 @@ if (auth && entry && window.LegaryaMedia) {
     find("[data-manage]").hidden=true;find("[data-delete-confirm]").hidden=true;find("[data-candidate]").hidden=true;find("[data-chooser]").hidden=false;
     find("[data-subject]").textContent=legacy.subject_name || "Selected Legacy";
     if(legacy.access_role!=="owner"){notice("Visual Presence is managed by the Legacy owner. You cannot prepare, preview or change their portrait.");return;}
-    if(legacy.setup_status!=="active"){notice("Finish this Legacy's identity setup with Rya in the chat, then return here to choose a photo and prepare its Visual Presence.");return;}
     await perform(async()=>{
       const available=await client.capabilities(legacy.id,abort.signal);if(!current(token))return;capabilities=available;
       if(!capabilities.enabled){notice("Visual Presence is not enabled for this Legacy yet.");return;}
       if(!capabilities.can_manage || capabilities.confirmation_copy_version!=="l19-likeness-v1")throw new Error("Unsupported visual setup.");
       await refreshProfile(token); if(!current(token))return;
       await sourceList(token); if(!current(token))return;
-      find("[data-manage]").hidden=false;notice(capabilities.can_prepare ? "" : "Preparation is temporarily unavailable. You can still manage an existing portrait.");
+      find("[data-manage]").hidden=false;notice(legacy.setup_status !== "active" ? "Upload or choose a photo now. Animated portrait preparation becomes available after identity setup with Rya." : capabilities.can_prepare ? "" : "Preparation is temporarily unavailable. You can still manage an existing portrait.");
       polls=0;if(profile.desired_version_id && profile.desired_version_id!==profile.current_version_id)await showVersion(profile.desired_version_id,token);
     });
   }
