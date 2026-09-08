@@ -39,6 +39,7 @@
   let memories = [];
   let accessRole = "owner";
   let journey = null;
+  let loadEpoch = 0;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
   const setStatus = (message = "", error = false) => {
@@ -47,6 +48,8 @@
   };
 
   const close = () => {
+    loadEpoch++;
+    window.LegaryaTimelineDashboard?.close();
     personalityPanel?.close();
     dashboard.hidden = true;
     document.body.classList.remove("memory-dashboard-open");
@@ -149,6 +152,8 @@
       if (journey.progress.next_area) { const next=document.createElement("p"); next.className="progress-next"; next.textContent=`Next area to explore · ${journey.progress.next_area.label}. An invitation, never a requirement.`; overview.append(next); }
       content.append(overview);
     }
+    window.LegaryaTimelineDashboard?.mount(content, { legacyId, role: accessRole });
+    const storedTitle = document.createElement("h3"); storedTitle.className = "stored-memories-title"; storedTitle.textContent = "Stored memories"; content.append(storedTitle);
     if (!memories.length) {
       const empty = document.createElement("p"); empty.className = "memory-empty"; empty.textContent = "No memories yet. A meaningful Legacy begins in conversation."; content.append(empty); personalityPanel?.mount(content); return;
     }
@@ -166,15 +171,21 @@
   }
 
   async function load() {
+    const token = ++loadEpoch;
+    window.LegaryaTimelineDashboard?.close();
+    content.replaceChildren();
     const personalityToken = personalityPanel?.begin();
     const context = await apiRequest("/legacies", { authenticated: true });
+    if (token !== loadEpoch || dashboard.hidden) return;
     legacyId = context.active_legacy_id;
     accessRole = context.legacies.find((legacy) => legacy.id === legacyId)?.access_role || "owner";
     if (!legacyId) { memories = []; journey = null; render(); return; }
-    [memories, journey] = await Promise.all([
+    const result = await Promise.all([
       apiRequest(`/memories?legacy_id=${legacyId}`, { authenticated: true }),
       apiRequest(`/progress/${legacyId}?timezone=${encodeURIComponent(timezone)}`, { authenticated: true }),
     ]);
+    if (token !== loadEpoch || dashboard.hidden) return;
+    [memories, journey] = result;
     render();
     // Deliberately not awaited: representation must never delay memory actions.
     personalityPanel?.load({ legacyId, role: accessRole, memories }, personalityToken);
@@ -185,5 +196,7 @@
     try { await load(); setStatus(); } catch (error) { setStatus(error.message || "Memories could not be loaded.", true); }
   });
   closeButton.addEventListener("click", close); backdrop.addEventListener("click", close);
+  window.addEventListener("legarya-legacy-change", () => { if (!dashboard.hidden) close(); });
+  window.addEventListener("pagehide", close);
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !dashboard.hidden) close(); });
 })();

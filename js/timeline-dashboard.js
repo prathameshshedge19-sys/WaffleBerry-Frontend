@@ -1,14 +1,11 @@
 "use strict";
 ((root) => {
-  const entry = document.querySelector("#openTimeline");
   const dashboard = document.querySelector("#timelineDashboard");
-  if (!entry || !dashboard || !root.LegaryaTimeline) return;
+  if (!dashboard || !root.LegaryaTimeline) return;
   const content = document.querySelector("#timelineContent");
   const status = document.querySelector("#timelineStatus");
-  const close = document.querySelector("#closeTimeline");
-  const backdrop = document.querySelector("#timelineBackdrop");
-  let epoch = 0, opener = entry, controller = null, selected = null;
-  const legacy = () => root.LegaryaWorkspace?.getActiveLegacy?.() || null;
+  let epoch = 0, controller = null, selected = null, context = null;
+  const legacy = () => context;
   const owner = () => legacy()?.access_role === "owner";
   const el = (tag, text = "", cls = "") => { const node = document.createElement(tag); node.textContent = text; if (cls) node.className = cls; return node; };
   const precision = (event) => {
@@ -20,7 +17,7 @@
   };
   const support = (event) => `${event.memory_count || 0} ${event.memory_count === 1 ? "family memory" : "family memories"} · ${event.source_count || 0} ${event.source_count === 1 ? "source" : "sources"}`;
   const setStatus = (message = "", error = false) => { status.textContent = message; status.classList.toggle("is-error", error); };
-  const closePanel = () => { controller?.abort(); epoch++; dashboard.hidden = true; selected = null; content.replaceChildren(); setStatus(); opener?.focus(); };
+  const closePanel = () => { controller?.abort(); epoch++; dashboard.hidden = true; selected = null; context = null; content.replaceChildren(); setStatus(); };
   const dateGroup = (event) => event.date_start ? String(new Date(`${event.date_start}T00:00:00Z`).getUTCFullYear()) : "Date unknown";
   function card(event) {
     const article = el("article", "", "timeline-event"); article.tabIndex = 0; article.dataset.eventId = event.id;
@@ -59,8 +56,12 @@
     if (owner()) { const actions = el("div", "", "timeline-actions"); if (event.review_state === "conflict") { const resolve = el("button", "Mark reviewed"); resolve.addEventListener("click", async () => { await root.LegaryaTimeline.review(legacy().id, event.id, "resolve"); await refresh(); }); actions.append(resolve); } const remove = el("button", "Remove from Timeline", "timeline-danger"); remove.addEventListener("click", async () => { if (!window.confirm("Remove this event from the timeline? Canonical memories, sources, and personality will remain.")) return; await root.LegaryaTimeline.remove(legacy().id, event.id); await refresh(); }); actions.append(remove); article.append(actions); }
     content.append(article);
   }
-  function open() { const current = legacy(); if (!current || !["owner", "collaborator"].includes(current.access_role)) return; opener = document.activeElement || entry; dashboard.hidden = false; close.focus(); refresh(); }
-  entry.addEventListener("click", open); close.addEventListener("click", closePanel); backdrop.addEventListener("click", closePanel); document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !dashboard.hidden) closePanel(); });
-  const sync = () => { const current = legacy(); entry.hidden = !current || !["owner", "collaborator"].includes(current.access_role); if (dashboard.hidden) return; if (!entry.hidden) refresh(); else closePanel(); };
-  root.addEventListener("legarya-legacy-change", sync); root.addEventListener("pagehide", closePanel); sync();
+  function mount(parent, { legacyId, role }) {
+    closePanel();
+    if (!legacyId || !["owner", "collaborator"].includes(role)) return;
+    context = { id: legacyId, access_role: role };
+    parent.append(dashboard); dashboard.hidden = false; refresh();
+  }
+  root.LegaryaTimelineDashboard = { mount, close: closePanel };
+  root.addEventListener("legarya-legacy-change", closePanel); root.addEventListener("pagehide", closePanel);
 })(window);

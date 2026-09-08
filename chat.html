@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="css/live-voice.css?v=l15ui1">
 <link rel="stylesheet" href="css/visual-presence.css?v=l19c1">
     <link rel="stylesheet" href="css/media-sources.css?v=l16d1">
-    <link rel="stylesheet" href="css/timeline.css?v=l17c1">
+    <link rel="stylesheet" href="css/timeline.css?v=memories1">
 </head>
   <body>
     <div class="workspace">
@@ -62,7 +62,6 @@
           <button id="openMemories" class="memories-button" type="button">
             <span class="memories-button-icon" aria-hidden="true">◇</span><span>Memories</span>
           </button>
-          <button id="openTimeline" class="memories-button" type="button" hidden><span class="memories-button-icon" aria-hidden="true">◊</span><span>Timeline</span></button>
           <button id="openVisualPresence" class="memories-button" type="button" hidden><span class="memories-button-icon" aria-hidden="true">◌</span><span>Visual Presence</span></button>
           <button id="openMediaSources" class="memories-button" type="button" hidden>
             <span class="memories-button-icon" aria-hidden="true">▤</span><span>Media &amp; Sources</span>
@@ -158,16 +157,15 @@
           <button id="closeMemories" class="memory-dashboard-close" type="button" aria-label="Close Memory Dashboard">&times;</button>
         </header>
         <p id="memoryDashboardStatus" class="memory-dashboard-status" aria-live="polite"></p>
-        <div id="memoryDashboardContent" class="memory-dashboard-content"></div>
-      </div>
-    </section>
-
-    <section id="timelineDashboard" class="timeline-dashboard" role="dialog" aria-modal="true" aria-labelledby="timelineTitle" hidden>
-      <button id="timelineBackdrop" class="timeline-backdrop" type="button" aria-label="Close Timeline"></button>
-      <div class="timeline-panel">
-        <header class="timeline-header"><div><p>Living Legacy</p><h2 id="timelineTitle">Timeline</h2><span>Important moments, held with care.</span></div><button id="closeTimeline" class="timeline-close" type="button" aria-label="Close Timeline">&times;</button></header>
-        <p id="timelineStatus" class="timeline-status" role="status" aria-live="polite"></p>
-        <div id="timelineContent" class="timeline-content"></div>
+        <div id="memoryDashboardContent" class="memory-dashboard-content">
+          <section id="timelineDashboard" class="timeline-dashboard timeline-inline" aria-labelledby="timelineTitle" hidden>
+            <div class="timeline-panel">
+              <header class="timeline-header"><div><h3 id="timelineTitle">Timeline</h3><span>Important moments from preserved memories. Dates and source files are optional.</span></div></header>
+              <p id="timelineStatus" class="timeline-status" role="status" aria-live="polite"></p>
+              <div id="timelineContent" class="timeline-content"></div>
+            </div>
+          </section>
+        </div>
       </div>
     </section>
 
@@ -241,11 +239,11 @@
     <script src="js/progress-presentation.js?v=1.0"></script>
     <script src="js/progression.js?v=1.3"></script>
     <script src="js/personality-dashboard.js?v=l13d1"></script>
-    <script src="js/memory-dashboard.js?v=l16d1"></script>
+    <script src="js/memory-dashboard.js?v=memories1"></script>
     <script src="js/media-client.js?v=l16d1"></script>
     <script src="js/media-sources.js?v=l19c4"></script>
     <script src="js/timeline-client.js?v=l17c1"></script>
-    <script src="js/timeline-dashboard.js?v=l17c1"></script>
+    <script src="js/timeline-dashboard.js?v=memories1"></script>
     <script src="js/access-management.js?v=1.0"></script>
     <script type="module" src="js/visual-presence-settings.mjs?v=l19c4"></script>
   <script type="module" src="js/live-voice.mjs?v=l19c1"></script>

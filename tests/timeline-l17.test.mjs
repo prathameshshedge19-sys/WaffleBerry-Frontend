@@ -7,9 +7,11 @@ const source = fs.readFileSync(new URL("../js/timeline-dashboard.js", import.met
 const client = fs.readFileSync(new URL("../js/timeline-client.js", import.meta.url), "utf8");
 const styles = fs.readFileSync(new URL("../css/timeline.css", import.meta.url), "utf8");
 
-test("Timeline navigation is present beside builder actions", () => {
-  assert.match(markup, /id="openTimeline"/);
+test("Timeline is embedded only inside Memories, with no standalone navigation or dialog", () => {
+  assert.doesNotMatch(markup, /id="openTimeline"|id="closeTimeline"|id="timelineBackdrop"/);
   assert.match(markup, /id="timelineDashboard"/);
+  assert.match(markup, /id="memoryDashboardContent"[^>]*>\s*<section id="timelineDashboard"/);
+  assert.doesNotMatch(markup, /id="timelineDashboard"[^>]*role="dialog"/);
   assert.match(markup, /Timeline/);
   assert.match(source, /legarya-legacy-change/);
 });
