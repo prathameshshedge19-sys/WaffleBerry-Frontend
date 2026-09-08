@@ -15,13 +15,13 @@ if (adapter && entry) {
     <div class="live-call-presence" data-rya-section-host aria-hidden="true"></div>
     <h1 id="liveCallTitle">Rya</h1><p id="liveCallDisclosure" class="live-call-disclosure">Your AI companion for preserving memories</p>
     <p class="live-call-state" role="status" aria-live="polite" aria-atomic="true">Connecting</p>
+    <p data-live-portrait-status class="live-call-help" role="status" hidden></p>
     <p class="live-call-help">You can speak naturally and interrupt at any time.</p>
     <p class="live-call-transcript" aria-label="Live speech preview"></p>
     <div class="live-call-controls"><button type="button" data-live-mute aria-pressed="false">Mute microphone</button><button type="button" data-live-stop>Stop speaking</button><button type="button" data-live-end class="live-call-end">End call</button></div>
     <button type="button" data-live-resume hidden>Resume microphone</button>
     <button type="button" data-live-close hidden>Return to chat</button>
     <button type="button" data-live-ambience aria-pressed="true">Ambient sound on</button>
-    <button type="button" data-live-static aria-pressed="false" hidden>Show static photo</button>
     <p class="live-call-footnote">Keep this page open. Switching apps or locking your screen ends the call.</p>
   </div>`;
   document.body.append(dialog);
@@ -34,20 +34,25 @@ if (adapter && entry) {
   let refreshQueue = Promise.resolve();
   const partials = new Map();
   let presence = null, ambience = null, previousPresenceActive = false;
-  let visualPresence = null, visualEpoch = 0, staticPhoto = false;
+  let visualPresence = null, visualEpoch = 0;
   function releasePortrait() { ++visualEpoch; try { visualPresence?.dispose(); } catch {} visualPresence = null; }
   function startPortrait() {
     releasePortrait();
     if (context?.mode !== "legacy" || !active || finishing || finished) return;
     const token = serial, load = visualEpoch, snapshot = context, account = window.LegaryaAuthApi.getSessionEpoch?.();
+    const portraitStatus=find('[data-live-portrait-status]');portraitStatus.hidden=false;portraitStatus.textContent='Loading approved face…';
     const guard = () => account === window.LegaryaAuthApi.getSessionEpoch?.() && token === serial && load === visualEpoch && context === snapshot && active && !finishing && !finished && context.mode === "legacy";
     // Optional loading runs beside audio startup; failures never reach client.fail.
     void Promise.all([import("./visual-presence-client.mjs?v=l19c1"), import("./visual-presence-controller.mjs?v=l19c1"), import("./legacy-portrait-renderer.mjs?v=l19c1")]).then(([api, controller, renderer]) => {
       if (!guard()) return;
       visualPresence = controller.createVisualPresence({ host: find(".live-call-presence"), client: api.createVisualClient(window.LegaryaAuthApi), legacyId: snapshot.legacyId,
-        name: snapshot.name || "L", guard, staticPhoto, rendererFactory: renderer.createPortraitRenderer });
+        name: snapshot.name || "L", guard, rendererFactory: renderer.createPortraitRenderer, onState:state=>{
+          if(!guard())return;
+          portraitStatus.hidden=!['LOADING','ERROR','DISABLED'].includes(state);
+          portraitStatus.textContent=state==='DISABLED'?'No approved face is available for this Legacy.':state==='ERROR'?'The approved face could not load. Voice can continue.':'Loading approved face…';
+        } });
       return visualPresence.start();
-    }).catch(() => { if (guard()) releasePortrait(); });
+    }).catch(() => { if (guard()) {releasePortrait();portraitStatus.hidden=false;portraitStatus.textContent='The approved face could not load. Voice can continue.';} });
   }
   function releasePresence() {
     releasePortrait();
@@ -163,12 +168,12 @@ if (adapter && entry) {
     find("#liveCallTitle").textContent = context.mode === "legacy" ? context.name : "Rya";
     find("#liveCallDisclosure").textContent = context.mode === "legacy" ? "AI Legacy · A standard AI voice, grounded in preserved memories" : "Your AI companion for preserving memories";
     dialog.dataset.mode = context.mode;
+    find('[data-live-portrait-status]').hidden=true;
     adapter.setLive(true);
     dialog.showModal();
     const visual = find(".live-call-presence"), soundButton = find("[data-live-ambience]");
     visual.replaceChildren();
     soundButton.hidden = context.mode !== "rya";
-    find("[data-live-static]").hidden = context.mode !== "legacy";
     if (context.mode === "legacy") find("#liveCallDisclosure").textContent = "AI Legacy · An approved AI-animated portrait, not a recording. Standard AI voice, grounded in preserved memories.";
     if (context.mode === "rya") {
       previousPresenceActive = Boolean(window.RyaEnergyControl?.active);
@@ -220,12 +225,6 @@ if (adapter && entry) {
     document.querySelector("#liveVoiceAvailability").textContent = reason;
   }
   window.addEventListener("legarya:chat-context", updateEntry);
-  find("[data-live-static]").addEventListener("click", () => {
-    staticPhoto = !staticPhoto;
-    find("[data-live-static]").setAttribute("aria-pressed", String(staticPhoto));
-    find("[data-live-static]").textContent = staticPhoto ? "Enable portrait motion" : "Show static photo";
-    try { visualPresence?.setStatic(staticPhoto); } catch { releasePortrait(); }
-  });
   window.addEventListener("legarya:visual-invalidated", event => { if (context?.legacyId === event.detail?.legacyId) startPortrait(); });
   window.LegaryaLiveVoice = Object.freeze({ invalidate() { if (active) void finish("The chat changed. Saved speech remains in its original conversation."); } });
   updateEntry();

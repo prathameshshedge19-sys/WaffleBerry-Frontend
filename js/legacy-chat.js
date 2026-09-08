@@ -86,8 +86,8 @@
   initialize();
   window.LegaryaLiveChat = Object.freeze({
     context() { return { legacyId, conversationId: activeId, mode: "legacy", name: subjectName,
-      ready: liveReady, busy: sending, version: navigationVersion }; },
-    setLive(value) { liveActive = value; window.LegaryaVoice?.setChatBusy(value || sending); },
+      ready: liveReady, busy: sending, live: liveActive, version: navigationVersion }; },
+    setLive(value) { liveActive = value; window.LegaryaVoice?.setChatBusy(value || sending); updateSend(); },
     accept(snapshot, event) {
       if (snapshot.version !== navigationVersion || event.legacy_id !== legacyId || event.mode !== "legacy"
           || (activeId && activeId !== event.conversation_id)) return false;

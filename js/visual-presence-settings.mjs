@@ -1,5 +1,5 @@
 import { createVisualClient, visualError } from "./visual-presence-client.mjs?v=face4";
-import { mountCropControls } from "./visual-crop.mjs?v=l19c1";
+import { mountCropControls } from "./visual-crop.mjs?v=face5";
 import { createVisualPresence } from "./visual-presence-controller.mjs?v=l19c1";
 import { createPortraitRenderer } from "./legacy-portrait-renderer.mjs?v=l19c1";
 import { waitForVisualSource } from "./visual-source-ready.mjs?v=l19c2";
@@ -14,7 +14,7 @@ if(auth && entry && window.LegaryaMedia) {
     <section data-manage hidden>
       <label class="visual-upload">Upload photo &amp; create private preview<input data-upload type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="visualPermission" disabled></label>
       <p id="visualPermission" class="visual-hint">By selecting a photo or clicking Regenerate, I confirm I have permission to use the pictured person's likeness for this Legacy's AI-generated Visual Companion, not a recording of that person.</p>
-      <p class="visual-hint">Use a clear photo of one person. JPEG, PNG or WebP, up to 20 MB. A new upload never changes the current face until you approve its preview.</p>
+      <p class="visual-hint">Upload a clear photo with one face. We find and frame it automatically—even with a background. JPEG, PNG or WebP, up to 20 MB. Your current face stays unchanged until you approve the new preview.</p>
       <section data-candidate hidden><h3 data-preview-title>Uploaded photo</h3><p data-candidate-status role="status" aria-live="polite"></p>
         <img data-original class="visual-upload-preview" alt="Your uploaded photo, not yet approved as the Legacy face" hidden>
         <div class="visual-preview" data-preview aria-hidden="true" hidden></div>
@@ -28,12 +28,13 @@ if(auth && entry && window.LegaryaMedia) {
   let epoch=0,account=null,abort=null,timer=null,busy=false,legacy=null,capabilities=null,profile=null;
   let candidate=null,crop=null,bitmap=null,source=null,preview=null,pending=null,upload=null,queuedFile=null;
   let originalUrl=null,framingChanged=false,polls=0,focus=null,mounting=false,previewEpoch=0;
+  let manualFraming=false;
   const current=t=>dialog.open&&t===epoch&&account===auth.getSessionEpoch?.()&&getLegacy()?.id===legacy?.id&&getLegacy()?.access_role==="owner";
   const notice=(text,error=false)=>{find("[data-notice]").textContent=text;find("[data-notice]").classList.toggle("visual-error",error);};
   const status=text=>{find("[data-candidate-status]").textContent=text;};
   function clearPreview(){++previewEpoch;preview?.dispose();preview=null;find("[data-preview]").replaceChildren();find("[data-preview]").hidden=true;}
   function clearPhoto(){
-    crop?.dispose();crop=null;bitmap?.close();bitmap=null;source=null;pending=null;framingChanged=false;
+    crop?.dispose();crop=null;bitmap?.close();bitmap=null;source=null;pending=null;framingChanged=false;manualFraming=false;
     if(originalUrl)URL.revokeObjectURL(originalUrl);originalUrl=null;
     find("[data-original]").removeAttribute("src");find("[data-original]").hidden=true;find("[data-framing]").hidden=true;find("[data-framing]").open=false;
   }
@@ -100,10 +101,10 @@ if(auth && entry && window.LegaryaMedia) {
   async function showPhoto(blob,token,initial=null){
     if(blob.size>20*1024*1024||!["image/jpeg","image/png","image/webp"].includes(blob.type))throw userError("Upload a JPEG, PNG or WebP photo up to 20 MB.");
     let decoded;try{decoded=await createImageBitmap(blob,{imageOrientation:"from-image"});}catch{throw userError("This photo could not be opened. Try another JPEG, PNG or WebP image.");}
-    if(!current(token)){decoded.close();return;}clearPhoto();bitmap=decoded;originalUrl=URL.createObjectURL(blob);find("[data-original]").src=originalUrl;
+    if(!current(token)){decoded.close();return;}clearPhoto();manualFraming=Boolean(initial&&!initial.auto_fit);bitmap=decoded;originalUrl=URL.createObjectURL(blob);find("[data-original]").src=originalUrl;
     find("[data-original]").hidden=false;find("[data-candidate]").hidden=false;find("[data-preview-title]").textContent="Uploaded photo — preview not ready";mounting=true;
     try{crop=mountCropControls(find("[data-crop]"),bitmap,{initial,onChange:()=>{
-      if(mounting)return;pending=null;framingChanged=true;status("Framing changed. Click Regenerate to create a preview of this frame before approving.");lock(busy);
+      if(mounting)return;pending=null;framingChanged=true;manualFraming=true;status("Framing changed. Click Regenerate to create a preview of this frame before approving.");lock(busy);
     }});}catch{throw userError("Use a photo at least 128 pixels wide and high, no larger than 24 megapixels or 8192 pixels on either edge.");}finally{mounting=false;}
     find("[data-framing]").hidden=false;
   }
@@ -117,11 +118,12 @@ if(auth && entry && window.LegaryaMedia) {
     await refreshProfile(token);if(!current(token))return;
     // Upload/Regenerate is an explicit confirmation with adjacent permission
     // wording. Opening/reloading a saved photo never grants consent or approval.
-    pending||={source_id:source.id,crop:crop.value(),confirmed:true,confirmation_copy_version:capabilities.confirmation_copy_version,
+    pending||={source_id:source.id,crop:{...crop.value(),auto_fit:!manualFraming},confirmed:true,confirmation_copy_version:capabilities.confirmation_copy_version,
       request_key:crypto.randomUUID(),expected_revision:profile.revision};
     pending.expected_revision=profile.revision;
     // Retiring a previous private preview is intentional, not a delivery error.
     clearPreview();if(originalUrl)find("[data-original]").hidden=false;
+    if(manualFraming)find("[data-original]").src=crop.preview();
     notice("Your photo stays private until you approve its preview.");status("Creating your private preview…");let created;
     try{created=await client.generate(legacy.id,pending,abort.signal);}catch(error){
       // A rejected regeneration must not strand an already valid preview.
@@ -134,12 +136,13 @@ if(auth && entry && window.LegaryaMedia) {
   }
   async function uploadPhoto(file,token){
     if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||!file.size||file.size>20*1024*1024)throw userError("Upload a JPEG, PNG or WebP photo up to 20 MB.");
+    const initial=upload?.file===file&&crop?{...crop.value(),auto_fit:!manualFraming}:null;
     clearTimeout(timer);timer=null;clearPreview();candidate=null;pending=null;
     const request=upload?.file===file?upload:{file,key:crypto.randomUUID(),source:null};upload=request;
-    await showPhoto(file,token);if(!current(token))return;notice("Your photo stays private until you approve its preview.");status("Uploading your photo…");
+    await showPhoto(file,token,initial);if(!current(token))return;notice("Your photo stays private until you approve its preview.");status("Uploading your photo…");
     request.source||=await auth.apiRequest(`/legacies/${legacy.id}/sources`,{authenticated:true,method:"POST",signal:abort.signal,
       body:{filename:file.name,kind:"image",mime_type:file.type,size_bytes:file.size,upload_request_key:request.key,processing_purpose:"visual_reference"}});
-    if(!current(token))return;const uploaded=await media.upload(legacy.id,request.source.id,file,abort.signal);if(!current(token))return;
+    if(!current(token))return;request.uploaded||=await media.upload(legacy.id,request.source.id,file,abort.signal);const uploaded=request.uploaded;if(!current(token))return;
     status("Checking your photo, then creating your private preview…");let row;
     try{row=await waitForVisualSource(media,legacy.id,uploaded,{signal:abort.signal,current:()=>current(token)});}
     catch(error){if(error.name==="AbortError")throw error;throw userError("Your photo could not finish validation. Click Regenerate to retry, or upload another photo.");}

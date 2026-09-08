@@ -55,5 +55,5 @@ export function mountCropControls(root, bitmap, { onChange=()=>{}, initial=null 
   canvas.addEventListener("pointermove",event=>{if(pointer?.id!==event.pointerId)return;const scale=crop.edge/canvas.getBoundingClientRect().width;crop.pan((pointer.x-event.clientX)*scale,(pointer.y-event.clientY)*scale);pointer.x=event.clientX;pointer.y=event.clientY;draw();});
   canvas.addEventListener("pointerup",()=>{pointer=null;}); canvas.addEventListener("pointercancel",()=>{pointer=null;});
   root.replaceChildren(canvas,controls,note); draw();
-  return { value:()=>crop.value(), dispose(){pointer=null;canvas.width=canvas.height=0;root.replaceChildren();} };
+  return { value:()=>crop.value(), preview:()=>canvas.toDataURL("image/png"), dispose(){pointer=null;canvas.width=canvas.height=0;root.replaceChildren();} };
 }

@@ -63,7 +63,7 @@ try {
       }
       throw new Error("Unexpected synthetic API path");
     },
-    async authenticatedMediaFetch(route,options={}){original ||= await picture(1200,800);if(options.method==="PUT"){const row=state.sources[route.split("/").at(-2)];if(state.holdUpload)await new Promise(resolve=>{state.releaseUpload=resolve;});return new Response(JSON.stringify(row),{headers:{"Content-Type":"application/json"}});}return new Response(original,{headers:{"Content-Type":"image/png"}});},
+    async authenticatedMediaFetch(route,options={}){original ||= await picture(1200,800);if(options.method==="PUT"){if(state.failUpload){state.failUpload=false;throw Object.assign(new Error('Synthetic upload interruption'),{status:503});}const row=state.sources[route.split("/").at(-2)];if(state.holdUpload)await new Promise(resolve=>{state.releaseUpload=resolve;});return new Response(JSON.stringify(row),{headers:{"Content-Type":"application/json"}});}return new Response(original,{headers:{"Content-Type":"image/png"}});},
     async authenticatedVisualFetch(route){if(state.revoke)denied();const b=await assets(),a=b.descriptors.find(a=>route.endsWith("/"+a.id+"/content"));if(!a)denied();return new Response(b.bytes[a.role],{headers:{"Content-Type":a.mime_type}});}
    };
    function assertBody(b){if(!b.confirmed||b.confirmation_copy_version!=="l19-likeness-v1"||!b.request_key||b.expected_revision!==state.profile.revision)throw new Error("Missing explicit confirmation");}
@@ -89,6 +89,7 @@ try {
  assert.equal(await page.locator('[data-approve]').isDisabled(),true);
  await page.evaluate(()=>{window.__visualQA.versions[window.__visualQA.profile.desired_version_id].state='ready';window.__visualQA.nextVersionState='ready';});
  await ready();assert.equal(await count(),1);assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),false);
+ assert.equal(await page.evaluate(()=>window.__visualQA.calls.find(c=>c.route.endsWith('/versions')&&c.method==='POST').body.crop.auto_fit),true);
  if(process.env.L19_SCREENSHOT_DIR)await page.locator('dialog.visual-settings').screenshot({path:path.join(process.env.L19_SCREENSHOT_DIR,'face-flow-desktop.png')});
  results.checks.push('immediate-private-photo','upload-automatically-prepares','queued-preview-polls-to-ready-without-a-button','private-until-approval');
  await approved();const first=await page.evaluate(()=>window.__visualQA.profile.current_version_id);
@@ -109,6 +110,7 @@ try {
  await page.locator('[data-regenerate]').click();await ready();assert.equal(await count(),beforeCrop+1);
  const lastBody=await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').at(-1).body);
  assert.ok(lastBody.crop.width<1);assert.equal(lastBody.confirmed,true);
+ assert.equal(lastBody.crop.auto_fit,false);
  results.checks.push('framing-change-invalidates-approval','regenerate-beside-preview-new-confirmed-request');
  await page.evaluate(()=>{window.__visualQA.holdGeneration=true;window.__visualQA.nextVersionState='queued';});
  await page.locator('[data-regenerate]').click();await page.waitForFunction(()=>typeof window.__visualQA.releaseGeneration==='function');
@@ -159,6 +161,18 @@ try {
  await approved();assert.equal(await page.evaluate(()=>window.__visualQA.profile.current_version_id),retained);
  results.checks.push('unprepared-upload-not-labelled-approvable-preview','rejected-regeneration-preserves-valid-preview-approval');
 
+ await page.evaluate(()=>{window.__visualQA.failUpload=true;});await upload('Synthetic interrupted upload framing.png');
+ await page.getByText(/Face recreation is temporarily unavailable/).first().waitFor();
+ await page.locator('[data-framing] summary').click();await page.locator('.visual-crop-canvas').focus();await page.keyboard.press('+');await page.keyboard.press('Shift+ArrowUp');
+ const selectedZoom=Number(await page.locator('input[aria-label="Crop zoom"]').inputValue());
+ await page.locator('[data-regenerate]').click();await ready();
+ assert.ok(Math.abs(Number(await page.locator('input[aria-label="Crop zoom"]').inputValue())-selectedZoom)<.001);
+ const retryCrop=await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').at(-1).body.crop);
+ assert.equal(retryCrop.auto_fit,false);assert.ok(retryCrop.width<1);
+ await page.locator('[data-regenerate]').click();await ready();
+ assert.deepEqual(await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').at(-1).body.crop),retryCrop);
+ results.checks.push('automatic-full-image-framing-default','manual-framing-survives-upload-retry-and-repeat-regeneration');
+
  await page.locator('[data-close]').click();const beforeRole=await page.evaluate(()=>window.__visualQA.calls.length);
  await page.evaluate(()=>{window.__visualQA.legacy={...window.__visualQA.legacy,access_role:'collaborator'};dispatchEvent(new Event('legarya-legacy-change'));});
  await page.locator('#openVisualPresence').click();await page.getByText(/Face recreation is managed by the Legacy owner/).waitFor();
@@ -181,6 +195,26 @@ try {
    await page.evaluate(value=>{window.__visualQA.legacy=value;dispatchEvent(new Event('legarya-legacy-change'));},legacy);
    assert.equal(await page.locator('#openVisualPresence').isVisible(),false);assert.equal(await page.locator('dialog.visual-settings').evaluate(e=>e.open),false);
  }
- results.checks.push('viewer-and-missing-legacy-hidden');assert.deepEqual(errors,[]);results.pageErrors=0;
+ results.checks.push('viewer-and-missing-legacy-hidden');
+ const chatHTML=await readFile(path.join(root,'legacy-chat.html'),'utf8');
+ await page.setContent(chatHTML.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace(/<link\b[^>]*>/g,''));
+ for(const file of ['chat.css','legacy-chat.css','visual-presence.css'])await page.addStyleTag({content:await readFile(path.join(root,'css',file),'utf8')});
+ await page.evaluate(async()=>{
+   const state=window.__visualQA;state.legacy={id:1,subject_name:'Synthetic QA',access_role:'viewer'};state.profile.current_version_id=Object.keys(state.versions)[0];state.profile.revision=1;state.profile.enabled=true;state.live=false;
+   window.LegaryaLiveChat={context:()=>({legacyId:1,mode:'legacy',name:'Synthetic QA',ready:true,live:state.live})};
+   await import('/js/legacy-chat-portrait.mjs?v=face5');
+ });
+ await page.locator('#legacyChatFace .visual-presence-canvas').waitFor({state:'visible'});
+ for(const width of [1280,390,320]){
+   await page.setViewportSize({width,height:800});
+   const fits=await page.evaluate(()=>{const face=document.querySelector('#legacyChatFace').getBoundingClientRect(),composer=document.querySelector('#composer').getBoundingClientRect();return face.width>0&&face.right<=innerWidth&&composer.bottom<=innerHeight&&composer.top>face.bottom;});
+   assert.ok(fits,'visible face and composer must both fit');
+ }
+ await page.evaluate(()=>{window.__visualQA.live=true;dispatchEvent(new Event('legarya:chat-context'));});
+ assert.equal(await page.locator('#legacyChatFace').isVisible(),false);assert.equal(await page.locator('#legacyChatFace canvas').count(),0);
+ await page.evaluate(()=>{window.__visualQA.live=false;dispatchEvent(new Event('legarya:chat-context'));});
+ await page.locator('#legacyChatFace .visual-presence-canvas').waitFor({state:'visible'});
+ results.checks.push('approved-face-visible-in-chat-desktop-mobile','chat-face-yields-to-call-and-restores');
+ assert.deepEqual(errors,[]);results.pageErrors=0;
  console.log(JSON.stringify(results,null,2));await context.close();
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
