@@ -4,165 +4,170 @@ import { createVisualPresence } from "./visual-presence-controller.mjs?v=l19c1";
 import { createPortraitRenderer } from "./legacy-portrait-renderer.mjs?v=l19c1";
 import { waitForVisualSource } from "./visual-source-ready.mjs?v=l19c2";
 
-const auth = window.LegaryaAuthApi, entry = document.querySelector("#openVisualPresence");
-if (auth && entry && window.LegaryaMedia) {
-  const client = createVisualClient(auth), media = window.LegaryaMedia.createClient(auth);
-  const dialog = document.createElement("dialog"); dialog.className = "visual-settings";
-  dialog.setAttribute("aria-labelledby", "visualTitle");
-  dialog.innerHTML = `<header><div><p class="visual-eyebrow">Legacy settings</p><h2 id="visualTitle">Recreate Legacy's Face</h2></div><button type="button" data-close aria-label="Close Recreate Legacy's Face">Close</button></header>
-    <p data-subject class="visual-subject"></p>
-    <p class="visual-intro">Create an animated portrait from a photo, even before identity setup. Your memories remain the source of what is said. Recreating a face never creates facts or changes a voice.</p>
+const auth=window.LegaryaAuthApi, entry=document.querySelector("#openVisualPresence");
+if(auth && entry && window.LegaryaMedia) {
+  const client=createVisualClient(auth), media=window.LegaryaMedia.createClient(auth);
+  const dialog=document.createElement("dialog");dialog.className="visual-settings";dialog.setAttribute("aria-labelledby","visualTitle");
+  dialog.innerHTML=`<header><div><p class="visual-eyebrow">Legacy settings</p><h2 id="visualTitle">Recreate Legacy's Face</h2></div><button type="button" data-close aria-label="Close Recreate Legacy's Face">Close</button></header>
+    <p data-subject class="visual-subject"></p><p class="visual-intro">Upload a photo. Review the private preview. Approve it as this Legacy's face. Identity setup is not required.</p>
     <p data-notice role="status" aria-live="polite"></p>
-    <section data-manage hidden><div class="visual-current"><h3>Current portrait</h3><p data-current></p><div class="visual-actions"><button type="button" data-view-current>Preview current</button><button type="button" data-toggle>Disable</button><button type="button" data-replace>Replace photo</button><button type="button" data-regenerate>Regenerate</button><button type="button" data-remove>Delete Visual Companion</button></div></div>
-    <div data-delete-confirm hidden class="visual-warning"><p>Delete the Visual Companion and its prepared portraits? The original photo stays in Media &amp; Sources. Memories, Timeline, Stories and conversations are unchanged.</p><button type="button" data-delete-yes>Delete prepared portraits</button><button type="button" data-delete-no>Keep portraits</button></div>
-    <div data-chooser><h3>Choose a photo</h3><p>Use one clear face with room around the head. For a group photo, manually frame only the intended person. Faded, grayscale and old photographs are welcome.</p><label>Existing Media &amp; Sources image<select data-source><option value="">Choose an image</option></select></label><p class="visual-or">or</p><label class="visual-upload">Upload a portrait<input data-upload type="file" accept="image/jpeg,image/png,image/webp"></label><p class="visual-hint">JPEG, PNG or WebP · up to 20 MB. New portrait uploads are private visual references: no memory suggestions or factual extraction.</p></div>
-    <section data-crop-section hidden><h3>Frame one person</h3><p>Drag to position, use Zoom, or focus the image and use arrow keys. The square shown here is the exact crop used.</p><div data-crop></div>
-    <label class="visual-confirm"><input type="checkbox" data-confirm><span data-consent></span></label><button type="button" data-generate aria-describedby="visualPrepareHelp" disabled>Prepare private preview</button><p id="visualPrepareHelp" data-prepare-help class="visual-hint" role="status"></p></section>
-    <section data-candidate hidden><h3>Private preview</h3><p data-candidate-status></p><div class="visual-preview" data-preview aria-hidden="true"></div><p>AI-animated portrait, not a recording. Movement is approximate. Live calls use the existing standard AI voice, not the person's recorded voice.</p><label><input type="checkbox" data-static>Show static photo</label><div class="visual-actions"><button type="button" data-approve disabled>Approve &amp; use in Legacy calls</button><button type="button" data-refresh>Refresh preparation status</button></div><p class="visual-hint">Nothing is shown to visitors until you approve this exact preview. Your current approved portrait stays active while a replacement is prepared.</p></section>
+    <section data-manage hidden>
+      <label class="visual-upload">Upload photo &amp; create private preview<input data-upload type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="visualPermission" disabled></label>
+      <p id="visualPermission" class="visual-hint">By selecting a photo or clicking Regenerate, I confirm I have permission to use the pictured person's likeness for this Legacy's AI-generated Visual Companion, not a recording of that person.</p>
+      <p class="visual-hint">Use a clear photo of one person. JPEG, PNG or WebP, up to 20 MB. A new upload never changes the current face until you approve its preview.</p>
+      <section data-candidate hidden><h3 data-preview-title>Private preview</h3><p data-candidate-status role="status" aria-live="polite"></p>
+        <img data-original class="visual-upload-preview" alt="Your uploaded photo, not yet approved as the Legacy face" hidden>
+        <div class="visual-preview" data-preview aria-hidden="true" hidden></div>
+        <div class="visual-actions"><button type="button" data-approve disabled>Approve as Legacy face</button><button type="button" data-regenerate aria-describedby="visualPermission" disabled>Regenerate</button></div>
+        <p class="visual-hint">Only an approved preview becomes the Legacy's face. Memories and voice are unchanged.</p>
+        <details data-framing hidden><summary>Adjust framing (optional)</summary><p>Frame one person's full face with some headroom, then click Regenerate above to update the preview.</p><div data-crop></div></details>
+      </section>
     </section>`;
   document.body.append(dialog);
-  const find = s => dialog.querySelector(s), getLegacy = () => window.LegaryaWorkspace?.getActiveLegacy();
-  let epoch=0, selection=0, account=null, abort=null, timer=null, busy=false, legacy=null, capabilities=null, profile=null, candidate=null, sources=[];
-  let crop=null, bitmap=null, source=null, preview=null, pending=null, upload=null, polls=0, focus=null;
-  const current = token => dialog.open && token===epoch && account===auth.getSessionEpoch?.() && getLegacy()?.id===legacy?.id && getLegacy()?.access_role==="owner";
-  function notice(text, error=false) { find("[data-notice]").textContent=text; find("[data-notice]").classList.toggle("visual-error",error); }
-  function clearPreview() { preview?.dispose(); preview=null; find("[data-preview]").replaceChildren(); find("[data-approve]").disabled=true; }
-  function clearCrop() { ++selection; crop?.dispose(); crop=null; bitmap?.close(); bitmap=null; source=null; pending=null; find("[data-confirm]").checked=false; find("[data-generate]").disabled=true; find("[data-crop-section]").hidden=true; }
-  function retire() { ++epoch; abort?.abort(); abort=null; clearTimeout(timer); timer=null; clearPreview(); clearCrop(); sources=[]; upload=null; pending=null; busy=false; candidate=profile=capabilities=null; }
-  function close() { retire(); dialog.close(); focus?.focus(); }
-  const invalidate = () => window.dispatchEvent(new CustomEvent("legarya:visual-invalidated",{detail:{legacyId:legacy.id}}));
-  function lock(value) {
-    busy=value;
-    find("[data-crop]").inert=value;
-    for(const button of dialog.querySelectorAll("[data-manage] button, [data-manage] select, [data-upload], [data-confirm]")) button.disabled=value;
-    find("[data-generate]").disabled=value || !crop || !find("[data-confirm]").checked || !capabilities?.can_prepare;
-    find("[data-prepare-help]").textContent=value ? "Please wait…" : !capabilities?.can_prepare ? "Face preparation is temporarily unavailable. Your photo is saved; close and reopen this panel to try again." : !find("[data-confirm]").checked ? "Tick the permission box above, then prepare your private preview. Identity setup is not required." : "Next: prepare your private preview, inspect it, then approve it. Identity setup is not required.";
-    find("[data-approve]").disabled=value || !preview?.approval() || candidate?.id===profile?.current_version_id;
-    find("[data-toggle]").disabled=value || !profile?.current_version_id || profile.deleted;
-    find("[data-regenerate]").disabled=value || !profile?.current_version_id || !capabilities?.can_prepare;
-    find("[data-view-current]").disabled=value || !profile?.current_version_id;
-    find("[data-remove]").disabled=value || !profile?.revision || profile.deleted;
+  const find=s=>dialog.querySelector(s), getLegacy=()=>window.LegaryaWorkspace?.getActiveLegacy();
+  let epoch=0,account=null,abort=null,timer=null,busy=false,legacy=null,capabilities=null,profile=null;
+  let candidate=null,crop=null,bitmap=null,source=null,preview=null,pending=null,upload=null,queuedFile=null;
+  let originalUrl=null,framingChanged=false,polls=0,focus=null,mounting=false;
+  const current=t=>dialog.open&&t===epoch&&account===auth.getSessionEpoch?.()&&getLegacy()?.id===legacy?.id&&getLegacy()?.access_role==="owner";
+  const notice=(text,error=false)=>{find("[data-notice]").textContent=text;find("[data-notice]").classList.toggle("visual-error",error);};
+  const status=text=>{find("[data-candidate-status]").textContent=text;};
+  function clearPreview(){preview?.dispose();preview=null;find("[data-preview]").replaceChildren();find("[data-preview]").hidden=true;}
+  function clearPhoto(){
+    crop?.dispose();crop=null;bitmap?.close();bitmap=null;source=null;pending=null;framingChanged=false;
+    if(originalUrl)URL.revokeObjectURL(originalUrl);originalUrl=null;
+    find("[data-original]").removeAttribute("src");find("[data-original]").hidden=true;find("[data-framing]").hidden=true;find("[data-framing]").open=false;
   }
-  async function perform(action) {
-    if(busy || !current(epoch)) return;
-    const token=epoch; lock(true);
-    try { await action(token,abort.signal); }
-    catch(error) { if(current(token)) { notice(visualError(error),true); if([401,403,404,409,410].includes(error.status)){clearPreview();clearCrop();} } }
-    finally { if(current(token))lock(false); }
+  function retire(){++epoch;abort?.abort();abort=null;clearTimeout(timer);timer=null;clearPreview();clearPhoto();upload=queuedFile=candidate=profile=capabilities=null;busy=false;find("[data-upload]").value="";}
+  function close(){retire();dialog.close();focus?.focus();}
+  function lock(value){
+    busy=value;find("[data-crop]").inert=value;find("[data-upload]").disabled=value||!capabilities?.can_manage;
+    const preparing=["queued","preparing"].includes(candidate?.state),approved=candidate?.id===profile?.current_version_id&&profile?.enabled;
+    find("[data-approve]").disabled=value||framingChanged||!preview?.approval()||approved;
+    find("[data-approve]").textContent=approved?"Current Legacy face":"Approve as Legacy face";
+    find("[data-regenerate]").disabled=value||preparing||!capabilities?.can_prepare||!(source||candidate||upload);
+    find("[data-candidate]").setAttribute("aria-busy",String(value||preparing));
   }
-  async function refreshProfile(token) {
-    const row=await client.profile(legacy.id,abort.signal); if(!current(token))return;
-    profile=row; find("[data-current]").textContent=row.deleted ? "Visual Companion deleted. Your original photo remains." : !row.current_version_id ? "No approved portrait yet." : row.enabled ? "Enabled for authorized Legacy voice calls." : "Disabled. Your approved portrait is retained privately.";
-    find("[data-toggle]").textContent=row.enabled ? "Disable" : "Enable";
-    lock(busy);
+  function userError(message){const error=new Error("Face preparation interrupted");error.userMessage=message;return error;}
+  async function perform(action){
+    if(busy||!current(epoch))return;const token=epoch;lock(true);
+    try{await action(token);}catch(error){if(current(token)){
+      const message=error.userMessage||visualError(error);notice(message,true);status(message);
+      if([401,403,404,410].includes(error.status)){clearPreview();clearPhoto();candidate=upload=null;}
+    }}finally{if(current(token)){lock(false);if(queuedFile){const file=queuedFile;queuedFile=null;void perform(t=>uploadPhoto(file,t));}}}
   }
-  async function showVersion(id,token) {
-    clearTimeout(timer); timer=null;
-    const next=await client.version(legacy.id,id,abort.signal); if(!current(token))return;
-    const changed=candidate?.id!==next.id; candidate=next;
-    find("[data-candidate]").hidden=false;
-    find("[data-candidate-status]").textContent=({queued:"Queued for private preparation…",preparing:"Preparing your portrait privately…",ready:"Ready. Inspect the face at rest and during the motion preview before approving.",failed:"This photo could not be prepared. Reposition the crop or choose another photo.",needs_recrop:"Please crop a single, clear face with some headroom, then confirm again.",purge_pending:"This version is being removed.",purged:"This version was removed.",cancelled:"Preparation was cancelled."})[next.state] || "Checking preparation…";
-    if(next.state==="ready") {
-      if(changed || !preview) {
-        clearPreview();
-        preview=createVisualPresence({host:find("[data-preview]"),client,legacyId:legacy.id,version:next.id,name:legacy.subject_name||"L",preview:true,staticPhoto:find("[data-static]").checked,
-          guard:()=>current(token)&&candidate?.id===next.id,rendererFactory:createPortraitRenderer,onState:()=>lock(busy)});
-        await preview.start(); if(current(token)) { lock(busy); find("[data-candidate]").scrollIntoView({block:"start"}); }
+  async function refreshProfile(token){const row=await client.profile(legacy.id,abort.signal);if(current(token)){profile=row;lock(busy);}}
+  function schedule(id,token){
+    clearTimeout(timer);timer=setTimeout(()=>{timer=null;if(!current(token)||candidate?.id!==id)return;
+      // A busy upload must not permanently swallow the status polling tick.
+      if(busy){schedule(id,token);return;}void perform(t=>showVersion(id,t));
+    },3000);
+  }
+  async function showVersion(id,token){
+    clearTimeout(timer);timer=null;const next=await client.version(legacy.id,id,abort.signal);if(!current(token))return;
+    const changed=candidate?.id!==next.id;candidate=next;find("[data-candidate]").hidden=false;
+    const approved=next.id===profile?.current_version_id&&profile?.enabled;find("[data-preview-title]").textContent=approved?"Current Legacy face":"Private preview";
+    if(next.state==="ready"){
+      if(changed||!preview||!preview.approval()){
+        clearPreview();find("[data-preview]").hidden=false;
+        preview=createVisualPresence({host:find("[data-preview]"),client,legacyId:legacy.id,version:next.id,name:legacy.subject_name||"L",preview:true,
+          guard:()=>current(token)&&candidate?.id===next.id,rendererFactory:createPortraitRenderer,onState:state=>{
+            if(!current(token))return;
+            if(state==="ERROR"||state==="DISABLED")status("Preview could not be displayed. Click Regenerate to try again; your current face is unchanged.");lock(busy);
+          }});
+        await preview.start();if(!current(token))return;
       }
-    } else {
-      clearPreview();
-      if(["queued","preparing"].includes(next.state) && polls++<100) timer=setTimeout(()=>{timer=null;if(current(token))void perform(t=>showVersion(id,t));},3000);
-      else if(["queued","preparing"].includes(next.state))notice("Preparation is taking longer. You can close this panel and check again later.");
-    }
+      if(preview?.approval()){
+        find("[data-original]").hidden=true;
+        status(framingChanged?"Framing changed. Click Regenerate to create a preview of this frame before approving.":approved?"This is the approved face. Upload a new photo whenever you want to change it.":"Your private preview is ready. Approve it if you are happy with the result, or Regenerate.");
+      }
+    }else{
+      clearPreview();if(originalUrl)find("[data-original]").hidden=false;
+      if(["queued","preparing"].includes(next.state)){
+        status("Creating your private preview… Your current Legacy face is unchanged.");
+        if(polls++<100)schedule(id,token);else{candidate={...candidate,state:"polling_paused"};status("Preparation is taking longer. Click Regenerate to check again, or reopen this panel later.");}
+      }else{
+        if(!crop&&next.source_id){const row=await media.source(legacy.id,next.source_id,abort.signal);if(!current(token))return;await loadSource(row,token,next.crop);if(!current(token))return;}
+        status("We could not prepare this photo. Open Adjust framing, include one clear face, then click Regenerate. You can also upload a different photo.");
+        if(crop)find("[data-framing]").open=true;
+      }
+    }lock(busy);
   }
-  async function choose(row,token,initial=null) {
-    clearCrop(); clearPreview(); const chosen=selection;
-    if(!row)return;
-    notice("Opening your private photo…");
-    const blob=await media.original(legacy.id,row.id,abort.signal);
-    if(!current(token)||chosen!==selection)return;
-    if(blob.size>20*1024*1024 || !["image/jpeg","image/png","image/webp"].includes(blob.type))throw new Error("Photo unavailable.");
-    const decoded=await createImageBitmap(blob,{imageOrientation:"from-image"});
-    if(!current(token)||chosen!==selection){decoded.close();return;}
-    bitmap=decoded;source=row;
-    try { crop=mountCropControls(find("[data-crop]"),bitmap,{initial,onChange:()=>{pending=null;find("[data-confirm]").checked=false;lock(busy);}}); }
-    catch(error){clearCrop();throw error;}
-    find("[data-crop-section]").hidden=false;
-    find("[data-consent]").textContent=`Use this selected image for ${legacy.subject_name || "this Legacy"}'s Visual Companion. I have permission to use this likeness and understand that the animated result is an AI-generated representation, not a recording of this person.`;
-    notice("Your photo is saved privately. Frame the face, confirm permission, then prepare your preview. Identity setup is not required.");find("[data-crop-section]").scrollIntoView({block:"nearest"});
+  async function showPhoto(blob,token,initial=null){
+    if(blob.size>20*1024*1024||!["image/jpeg","image/png","image/webp"].includes(blob.type))throw userError("Upload a JPEG, PNG or WebP photo up to 20 MB.");
+    let decoded;try{decoded=await createImageBitmap(blob,{imageOrientation:"from-image"});}catch{throw userError("This photo could not be opened. Try another JPEG, PNG or WebP image.");}
+    if(!current(token)){decoded.close();return;}clearPhoto();bitmap=decoded;originalUrl=URL.createObjectURL(blob);find("[data-original]").src=originalUrl;
+    find("[data-original]").hidden=false;find("[data-candidate]").hidden=false;find("[data-preview-title]").textContent="Private preview";mounting=true;
+    try{crop=mountCropControls(find("[data-crop]"),bitmap,{initial,onChange:()=>{
+      if(mounting)return;pending=null;framingChanged=true;status("Framing changed. Click Regenerate to create a preview of this frame before approving.");lock(busy);
+    }});}catch{throw userError("Use a photo at least 128 pixels wide and high, no larger than 24 megapixels or 8192 pixels on either edge.");}finally{mounting=false;}
+    find("[data-framing]").hidden=false;
   }
-  async function sourceList(token) {
-    const rows=await media.list(legacy.id,abort.signal);if(!current(token))return;
-    sources=rows.filter(s=>s.kind==="image" && s.safety_state==="clean" && !["uploading","deleting","deleted"].includes(s.state) && s.legacy_id===legacy.id);
-    const select=find("[data-source]"); select.replaceChildren(new Option("Choose an image",""));
-    for(const row of sources)select.add(new Option(row.original_filename,row.id));
+  async function loadSource(row,token,initial=null){
+    if(row.legacy_id!==legacy.id)throw userError("This photo is not available in the selected Legacy.");
+    await showPhoto(await media.original(legacy.id,row.id,abort.signal),token,initial);if(current(token))source=row;
   }
-  async function open() {
-    retire(); legacy=getLegacy();if(!legacy)return;account=auth.getSessionEpoch?.();
-    legacy={...legacy}; focus=document.activeElement; dialog.showModal(); abort=new AbortController(); const token=epoch;
-    find("[data-manage]").hidden=true;find("[data-delete-confirm]").hidden=true;find("[data-candidate]").hidden=true;find("[data-chooser]").hidden=false;
-    find("[data-subject]").textContent=legacy.subject_name || "Selected Legacy";
-    if(legacy.access_role!=="owner"){notice("Face recreation is managed by the Legacy owner. You cannot prepare, preview or change their portrait.");return;}
-    await perform(async()=>{
-      const available=await client.capabilities(legacy.id,abort.signal);if(!current(token))return;capabilities=available;
-      if(!capabilities.enabled){notice("Face recreation is not available for this Legacy right now.");return;}
-      if(!capabilities.can_manage || capabilities.confirmation_copy_version!=="l19-likeness-v1")throw new Error("Unsupported visual setup.");
-      await refreshProfile(token); if(!current(token))return;
-      await sourceList(token); if(!current(token))return;
-      find("[data-manage]").hidden=false;notice(capabilities.can_prepare ? "Upload or choose a photo, prepare a private preview, then approve it. Identity setup is not required." : "Preparation is temporarily unavailable. You can still manage an existing portrait.");
-      polls=0;if(profile.desired_version_id && profile.desired_version_id!==profile.current_version_id)await showVersion(profile.desired_version_id,token);
+  async function prepare(token){
+    if(!source||!crop)return;
+    if(!capabilities.can_prepare)throw userError("Your photo is saved, but face preparation is temporarily unavailable. Reopen this panel to try again later.");
+    await refreshProfile(token);if(!current(token))return;
+    // Upload/Regenerate is an explicit confirmation with adjacent permission
+    // wording. Opening/reloading a saved photo never grants consent or approval.
+    pending||={source_id:source.id,crop:crop.value(),confirmed:true,confirmation_copy_version:capabilities.confirmation_copy_version,
+      request_key:crypto.randomUUID(),expected_revision:profile.revision};
+    pending.expected_revision=profile.revision;
+    status("Creating your private preview…");const created=await client.generate(legacy.id,pending,abort.signal);if(!current(token))return;
+    pending=null;framingChanged=false;polls=0;clearPreview();candidate=null;await refreshProfile(token);if(current(token))await showVersion(created.id,token);
+  }
+  async function uploadPhoto(file,token){
+    if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||!file.size||file.size>20*1024*1024)throw userError("Upload a JPEG, PNG or WebP photo up to 20 MB.");
+    clearTimeout(timer);timer=null;clearPreview();candidate=null;pending=null;
+    const request=upload?.file===file?upload:{file,key:crypto.randomUUID(),source:null};upload=request;
+    await showPhoto(file,token);if(!current(token))return;notice("Your photo stays private until you approve its preview.");status("Uploading your photo…");
+    request.source||=await auth.apiRequest(`/legacies/${legacy.id}/sources`,{authenticated:true,method:"POST",signal:abort.signal,
+      body:{filename:file.name,kind:"image",mime_type:file.type,size_bytes:file.size,upload_request_key:request.key,processing_purpose:"visual_reference"}});
+    if(!current(token))return;const uploaded=await media.upload(legacy.id,request.source.id,file,abort.signal);if(!current(token))return;
+    status("Checking your photo, then creating your private preview…");let row;
+    try{row=await waitForVisualSource(media,legacy.id,uploaded,{signal:abort.signal,current:()=>current(token)});}
+    catch(error){if(error.name==="AbortError")throw error;throw userError("Your photo could not finish validation. Click Regenerate to retry, or upload another photo.");}
+    if(!current(token))return;source=row;upload=null;find("[data-upload]").value="";await prepare(token);
+  }
+  async function regenerate(token){
+    if(upload){await uploadPhoto(upload.file,token);return;}
+    if(candidate&&["polling_paused","queued","preparing"].includes(candidate.state)){polls=0;await showVersion(candidate.id,token);return;}
+    if(!source&&candidate){const version=await client.version(legacy.id,candidate.id,abort.signal);if(!current(token))return;
+      const row=await media.source(legacy.id,version.source_id,abort.signal);if(!current(token))return;await loadSource(row,token,version.crop);}
+    if(current(token))await prepare(token);
+  }
+  async function open(){
+    retire();legacy=getLegacy();if(!legacy)return;legacy={...legacy};account=auth.getSessionEpoch?.();focus=document.activeElement;dialog.showModal();abort=new AbortController();
+    find("[data-manage]").hidden=true;find("[data-candidate]").hidden=true;find("[data-subject]").textContent=legacy.subject_name||"Selected Legacy";
+    if(legacy.access_role!=="owner"){notice("Face recreation is managed by the Legacy owner.");return;}
+    await perform(async token=>{
+      notice("Loading your Legacy face…");const available=await client.capabilities(legacy.id,abort.signal);if(!current(token))return;capabilities=available;
+      if(!capabilities.enabled||!capabilities.can_manage||capabilities.confirmation_copy_version!=="l19-likeness-v1")throw userError("Face recreation is not available for this Legacy right now.");
+      await refreshProfile(token);if(!current(token))return;find("[data-manage]").hidden=false;
+      notice("Upload a photo to create a private preview automatically. Nothing changes until you approve.");polls=0;
+      const id=profile.desired_version_id||profile.current_version_id;
+      if(id)await showVersion(id,token);
+      else{
+        // Recover an unfinished upload without recording consent on panel open.
+        const rows=await media.list(legacy.id,abort.signal);if(!current(token))return;
+        const last=rows.filter(row=>row.legacy_id===legacy.id&&row.processing_purpose==="visual_reference"&&row.kind==="image"&&row.safety_state==="clean"&&!["uploading","failed","deleting","deleted"].includes(row.state))
+          .sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0];
+        if(last){await loadSource(last,token);if(current(token))status("Your previous upload is saved. Click Regenerate to create its private preview, or upload a new photo.");}
+      }
     });
   }
-  find("[data-source]").addEventListener("change",()=>void perform(token=>choose(sources.find(s=>s.id===find("[data-source]").value),token)));
-  find("[data-upload]").addEventListener("change",()=>void perform(async token=>{
-    const file=find("[data-upload]").files[0]; if(!file)return;
-    if(!["image/jpeg","image/png","image/webp"].includes(file.type)||!file.size||file.size>20*1024*1024)throw new Error("Unsupported photo.");
-    const pendingUpload=upload?.file===file?upload:{file,key:crypto.randomUUID(),source:null}; upload=pendingUpload;
-    notice("Uploading a private visual reference. No memory extraction will run…");
-    pendingUpload.source ||= await auth.apiRequest(`/legacies/${legacy.id}/sources`,{authenticated:true,method:"POST",signal:abort.signal,body:{filename:file.name,kind:"image",mime_type:file.type,size_bytes:file.size,upload_request_key:pendingUpload.key,processing_purpose:"visual_reference"}});
-    if(!current(token))return;
-    const uploaded=await media.upload(legacy.id,pendingUpload.source.id,file,abort.signal);if(!current(token))return;
-    notice("Checking your private photo before opening the crop preview…");
-    const row=await waitForVisualSource(media,legacy.id,uploaded,{signal:abort.signal,current:()=>current(token)});if(!current(token))return;
-    upload=null;find("[data-upload]").value="";await sourceList(token);if(current(token))await choose(row,token);
-  }));
-  find("[data-confirm]").addEventListener("change",()=>lock(busy));
-  find("[data-generate]").addEventListener("click",()=>void perform(async token=>{
-    if(!crop||!source||!find("[data-confirm]").checked||!capabilities.can_prepare)return;
-    pending ||= {source_id:source.id,crop:crop.value(),confirmed:true,confirmation_copy_version:capabilities.confirmation_copy_version,request_key:crypto.randomUUID(),expected_revision:profile.revision};
-    notice("Requesting your private preview…");
-    const created=await client.generate(legacy.id,pending,abort.signal);if(!current(token))return;
-    pending=null;find("[data-confirm]").checked=false;await refreshProfile(token);if(!current(token))return;
-    polls=0;notice("Preparing privately. Visitors still see only your current approved portrait.");await showVersion(created.id,token);
-  }));
+  find("[data-upload]").addEventListener("change",()=>{const file=find("[data-upload]").files[0];if(!file||!current(epoch))return;if(busy){queuedFile=file;return;}void perform(t=>uploadPhoto(file,t));});
+  find("[data-regenerate]").addEventListener("click",()=>void perform(regenerate));
   find("[data-approve]").addEventListener("click",()=>void perform(async token=>{
-    const receipt=preview?.approval();if(!receipt||receipt.version_id!==candidate?.id)return;
+    const receipt=preview?.approval();if(!receipt||framingChanged||receipt.version_id!==candidate?.id)return;
     await client.activate(legacy.id,receipt,abort.signal);if(!current(token))return;
-    clearPreview();invalidate();await refreshProfile(token);if(current(token)){notice("Approved and enabled for authorized Legacy calls.");find("[data-candidate]").hidden=true;}
+    window.dispatchEvent(new CustomEvent("legarya:visual-invalidated",{detail:{legacyId:legacy.id}}));await refreshProfile(token);if(!current(token))return;
+    notice("Saved as this Legacy's face. Upload a new photo whenever you want to change it.");await showVersion(receipt.version_id,token);
   }));
-  find("[data-toggle]").addEventListener("click",()=>void perform(async token=>{
-    clearPreview();await client.toggle(legacy.id,!profile.enabled,profile.revision,abort.signal);if(!current(token))return;
-    invalidate();await refreshProfile(token);if(current(token))notice(profile.enabled?"Recreated face enabled.":"Recreated face disabled. Voice and memories are unchanged.");
-  }));
-  find("[data-replace]").addEventListener("click",()=>{clearCrop();find("[data-chooser]").hidden=false;find("[data-source]").focus();});
-  find("[data-regenerate]").addEventListener("click",()=>void perform(async token=>{
-    const version=await client.version(legacy.id,profile.current_version_id,abort.signal);if(!current(token))return;
-    const row=await media.source(legacy.id,version.source_id,abort.signal);if(!current(token))return;
-    await choose(row,token,version.crop);if(current(token))notice("Review this crop and confirm again to prepare a new private version. The current approved portrait stays active.");
-  }));
-  find("[data-view-current]").addEventListener("click",()=>void perform(token=>showVersion(profile.current_version_id,token)));
-  find("[data-refresh]").addEventListener("click",()=>void perform(async token=>{polls=0;await refreshProfile(token);if(current(token)&&profile.desired_version_id)await showVersion(profile.desired_version_id,token);}));
-  find("[data-static]").addEventListener("change",()=>preview?.setStatic(find("[data-static]").checked));
-  find("[data-remove]").addEventListener("click",()=>{find("[data-delete-confirm]").hidden=false;find("[data-delete-yes]").focus();});
-  find("[data-delete-no]").addEventListener("click",()=>{find("[data-delete-confirm]").hidden=true;});
-  find("[data-delete-yes]").addEventListener("click",()=>void perform(async token=>{
-    clearPreview();clearCrop();await client.remove(legacy.id,profile.revision,abort.signal);if(!current(token))return;
-    invalidate();find("[data-delete-confirm]").hidden=true;find("[data-candidate]").hidden=true;await refreshProfile(token);if(current(token))notice("Prepared portraits are being erased. The original photo remains in Media & Sources.");
-  }));
-  find("[data-close]").addEventListener("click",close); dialog.addEventListener("cancel",event=>{event.preventDefault();close();});
-  entry.addEventListener("click",()=>void open());
+  find("[data-close]").addEventListener("click",close);dialog.addEventListener("cancel",e=>{e.preventDefault();close();});entry.addEventListener("click",()=>void open());
   function updateEntry(){if(dialog.open)close();const active=getLegacy();entry.hidden=!active||!["owner","collaborator"].includes(active.access_role);entry.title=active?.access_role==="collaborator"?"Managed by the Legacy owner":"Recreate Legacy's Face";}
-  window.addEventListener("legarya-legacy-change",updateEntry);window.addEventListener("legarya:session-expired",close);window.addEventListener("pagehide",close);
-  window.addEventListener("legarya:session-ending",close);
+  window.addEventListener("legarya-legacy-change",updateEntry);window.addEventListener("legarya:session-expired",close);window.addEventListener("legarya:session-ending",close);window.addEventListener("pagehide",close);
   document.addEventListener("visibilitychange",()=>{if(document.hidden&&dialog.open)close();});updateEntry();
 }

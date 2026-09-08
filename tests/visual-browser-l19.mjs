@@ -34,17 +34,18 @@ try {
     const bundle_digest=await digest(new TextEncoder().encode(JSON.stringify({assets:descriptors.map(a=>({byte_size:a.byte_size,mime_type:a.mime_type,role:a.role,sha256:a.sha256})),recipe:"portrait_2d_v1"})));
     bundle={bytes,descriptors,bundle_digest};return bundle;
    }
-   const source={id:id(2),legacy_id:1,kind:"image",safety_state:"clean",state:"ready",mime_type:"image/png",original_filename:"Synthetic color-layout fixture.png"};
+   let source={id:id(2),legacy_id:1,kind:"image",safety_state:"clean",state:"ready",mime_type:"image/png",original_filename:"Synthetic color-layout fixture.png"};
+   state.sources={[source.id]:source};state.sourceSerial=2;state.requests={};
    function denied(){const e=new Error("Synthetic unavailable");e.status=404;throw e;}
    window.LegaryaAuthApi={
     async apiRequest(route,options={}){
       state.calls.push({route,method:options.method||"GET",body:options.body});
       if(options.signal?.aborted)throw new DOMException("Aborted","AbortError");
       if(route.endsWith("/capabilities"))return{enabled:true,can_manage:state.legacy.access_role==="owner",can_prepare:["active","collecting_identity"].includes(state.legacy.setup_status),confirmation_copy_version:"l19-likeness-v1"};
-      if(route.endsWith("/sources")){if(options.method==="POST"){source.legacy_id=state.legacy.id;return source;}return [source];}
-      if(route.endsWith("/sources/"+source.id))return source;
+      if(route.endsWith("/sources")){if(options.method==="POST"){source={...source,id:id(++state.sourceSerial),legacy_id:state.legacy.id,processing_purpose:"visual_reference",original_filename:options.body.filename};state.sources[source.id]=source;return source;}return Object.values(state.sources);}
+      if(/\/sources\/[^/]+$/.test(route))return state.sources[route.split("/").pop()];
       if(route.endsWith("/versions")&&options.method==="POST"){
-        assertBody(options.body);const b=await assets(),v={id:id(100+state.profile.revision),state:"ready",version_number:state.profile.revision+1,source_id:source.id,crop:options.body.crop,bundle_digest:b.bundle_digest};state.versions[v.id]=v;state.profile.desired_version_id=v.id;state.profile.deleted=false;state.profile.revision++;return v;
+        if(state.requests[options.body.request_key])return state.requests[options.body.request_key];assertBody(options.body);if(state.failGeneration){state.failGeneration=false;const e=new Error("Synthetic failure");e.status=503;throw e;}const b=await assets(),v={id:id(100+state.profile.revision),state:state.nextVersionState||"ready",version_number:state.profile.revision+1,source_id:options.body.source_id,crop:options.body.crop,bundle_digest:b.bundle_digest};state.versions[v.id]=v;state.profile.desired_version_id=v.id;state.profile.deleted=false;state.profile.revision++;state.requests[options.body.request_key]=v;return v;
       }
       if(route.endsWith("/activate")){const b=options.body;if(b.expected_revision!==state.profile.revision||!b.approved||b.bundle_digest!==(await assets()).bundle_digest)throw new Error("Stale activation");state.profile.current_version_id=b.version_id;state.profile.enabled=true;state.profile.revision++;return{...state.profile};}
       if(route.includes("/manifest")||route.endsWith("/active-manifest")){
@@ -60,76 +61,92 @@ try {
       }
       throw new Error("Unexpected synthetic API path");
     },
-    async authenticatedMediaFetch(route,options={}){original ||= await picture(1200,800);if(options.method==="PUT")return new Response(JSON.stringify(source),{headers:{"Content-Type":"application/json"}});return new Response(original,{headers:{"Content-Type":"image/png"}});},
+    async authenticatedMediaFetch(route,options={}){original ||= await picture(1200,800);if(options.method==="PUT"){const row=state.sources[route.split("/").at(-2)];if(state.holdUpload)await new Promise(resolve=>{state.releaseUpload=resolve;});return new Response(JSON.stringify(row),{headers:{"Content-Type":"application/json"}});}return new Response(original,{headers:{"Content-Type":"image/png"}});},
     async authenticatedVisualFetch(route){if(state.revoke)denied();const b=await assets(),a=b.descriptors.find(a=>route.endsWith("/"+a.id+"/content"));if(!a)denied();return new Response(b.bytes[a.role],{headers:{"Content-Type":a.mime_type}});}
    };
    function assertBody(b){if(!b.confirmed||b.confirmation_copy_version!=="l19-likeness-v1"||!b.request_key||b.expected_revision!==state.profile.revision)throw new Error("Missing explicit confirmation");}
  });
- await page.goto(origin);await page.locator("#openVisualPresence").click();
- await page.locator("[data-source]").selectOption({label:"Synthetic color-layout fixture.png"});await page.locator(".visual-crop-canvas").waitFor();
- assert.equal(await page.locator("[data-generate]").isDisabled(),true);
- await page.locator(".visual-crop-canvas").focus();await page.keyboard.press("ArrowRight");await page.keyboard.press("+");
- await page.locator("[data-confirm]").check();await page.getByRole("button",{name:"Rotate 90°"}).click();assert.equal(await page.locator("[data-confirm]").isChecked(),false);
- await page.locator("[data-confirm]").check();await page.locator("[data-generate]").click();await page.locator("[data-approve]:not([disabled])").waitFor();
- const body=await page.evaluate(()=>window.__visualQA.calls.find(c=>c.route.endsWith("/versions")&&c.method==="POST").body);
- assert.equal(body.crop.rotation,90);assert.ok(Math.abs(body.crop.width*800-body.crop.height*1200)<1e-6);
- assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),false);results.checks.push("crop-keyboard-rotation-confirmation","private-before-approval");
- await page.locator(".visual-presence-canvas").waitFor({state:"visible"});
- if(process.env.L19_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.L19_SCREENSHOT_DIR,"visual-owner-desktop.png"),fullPage:true});
- await page.locator("[data-static]").check();assert.equal(await page.locator(".visual-presence-canvas").isVisible(),false);assert.equal(await page.locator(".visual-presence-poster").isVisible(),true);
- await page.locator("[data-static]").uncheck();await page.emulateMedia({reducedMotion:"reduce"});await page.locator(".visual-presence-canvas").waitFor({state:"hidden",timeout:1000});assert.equal(await page.locator(".visual-presence-poster").isVisible(),true);await page.emulateMedia({reducedMotion:"no-preference"});results.checks.push("static-toggle","system-reduced-motion");
- await page.locator("[data-approve]").click();await page.getByText("Approved and enabled for authorized Legacy calls.",{exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),true);results.checks.push("explicit-exact-bundle-activation");
- await page.locator("[data-regenerate]").click();await page.locator(".visual-crop-canvas").waitFor();assert.equal(await page.locator("[data-confirm]").isChecked(),false);await page.locator("[data-confirm]").check();await page.locator("[data-generate]").click();await page.locator("[data-approve]:not([disabled])").waitFor();
- const profiles=await page.evaluate(()=>window.__visualQA.profile);assert.notEqual(profiles.current_version_id,profiles.desired_version_id);assert.equal(profiles.enabled,true);results.checks.push("replacement-preserves-current","regeneration-needs-fresh-confirmation");
- await page.setViewportSize({width:390,height:844});await page.locator("[data-candidate]").scrollIntoViewIfNeeded();if(process.env.L19_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.L19_SCREENSHOT_DIR,"visual-owner-mobile.png")});
- assert.ok(await page.evaluate(()=>document.querySelector(".visual-settings").scrollWidth<=390));results.checks.push("390px-layout");
- await page.setViewportSize({width:820,height:1180});assert.ok(await page.evaluate(()=>document.querySelector(".visual-settings").getBoundingClientRect().width<=820));results.checks.push("tablet-layout");
- await page.evaluate(()=>{window.__visualQA.revoke=true;});await page.locator(".visual-presence-poster").waitFor({state:"detached",timeout:10000});assert.equal(await page.locator("[data-approve]").isDisabled(),true);results.checks.push("lease-revocation-removes-private-bytes");
- await page.evaluate(()=>{window.__visualQA.revoke=false;});await page.locator("[data-toggle]").click();await page.getByText("Recreated face disabled. Voice and memories are unchanged.",{exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),false);results.checks.push("owner-disable");
- await page.locator("[data-remove]").click();await page.locator("[data-delete-yes]").click();await page.getByText("Prepared portraits are being erased. The original photo remains in Media & Sources.",{exact:true}).waitFor();
- assert.equal(await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.includes("/sources")&&c.method==="DELETE").length),0);results.checks.push("delete-retains-original");
- await page.locator("[data-close]").click();assert.equal(await page.locator(".visual-presence-canvas").count(),0);assert.equal(await page.locator(".visual-crop-canvas").count(),0);
- const before=await page.evaluate(()=>window.__visualQA.calls.length);await page.evaluate(()=>{window.__visualQA.legacy={...window.__visualQA.legacy,access_role:"collaborator"};dispatchEvent(new Event("legarya-legacy-change"));});await page.locator("#openVisualPresence").click();await page.getByText(/Face recreation is managed by the Legacy owner/).waitFor();assert.equal(await page.evaluate(()=>window.__visualQA.calls.length),before);results.checks.push("collaborator-no-owner-api","close-disposal");
- for(const legacyId of [2,3]) {
-   await page.evaluate(id=>{window.__visualQA.legacy={id,subject_name:null,access_role:"owner",setup_status:"collecting_identity"};window.__visualQA.profile={revision:0,enabled:false,current_version_id:null,desired_version_id:null,deleted:false};window.__visualQA.versions={};dispatchEvent(new Event("legarya-legacy-change"));},legacyId);
-   assert.equal(await page.locator("#openVisualPresence").isVisible(),true);
-   const preparations=await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').length);
-   await page.locator("#openVisualPresence").click();
-   await page.locator('[data-upload]').waitFor({state:'visible'});
-   await page.locator('[data-upload]').setInputFiles({name:'Synthetic pending photo.png',mimeType:'image/png',buffer:Buffer.from('synthetic upload adapter')});
-   await page.locator('.visual-crop-canvas').waitFor();
-   await page.locator('[data-confirm]').check();
-   assert.equal(await page.locator('[data-generate]').isDisabled(),false);
-   assert.match(await page.locator('[data-prepare-help]').innerText(),/Identity setup is not required/);
-   await page.locator('[data-generate]').click();
-   await page.locator('[data-approve]:not([disabled])').waitFor();
-   assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),false);
-   await page.locator('[data-approve]').click();
-   await page.getByText("Approved and enabled for authorized Legacy calls.",{exact:true}).waitFor();
-   assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),true);
-   assert.equal(await page.evaluate(()=>window.__visualQA.legacy.setup_status),'collecting_identity');
+ await page.goto(origin);
+ const png=Buffer.from(await page.evaluate(async()=>{const c=document.createElement('canvas');c.width=800;c.height=1000;const g=c.getContext('2d');g.fillStyle='#bda070';g.fillRect(0,0,800,1000);return [...new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/png'))).arrayBuffer())];}));
+ const upload=async name=>{await page.locator('[data-upload]:not([disabled])').waitFor({state:'visible'});await page.locator('[data-upload]').setInputFiles({name,mimeType:'image/png',buffer:png});};
+ const ready=()=>page.locator('[data-approve]:not([disabled])').waitFor();
+ const approved=async()=>{await page.locator('[data-approve]').click();await page.getByText("Saved as this Legacy's face. Upload a new photo whenever you want to change it.",{exact:true}).waitFor();};
+ const count=()=>page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').length);
+ await page.locator('#openVisualPresence').click();await page.locator('[data-manage]').waitFor({state:'visible'});
+ assert.equal(await page.locator('[data-toggle],[data-replace],[data-source],[data-generate],[data-view-current]').count(),0);
+ assert.match(await page.locator('#visualPermission').innerText(),/I confirm I have permission/);
+ assert.equal(await count(),0);results.checks.push('no-prepare-on-open','simple-upload-preview-approve-controls');
+ await page.evaluate(()=>{window.__visualQA.holdUpload=true;window.__visualQA.nextVersionState='queued';});
+ await upload('Synthetic first portrait.png');await page.locator('[data-original]').waitFor({state:'visible'});
+ assert.equal(await page.locator('[data-approve]').isDisabled(),true);assert.equal(await count(),0);
+ await page.waitForFunction(()=>typeof window.__visualQA.releaseUpload==='function');
+ await page.evaluate(()=>{window.__visualQA.holdUpload=false;window.__visualQA.releaseUpload();});
+ await page.waitForFunction(()=>!!window.__visualQA.profile.desired_version_id);
+ assert.equal(await page.locator('[data-approve]').isDisabled(),true);
+ await page.evaluate(()=>{window.__visualQA.versions[window.__visualQA.profile.desired_version_id].state='ready';window.__visualQA.nextVersionState='ready';});
+ await ready();assert.equal(await count(),1);assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),false);
+ if(process.env.L19_SCREENSHOT_DIR)await page.locator('dialog.visual-settings').screenshot({path:path.join(process.env.L19_SCREENSHOT_DIR,'face-flow-desktop.png')});
+ results.checks.push('immediate-private-photo','upload-automatically-prepares','queued-preview-polls-to-ready-without-a-button','private-until-approval');
+ await approved();const first=await page.evaluate(()=>window.__visualQA.profile.current_version_id);
+ await page.locator('[data-close]').click();await page.locator('#openVisualPresence').click();
+ await page.locator('[data-preview][data-visual-state="IDLE"]').waitFor({state:'visible'});
+ await page.locator('.visual-presence-canvas:visible,.visual-presence-poster:visible').first().waitFor();
+ assert.equal(await count(),1);results.checks.push('approved-face-opens-automatically-without-new-generation');
+ await page.emulateMedia({reducedMotion:'reduce'});await page.locator('.visual-presence-poster').waitFor({state:'visible'});await page.emulateMedia({reducedMotion:'no-preference'});
+ results.checks.push('system-reduced-motion-private-poster');
+ await upload('Synthetic replacement portrait.png');await ready();
+ assert.equal(await page.evaluate(()=>window.__visualQA.profile.current_version_id),first);
+ assert.notEqual(await page.evaluate(()=>window.__visualQA.profile.desired_version_id),first);
+ await approved();assert.notEqual(await page.evaluate(()=>window.__visualQA.profile.current_version_id),first);
+ results.checks.push('replacement-preserves-current-until-approval','approve-replacement-sets-face-without-enable');
+ await upload('Synthetic frame test.png');await ready();
+ await page.locator('[data-framing] summary').click();await page.locator('.visual-crop-canvas').focus();await page.keyboard.press('+');
+ assert.equal(await page.locator('[data-approve]').isDisabled(),true);const beforeCrop=await count();
+ await page.locator('[data-regenerate]').click();await ready();assert.equal(await count(),beforeCrop+1);
+ const lastBody=await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').at(-1).body);
+ assert.ok(lastBody.crop.width<1);assert.equal(lastBody.confirmed,true);
+ results.checks.push('framing-change-invalidates-approval','regenerate-beside-preview-new-confirmed-request');
+ for(const width of [390,820,320]){await page.setViewportSize({width,height:1000});assert.ok(await page.locator('.visual-settings').evaluate(e=>e.scrollWidth<=innerWidth));}
+ results.checks.push('mobile-and-tablet-no-overflow');
+ await page.evaluate(()=>{window.__visualQA.revoke=true;});await page.locator('[data-preview][data-visual-state="DISABLED"]').waitFor();
+ assert.equal(await page.locator('[data-approve]').isDisabled(),true);assert.equal(await page.locator('.visual-presence-poster').count(),0);
+ assert.match(await page.locator('[data-candidate-status]').innerText(),/could not be displayed/);
+ await page.evaluate(()=>{window.__visualQA.revoke=false;});
+ results.checks.push('expired-access-removes-private-bytes-and-explains-retry');
+ await page.evaluate(()=>{window.__visualQA.failGeneration=true;});const beforeFail=await count();
+ await upload('Synthetic retry portrait.png');await page.getByText(/Face recreation is temporarily unavailable/).first().waitFor();
+ assert.equal(await page.locator('[data-approve]').isDisabled(),true);
+ await page.locator('[data-regenerate]').click();await ready();
+ const retries=await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').slice(-2).map(c=>c.body.request_key));
+ assert.equal(retries[0],retries[1]);assert.equal(await count(),beforeFail+2);results.checks.push('generation-error-visible-and-idempotent-retry');
+ await page.evaluate(()=>{window.__visualQA.nextVersionState='needs_recrop';});
+ await upload('Synthetic invalid frame.png');await page.getByText(/We could not prepare this photo/).waitFor();
+ assert.equal(await page.locator('[data-approve]').isDisabled(),true);
+ assert.equal(await page.locator('[data-framing]').evaluate(e=>e.open),true);
+ await page.evaluate(()=>{window.__visualQA.nextVersionState='ready';});await page.locator('[data-regenerate]').click();await ready();
+ results.checks.push('failed-preparation-explains-framing-and-regenerate-recovery');
+ await page.locator('[data-close]').click();const beforeRole=await page.evaluate(()=>window.__visualQA.calls.length);
+ await page.evaluate(()=>{window.__visualQA.legacy={...window.__visualQA.legacy,access_role:'collaborator'};dispatchEvent(new Event('legarya-legacy-change'));});
+ await page.locator('#openVisualPresence').click();await page.getByText(/Face recreation is managed by the Legacy owner/).waitFor();
+ assert.equal(await page.evaluate(()=>window.__visualQA.calls.length),beforeRole);results.checks.push('collaborator-no-owner-api');
+ for(const id of [2,3]){
+   await page.evaluate(id=>{window.__visualQA.legacy={id,subject_name:null,access_role:'owner',setup_status:'collecting_identity'};window.__visualQA.profile={revision:0,enabled:false,current_version_id:null,desired_version_id:null,deleted:false};dispatchEvent(new Event('legarya-legacy-change'));},id);
+   await page.locator('#openVisualPresence').click();await upload('Synthetic unfinished Legacy.png');await ready();
+   assert.equal(await page.evaluate(()=>window.__visualQA.profile.enabled),false);await approved();
    assert.equal(await page.evaluate(()=>window.__visualQA.legacy.subject_name),null);
-   assert.equal(await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').length),preparations+1);
-   results.checks.push(`pending-legacy-${legacyId}-prepare-preview-approve-no-identity`);
+   assert.equal(await page.evaluate(()=>window.__visualQA.legacy.setup_status),'collecting_identity');
+   results.checks.push('pending-legacy-'+id+'-automatic-preview-and-approve');
  }
- await page.evaluate(()=>{window.__visualQA.legacy.setup_status="active";dispatchEvent(new Event("legarya-legacy-change"));});
- assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
- await page.locator("#openVisualPresence").click();await page.locator("[data-manage]").waitFor({state:"visible"});
- assert.ok(await page.evaluate(()=>window.__visualQA.calls.some(c=>c.route==="/legacies/3/visual-companion/capabilities")));
- assert.equal(await page.locator("[data-source] option").count(),2);
- results.checks.push("setup-completion-preserves-current-legacy-scope");
- await page.evaluate(()=>{window.__visualQA.legacy={id:4,subject_name:"Another completed Legacy",access_role:"owner",setup_status:"active"};dispatchEvent(new Event("legarya-legacy-change"));});
- assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
- assert.equal(await page.locator("#openVisualPresence").isVisible(),true);
- await page.locator("#openVisualPresence").click();await page.locator("[data-manage]").waitFor({state:"visible"});
- assert.ok(await page.evaluate(()=>window.__visualQA.calls.some(c=>c.route==="/legacies/4/sources")));
- assert.equal(await page.locator("[data-source] option").count(),1);
- results.checks.push("second-completed-legacy-visible-scoped");
- for(const legacy of [{id:5,access_role:"viewer",setup_status:"active"},null]) {
-   await page.evaluate(value=>{window.__visualQA.legacy=value;dispatchEvent(new Event("legarya-legacy-change"));},legacy);
-   assert.equal(await page.locator("#openVisualPresence").isVisible(),false);
-   assert.equal(await page.locator("dialog.visual-settings").evaluate(e=>e.open),false);
+ await page.evaluate(()=>{window.__visualQA.holdUpload=true;});await upload('Synthetic interrupted upload.png');await page.waitForFunction(()=>typeof window.__visualQA.releaseUpload==='function');
+ const beforeSwitch=await count();await page.locator('[data-close]').click();
+ await page.evaluate(()=>{window.__visualQA.legacy={id:4,subject_name:null,access_role:'owner',setup_status:'collecting_identity'};window.__visualQA.profile={revision:0,enabled:false,current_version_id:null,desired_version_id:null,deleted:false};dispatchEvent(new Event('legarya-legacy-change'));window.__visualQA.holdUpload=false;window.__visualQA.releaseUpload();});
+ await page.locator('#openVisualPresence').click();await page.locator('[data-manage]').waitFor({state:'visible'});
+ assert.equal(await page.locator('[data-original]').isVisible(),false);assert.equal(await count(),beforeSwitch);
+ assert.equal(await page.locator('.visual-crop-canvas').count(),0);results.checks.push('late-upload-after-close-cannot-cross-legacy-or-prepare');
+ for(const legacy of [{id:5,access_role:'viewer',setup_status:'active'},null]){
+   await page.evaluate(value=>{window.__visualQA.legacy=value;dispatchEvent(new Event('legarya-legacy-change'));},legacy);
+   assert.equal(await page.locator('#openVisualPresence').isVisible(),false);assert.equal(await page.locator('dialog.visual-settings').evaluate(e=>e.open),false);
  }
- results.checks.push("viewer-and-missing-legacy-hidden");
- assert.deepEqual(errors,[]);results.pageErrors=0;console.log(JSON.stringify(results,null,2));await context.close();
+ results.checks.push('viewer-and-missing-legacy-hidden');assert.deepEqual(errors,[]);results.pageErrors=0;
+ console.log(JSON.stringify(results,null,2));await context.close();
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
