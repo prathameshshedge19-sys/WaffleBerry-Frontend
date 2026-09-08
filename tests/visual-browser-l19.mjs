@@ -45,7 +45,8 @@ try {
       if(route.endsWith("/sources")){if(options.method==="POST"){source={...source,id:id(++state.sourceSerial),legacy_id:state.legacy.id,processing_purpose:"visual_reference",original_filename:options.body.filename};state.sources[source.id]=source;return source;}return Object.values(state.sources);}
       if(/\/sources\/[^/]+$/.test(route))return state.sources[route.split("/").pop()];
       if(route.endsWith("/versions")&&options.method==="POST"){
-        if(state.requests[options.body.request_key])return state.requests[options.body.request_key];assertBody(options.body);if(state.failGeneration){state.failGeneration=false;const e=new Error("Synthetic failure");e.status=503;throw e;}const b=await assets(),v={id:id(100+state.profile.revision),state:state.nextVersionState||"ready",version_number:state.profile.revision+1,source_id:options.body.source_id,crop:options.body.crop,bundle_digest:b.bundle_digest};state.versions[v.id]=v;state.profile.desired_version_id=v.id;state.profile.deleted=false;state.profile.revision++;state.requests[options.body.request_key]=v;return v;
+        if(state.holdGeneration)await new Promise(resolve=>{state.releaseGeneration=resolve;});
+        if(state.requests[options.body.request_key])return state.requests[options.body.request_key];assertBody(options.body);if(state.failGeneration){state.failGeneration=false;const e=new Error("Synthetic failure");e.status=503;throw e;}const b=await assets(),v={id:id(100+state.profile.revision),state:state.nextVersionState||"ready",failure_code:state.nextVersionFailure||null,version_number:state.profile.revision+1,source_id:options.body.source_id,crop:options.body.crop,bundle_digest:b.bundle_digest};state.versions[v.id]=v;state.profile.desired_version_id=v.id;state.profile.deleted=false;state.profile.revision++;state.requests[options.body.request_key]=v;return v;
       }
       if(route.endsWith("/activate")){const b=options.body;if(b.expected_revision!==state.profile.revision||!b.approved||b.bundle_digest!==(await assets()).bundle_digest)throw new Error("Stale activation");state.profile.current_version_id=b.version_id;state.profile.enabled=true;state.profile.revision++;return{...state.profile};}
       if(route.includes("/manifest")||route.endsWith("/active-manifest")){
@@ -106,6 +107,16 @@ try {
  const lastBody=await page.evaluate(()=>window.__visualQA.calls.filter(c=>c.route.endsWith('/versions')&&c.method==='POST').at(-1).body);
  assert.ok(lastBody.crop.width<1);assert.equal(lastBody.confirmed,true);
  results.checks.push('framing-change-invalidates-approval','regenerate-beside-preview-new-confirmed-request');
+ await page.evaluate(()=>{window.__visualQA.holdGeneration=true;window.__visualQA.nextVersionState='queued';});
+ await page.locator('[data-regenerate]').click();await page.waitForFunction(()=>typeof window.__visualQA.releaseGeneration==='function');
+ assert.equal(await page.locator('[data-preview]').isHidden(),true);
+ assert.equal(await page.locator('[data-approve]').isDisabled(),true);
+ assert.match(await page.locator('[data-candidate-status]').innerText(),/Creating your private preview/);
+ await page.evaluate(()=>{window.__visualQA.holdGeneration=false;window.__visualQA.releaseGeneration();});
+ await page.getByText('Creating your private preview… Your current Legacy face is unchanged.',{exact:true}).waitFor();
+ assert.equal(await page.locator('[data-approve]').isDisabled(),true);
+ await page.evaluate(()=>{window.__visualQA.versions[window.__visualQA.profile.desired_version_id].state='ready';window.__visualQA.nextVersionState='ready';});
+ await ready();results.checks.push('regenerate-retires-old-preview-without-false-delivery-error');
  for(const width of [390,820,320]){await page.setViewportSize({width,height:1000});assert.ok(await page.locator('.visual-settings').evaluate(e=>e.scrollWidth<=innerWidth));}
  results.checks.push('mobile-and-tablet-no-overflow');
  await page.evaluate(()=>{window.__visualQA.revoke=true;});await page.locator('[data-preview][data-visual-state="DISABLED"]').waitFor();
@@ -125,6 +136,13 @@ try {
  assert.equal(await page.locator('[data-framing]').evaluate(e=>e.open),true);
  await page.evaluate(()=>{window.__visualQA.nextVersionState='ready';});await page.locator('[data-regenerate]').click();await ready();
  results.checks.push('failed-preparation-explains-framing-and-regenerate-recovery');
+ await page.evaluate(()=>{window.__visualQA.nextVersionState='failed';window.__visualQA.nextVersionFailure='visual_storage_unavailable';});
+ await upload('Synthetic storage retry.png');await page.getByText(/Private photo storage could not be reached/).waitFor();
+ assert.equal(await page.locator('[data-approve]').isDisabled(),true);assert.equal(await page.locator('[data-framing]').evaluate(e=>e.open),false);
+ await page.evaluate(()=>{window.__visualQA.nextVersionState='ready';window.__visualQA.nextVersionFailure=null;});
+ await page.locator('[data-regenerate]').click();await ready();assert.equal(await page.locator('[data-notice]').evaluate(e=>e.classList.contains('visual-error')),false);
+ results.checks.push('storage-failure-not-misreported-as-bad-photo-and-retries');
+
  await page.locator('[data-close]').click();const beforeRole=await page.evaluate(()=>window.__visualQA.calls.length);
  await page.evaluate(()=>{window.__visualQA.legacy={...window.__visualQA.legacy,access_role:'collaborator'};dispatchEvent(new Event('legarya-legacy-change'));});
  await page.locator('#openVisualPresence').click();await page.getByText(/Face recreation is managed by the Legacy owner/).waitFor();

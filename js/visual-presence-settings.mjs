@@ -27,11 +27,11 @@ if(auth && entry && window.LegaryaMedia) {
   const find=s=>dialog.querySelector(s), getLegacy=()=>window.LegaryaWorkspace?.getActiveLegacy();
   let epoch=0,account=null,abort=null,timer=null,busy=false,legacy=null,capabilities=null,profile=null;
   let candidate=null,crop=null,bitmap=null,source=null,preview=null,pending=null,upload=null,queuedFile=null;
-  let originalUrl=null,framingChanged=false,polls=0,focus=null,mounting=false;
+  let originalUrl=null,framingChanged=false,polls=0,focus=null,mounting=false,previewEpoch=0;
   const current=t=>dialog.open&&t===epoch&&account===auth.getSessionEpoch?.()&&getLegacy()?.id===legacy?.id&&getLegacy()?.access_role==="owner";
   const notice=(text,error=false)=>{find("[data-notice]").textContent=text;find("[data-notice]").classList.toggle("visual-error",error);};
   const status=text=>{find("[data-candidate-status]").textContent=text;};
-  function clearPreview(){preview?.dispose();preview=null;find("[data-preview]").replaceChildren();find("[data-preview]").hidden=true;}
+  function clearPreview(){++previewEpoch;preview?.dispose();preview=null;find("[data-preview]").replaceChildren();find("[data-preview]").hidden=true;}
   function clearPhoto(){
     crop?.dispose();crop=null;bitmap?.close();bitmap=null;source=null;pending=null;framingChanged=false;
     if(originalUrl)URL.revokeObjectURL(originalUrl);originalUrl=null;
@@ -68,10 +68,10 @@ if(auth && entry && window.LegaryaMedia) {
     const approved=next.id===profile?.current_version_id&&profile?.enabled;find("[data-preview-title]").textContent=approved?"Current Legacy face":"Private preview";
     if(next.state==="ready"){
       if(changed||!preview||!preview.approval()){
-        clearPreview();find("[data-preview]").hidden=false;
+        clearPreview();const presentation=previewEpoch;find("[data-preview]").hidden=false;
         preview=createVisualPresence({host:find("[data-preview]"),client,legacyId:legacy.id,version:next.id,name:legacy.subject_name||"L",preview:true,
           guard:()=>current(token)&&candidate?.id===next.id,rendererFactory:createPortraitRenderer,onState:state=>{
-            if(!current(token))return;
+            if(!current(token)||presentation!==previewEpoch)return;
             if(state==="ERROR"||state==="DISABLED")status("Preview could not be displayed. Click Regenerate to try again; your current face is unchanged.");lock(busy);
           }});
         await preview.start();if(!current(token))return;
@@ -86,9 +86,12 @@ if(auth && entry && window.LegaryaMedia) {
         status("Creating your private preview… Your current Legacy face is unchanged.");
         if(polls++<100)schedule(id,token);else{candidate={...candidate,state:"polling_paused"};status("Preparation is taking longer. Click Regenerate to check again, or reopen this panel later.");}
       }else{
-        if(!crop&&next.source_id){const row=await media.source(legacy.id,next.source_id,abort.signal);if(!current(token))return;await loadSource(row,token,next.crop);if(!current(token))return;}
-        status("We could not prepare this photo. Open Adjust framing, include one clear face, then click Regenerate. You can also upload a different photo.");
-        if(crop)find("[data-framing]").open=true;
+        const recrop=next.state==="needs_recrop"||["visual_needs_recrop","visual_crop_invalid","visual_crop_not_square","visual_image_dimensions"].includes(next.failure_code);
+        if(recrop){
+          if(!crop&&next.source_id){const row=await media.source(legacy.id,next.source_id,abort.signal);if(!current(token))return;await loadSource(row,token,next.crop);if(!current(token))return;}
+          status("We could not prepare this photo. Open Adjust framing, include one clear face, then click Regenerate. You can also upload a different photo.");
+          if(crop)find("[data-framing]").open=true;
+        }else status(next.failure_code==="visual_storage_unavailable"?"Private photo storage could not be reached. Click Regenerate to retry. Your current Legacy face is unchanged.":"Preview preparation did not finish. Click Regenerate to retry, or upload another photo. Your current Legacy face is unchanged.");
       }
     }lock(busy);
   }
@@ -115,7 +118,9 @@ if(auth && entry && window.LegaryaMedia) {
     pending||={source_id:source.id,crop:crop.value(),confirmed:true,confirmation_copy_version:capabilities.confirmation_copy_version,
       request_key:crypto.randomUUID(),expected_revision:profile.revision};
     pending.expected_revision=profile.revision;
-    status("Creating your private preview…");const created=await client.generate(legacy.id,pending,abort.signal);if(!current(token))return;
+    // Retiring a previous private preview is intentional, not a delivery error.
+    clearPreview();if(originalUrl)find("[data-original]").hidden=false;
+    notice("Your photo stays private until you approve its preview.");status("Creating your private preview…");const created=await client.generate(legacy.id,pending,abort.signal);if(!current(token))return;
     pending=null;framingChanged=false;polls=0;clearPreview();candidate=null;await refreshProfile(token);if(current(token))await showVersion(created.id,token);
   }
   async function uploadPhoto(file,token){
