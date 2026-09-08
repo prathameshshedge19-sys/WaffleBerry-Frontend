@@ -1,6 +1,8 @@
 "use strict";
 (() => {
   const { apiRequest, ensureAuthenticated, logout } = window.LegaryaAuthApi;
+  const deletionNotice = document.querySelector("#legacyDeletedNotice");
+  if (deletionNotice) deletionNotice.hidden = new URLSearchParams(location.search).get("legacyDeleted") !== "1";
   const dialog = document.querySelector("#joinDialog");
   const form = document.querySelector("#joinForm");
   const codeInput = document.querySelector("#collaboratorCode");

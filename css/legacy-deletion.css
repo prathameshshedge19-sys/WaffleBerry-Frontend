@@ -1,0 +1,18 @@
+.delete-legacy-entry{display:block;width:100%;margin-top:10px;padding:12px;border:1px solid #a65e5255;border-radius:9px;background:#a33c3010;color:#ffc4b9;font:inherit;text-align:left;cursor:pointer}
+.legacy-delete-dialog{width:min(560px,calc(100vw - 32px));max-height:calc(100svh - 32px);overflow:auto;padding:28px;border:1px solid #b76d61;border-radius:18px;color:var(--ivory);background:#15110e}
+.legacy-delete-dialog::backdrop{background:#000c;backdrop-filter:blur(6px)}
+.legacy-delete-dialog h2{margin:0 0 16px;font:500 32px/1.1 "Cormorant Garamond",Georgia,serif;overflow-wrap:anywhere}
+.legacy-delete-warning{padding:16px;border:1px solid #b76d6180;border-radius:10px;background:#a33c3018;color:#ffd4cb;line-height:1.6}
+.legacy-delete-warning strong{display:block;margin-bottom:8px;font-size:17px}
+.legacy-delete-dialog p,.legacy-delete-dialog li{font-size:14px;line-height:1.6}
+.legacy-delete-dialog ul{padding-left:22px}
+.legacy-delete-dialog label{display:block;margin:18px 0 8px;font-size:14px;line-height:1.5}
+.legacy-delete-dialog input[type=text]{box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:8px;background:#0004;color:var(--ivory);font:inherit}
+.legacy-delete-dialog input[type=checkbox]{width:18px;height:18px;margin:0 8px 0 0;vertical-align:middle;accent-color:#d27868}
+.legacy-delete-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;margin-top:24px}
+.legacy-delete-actions button{min-height:46px;padding:12px 18px;border:1px solid var(--line-strong);border-radius:9px;background:#ffffff08;color:var(--ivory);font:inherit;cursor:pointer}
+.legacy-delete-actions .legacy-delete-confirm{border-color:#cd8172;background:#842b24;color:#fff}
+.legacy-delete-actions button:disabled{opacity:.45;cursor:not-allowed}
+.legacy-delete-dialog :focus-visible,.delete-legacy-entry:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.legacy-delete-status{min-height:22px;color:#ffc4b9}
+@media(max-width:520px){.legacy-delete-dialog{padding:20px}.legacy-delete-actions button{flex:1 1 100%}}
