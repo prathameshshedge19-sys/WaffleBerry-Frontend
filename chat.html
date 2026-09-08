@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="css/live-voice.css?v=l15ui1">
     <link rel="stylesheet" href="css/media-sources.css?v=l16d1">
     <link rel="stylesheet" href="css/timeline.css?v=l17c1">
+    <link rel="stylesheet" href="css/stories.css?v=l18c1">
 </head>
   <body>
     <div class="workspace">
@@ -62,6 +63,8 @@
             <span class="memories-button-icon" aria-hidden="true">◇</span><span>Memories</span>
           </button>
           <button id="openTimeline" class="memories-button" type="button" hidden><span class="memories-button-icon" aria-hidden="true">◊</span><span>Timeline</span></button>
+          <button id="openStories" class="memories-button" type="button" hidden><span class="memories-button-icon" aria-hidden="true">*</span><span>Stories</span>
+          </button>
           <button id="openMediaSources" class="memories-button" type="button" hidden>
             <span class="memories-button-icon" aria-hidden="true">▤</span><span>Media &amp; Sources</span>
           </button>
@@ -169,6 +172,15 @@
       </div>
     </section>
 
+    <section id="storiesDashboard" class="stories-dashboard" role="dialog" aria-modal="true" aria-labelledby="storiesTitle" hidden>
+      <button id="storiesBackdrop" class="stories-backdrop" type="button" aria-label="Close Stories"></button>
+      <div class="stories-panel">
+        <header class="stories-header"><div><p>Living Legacy</p><h2 id="storiesTitle">Stories</h2><span>Preserved moments, shaped into something you can revisit.</span></div><button id="closeStories" class="stories-close" type="button" aria-label="Close Stories">&times;</button></header>
+        <p id="storiesStatus" class="stories-status" role="status" aria-live="polite"></p>
+        <div id="storiesContent" class="stories-content"></div>
+      </div>
+    </section>
+
     <section id="collaboratorPanel" class="memory-dashboard" role="dialog" aria-modal="true" aria-labelledby="collaboratorPanelTitle" hidden>
       <button id="collaboratorPanelBackdrop" class="memory-dashboard-backdrop" type="button" aria-label="Close Access"></button>
       <div class="memory-dashboard-panel access-panel-inner">
@@ -244,6 +256,8 @@
     <script src="js/media-sources.js?v=l16d1"></script>
     <script src="js/timeline-client.js?v=l17c1"></script>
     <script src="js/timeline-dashboard.js?v=l17c1"></script>
+    <script src="js/stories-client.js?v=l18c1"></script>
+    <script src="js/stories-dashboard.js?v=l18c1"></script>
     <script src="js/access-management.js?v=1.0"></script>
   <script type="module" src="js/live-voice.mjs?v=l15ui1"></script>
 </body>
