@@ -8,7 +8,7 @@ test('face recreation entry and dialog use the requested plain-language name',()
   assert.match(html,/id="openVisualPresence"[^>]*>[\s\S]*?<span>Recreate Legacy's Face<\/span><\/button>/);
   assert.match(settings,/<h2 id="visualTitle">Recreate Legacy's Face<\/h2>/);
   assert.match(settings,/aria-label="Close Recreate Legacy's Face"/);
-  assert.match(html,/visual-presence-settings\.mjs\?v=face3/);
+  assert.match(html,/visual-presence-settings\.mjs\?v=face4/);
 });
 test('upload automatically prepares a private preview with explicit permission and separate approval',()=>{
   assert.match(settings,/aria-describedby="visualPermission"/);

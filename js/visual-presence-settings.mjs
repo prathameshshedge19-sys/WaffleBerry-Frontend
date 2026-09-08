@@ -1,4 +1,4 @@
-import { createVisualClient, visualError } from "./visual-presence-client.mjs?v=face1";
+import { createVisualClient, visualError } from "./visual-presence-client.mjs?v=face4";
 import { mountCropControls } from "./visual-crop.mjs?v=l19c1";
 import { createVisualPresence } from "./visual-presence-controller.mjs?v=l19c1";
 import { createPortraitRenderer } from "./legacy-portrait-renderer.mjs?v=l19c1";
@@ -15,7 +15,7 @@ if(auth && entry && window.LegaryaMedia) {
       <label class="visual-upload">Upload photo &amp; create private preview<input data-upload type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="visualPermission" disabled></label>
       <p id="visualPermission" class="visual-hint">By selecting a photo or clicking Regenerate, I confirm I have permission to use the pictured person's likeness for this Legacy's AI-generated Visual Companion, not a recording of that person.</p>
       <p class="visual-hint">Use a clear photo of one person. JPEG, PNG or WebP, up to 20 MB. A new upload never changes the current face until you approve its preview.</p>
-      <section data-candidate hidden><h3 data-preview-title>Private preview</h3><p data-candidate-status role="status" aria-live="polite"></p>
+      <section data-candidate hidden><h3 data-preview-title>Uploaded photo</h3><p data-candidate-status role="status" aria-live="polite"></p>
         <img data-original class="visual-upload-preview" alt="Your uploaded photo, not yet approved as the Legacy face" hidden>
         <div class="visual-preview" data-preview aria-hidden="true" hidden></div>
         <div class="visual-actions"><button type="button" data-approve disabled>Approve as Legacy face</button><button type="button" data-regenerate aria-describedby="visualPermission" disabled>Regenerate</button></div>
@@ -43,7 +43,7 @@ if(auth && entry && window.LegaryaMedia) {
     busy=value;find("[data-crop]").inert=value;find("[data-upload]").disabled=value||!capabilities?.can_manage;
     const preparing=["queued","preparing"].includes(candidate?.state),approved=candidate?.id===profile?.current_version_id&&profile?.enabled;
     find("[data-approve]").disabled=value||framingChanged||!preview?.approval()||approved;
-    find("[data-approve]").textContent=approved?"Current Legacy face":"Approve as Legacy face";
+    find("[data-approve]").textContent=approved?"Current Legacy face":framingChanged?"Regenerate to update preview":preview?.approval()?"Approve as Legacy face":preparing?"Preparing preview…":"Preview not ready";
     find("[data-regenerate]").disabled=value||preparing||!capabilities?.can_prepare||!(source||candidate||upload);
     find("[data-candidate]").setAttribute("aria-busy",String(value||preparing));
   }
@@ -52,6 +52,7 @@ if(auth && entry && window.LegaryaMedia) {
     if(busy||!current(epoch))return;const token=epoch;lock(true);
     try{await action(token);}catch(error){if(current(token)){
       const message=error.userMessage||visualError(error);notice(message,true);status(message);
+      if(!preview?.approval())find("[data-preview-title]").textContent="Uploaded photo — preview not ready";
       if([401,403,404,410].includes(error.status)){clearPreview();clearPhoto();candidate=upload=null;}
     }}finally{if(current(token)){lock(false);if(queuedFile){const file=queuedFile;queuedFile=null;void perform(t=>uploadPhoto(file,t));}}}
   }
@@ -65,7 +66,7 @@ if(auth && entry && window.LegaryaMedia) {
   async function showVersion(id,token){
     clearTimeout(timer);timer=null;const next=await client.version(legacy.id,id,abort.signal);if(!current(token))return;
     const changed=candidate?.id!==next.id;candidate=next;find("[data-candidate]").hidden=false;
-    const approved=next.id===profile?.current_version_id&&profile?.enabled;find("[data-preview-title]").textContent=approved?"Current Legacy face":"Private preview";
+    const approved=next.id===profile?.current_version_id&&profile?.enabled;find("[data-preview-title]").textContent=approved?"Current Legacy face":next.state==="ready"?"Loading private preview":"Uploaded photo — preview not ready";
     if(next.state==="ready"){
       if(changed||!preview||!preview.approval()){
         clearPreview();const presentation=previewEpoch;find("[data-preview]").hidden=false;
@@ -77,6 +78,7 @@ if(auth && entry && window.LegaryaMedia) {
         await preview.start();if(!current(token))return;
       }
       if(preview?.approval()){
+        find("[data-preview-title]").textContent=approved?"Current Legacy face":"Private preview";
         find("[data-original]").hidden=true;
         status(framingChanged?"Framing changed. Click Regenerate to create a preview of this frame before approving.":approved?"This is the approved face. Upload a new photo whenever you want to change it.":"Your private preview is ready. Approve it if you are happy with the result, or Regenerate.");
       }
@@ -99,7 +101,7 @@ if(auth && entry && window.LegaryaMedia) {
     if(blob.size>20*1024*1024||!["image/jpeg","image/png","image/webp"].includes(blob.type))throw userError("Upload a JPEG, PNG or WebP photo up to 20 MB.");
     let decoded;try{decoded=await createImageBitmap(blob,{imageOrientation:"from-image"});}catch{throw userError("This photo could not be opened. Try another JPEG, PNG or WebP image.");}
     if(!current(token)){decoded.close();return;}clearPhoto();bitmap=decoded;originalUrl=URL.createObjectURL(blob);find("[data-original]").src=originalUrl;
-    find("[data-original]").hidden=false;find("[data-candidate]").hidden=false;find("[data-preview-title]").textContent="Private preview";mounting=true;
+    find("[data-original]").hidden=false;find("[data-candidate]").hidden=false;find("[data-preview-title]").textContent="Uploaded photo — preview not ready";mounting=true;
     try{crop=mountCropControls(find("[data-crop]"),bitmap,{initial,onChange:()=>{
       if(mounting)return;pending=null;framingChanged=true;status("Framing changed. Click Regenerate to create a preview of this frame before approving.");lock(busy);
     }});}catch{throw userError("Use a photo at least 128 pixels wide and high, no larger than 24 megapixels or 8192 pixels on either edge.");}finally{mounting=false;}
@@ -120,7 +122,14 @@ if(auth && entry && window.LegaryaMedia) {
     pending.expected_revision=profile.revision;
     // Retiring a previous private preview is intentional, not a delivery error.
     clearPreview();if(originalUrl)find("[data-original]").hidden=false;
-    notice("Your photo stays private until you approve its preview.");status("Creating your private preview…");const created=await client.generate(legacy.id,pending,abort.signal);if(!current(token))return;
+    notice("Your photo stays private until you approve its preview.");status("Creating your private preview…");let created;
+    try{created=await client.generate(legacy.id,pending,abort.signal);}catch(error){
+      // A rejected regeneration must not strand an already valid preview.
+      if(current(token)&&candidate?.state==="ready"&&!framingChanged){
+        try{await refreshProfile(token);if(current(token)&&profile.desired_version_id===candidate.id)await showVersion(candidate.id,token);}catch{}
+      }
+      throw error;
+    }if(!current(token))return;
     pending=null;framingChanged=false;polls=0;clearPreview();candidate=null;await refreshProfile(token);if(current(token))await showVersion(created.id,token);
   }
   async function uploadPhoto(file,token){

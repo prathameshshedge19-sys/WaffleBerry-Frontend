@@ -45,6 +45,7 @@ try {
       if(route.endsWith("/sources")){if(options.method==="POST"){source={...source,id:id(++state.sourceSerial),legacy_id:state.legacy.id,processing_purpose:"visual_reference",original_filename:options.body.filename};state.sources[source.id]=source;return source;}return Object.values(state.sources);}
       if(/\/sources\/[^/]+$/.test(route))return state.sources[route.split("/").pop()];
       if(route.endsWith("/versions")&&options.method==="POST"){
+        if(state.rejectGeneration){const e=new Error('Synthetic rejection');e.status=state.rejectGeneration;e.details={detail:{code:state.rejectCode}};state.rejectGeneration=null;throw e;}
         if(state.holdGeneration)await new Promise(resolve=>{state.releaseGeneration=resolve;});
         if(state.requests[options.body.request_key])return state.requests[options.body.request_key];assertBody(options.body);if(state.failGeneration){state.failGeneration=false;const e=new Error("Synthetic failure");e.status=503;throw e;}const b=await assets(),v={id:id(100+state.profile.revision),state:state.nextVersionState||"ready",failure_code:state.nextVersionFailure||null,version_number:state.profile.revision+1,source_id:options.body.source_id,crop:options.body.crop,bundle_digest:b.bundle_digest};state.versions[v.id]=v;state.profile.desired_version_id=v.id;state.profile.deleted=false;state.profile.revision++;state.requests[options.body.request_key]=v;return v;
       }
@@ -80,6 +81,8 @@ try {
  await page.evaluate(()=>{window.__visualQA.holdUpload=true;window.__visualQA.nextVersionState='queued';});
  await upload('Synthetic first portrait.png');await page.locator('[data-original]').waitFor({state:'visible'});
  assert.equal(await page.locator('[data-approve]').isDisabled(),true);assert.equal(await count(),0);
+ assert.match(await page.locator('[data-preview-title]').innerText(),/Uploaded photo/);
+ assert.equal(await page.locator('[data-approve]').innerText(),'Preview not ready');
  await page.waitForFunction(()=>typeof window.__visualQA.releaseUpload==='function');
  await page.evaluate(()=>{window.__visualQA.holdUpload=false;window.__visualQA.releaseUpload();});
  await page.waitForFunction(()=>!!window.__visualQA.profile.desired_version_id);
@@ -142,6 +145,19 @@ try {
  await page.evaluate(()=>{window.__visualQA.nextVersionState='ready';window.__visualQA.nextVersionFailure=null;});
  await page.locator('[data-regenerate]').click();await ready();assert.equal(await page.locator('[data-notice]').evaluate(e=>e.classList.contains('visual-error')),false);
  results.checks.push('storage-failure-not-misreported-as-bad-photo-and-retries');
+ await page.evaluate(()=>{window.__visualQA.rejectGeneration=429;});await upload('Synthetic busy service.png');
+ await page.getByText(/Face preparation is temporarily busy/).first().waitFor();
+ assert.equal(await page.locator('[data-approve]').innerText(),'Preview not ready');
+ assert.match(await page.locator('[data-preview-title]').innerText(),/Uploaded photo/);
+ assert.doesNotMatch(await page.locator('dialog').innerText(),/preparation limit/);
+ await page.locator('[data-regenerate]').click();await ready();
+ const retained=await page.evaluate(()=>window.__visualQA.profile.desired_version_id);
+ await page.evaluate(()=>{window.__visualQA.rejectGeneration=409;window.__visualQA.rejectCode='visual_cleanup_pending';});
+ await page.locator('[data-regenerate]').click();await page.getByText(/Previous previews are still being securely removed/).first().waitFor();
+ await ready();assert.equal(await page.evaluate(()=>window.__visualQA.profile.desired_version_id),retained);
+ assert.equal(await page.locator('[data-preview-title]').innerText(),'Private preview');
+ await approved();assert.equal(await page.evaluate(()=>window.__visualQA.profile.current_version_id),retained);
+ results.checks.push('unprepared-upload-not-labelled-approvable-preview','rejected-regeneration-preserves-valid-preview-approval');
 
  await page.locator('[data-close]').click();const beforeRole=await page.evaluate(()=>window.__visualQA.calls.length);
  await page.evaluate(()=>{window.__visualQA.legacy={...window.__visualQA.legacy,access_role:'collaborator'};dispatchEvent(new Event('legarya-legacy-change'));});
