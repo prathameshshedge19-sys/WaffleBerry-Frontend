@@ -1,0 +1,11 @@
+# Publish product assets only; keep acceptance harnesses and local tools private.
+tests/
+docs/
+server.mjs
+README.md
+.git/
+.env*
+node_modules/
+coverage/
+*.log
+*.tmp
