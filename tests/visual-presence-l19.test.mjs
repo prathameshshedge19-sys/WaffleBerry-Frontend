@@ -70,6 +70,10 @@ test("private raw visual client pins route, method, origin, no-store and no redi
   assert.equal(calls[0].options.cache,"no-store");assert.equal(calls[0].options.redirect,"error");assert.equal(calls[0].options.method,"GET");
   for(const bad of [path+"?token=x",path+"/..","https://evil.invalid",path.replace("active",".."),"/legacies/1/sources/x/content"])assert.throws(()=>auth.authenticatedVisualFetch(bad));
   assert.throws(()=>auth.authenticatedVisualFetch(path,{method:"PUT"}));assert.equal(calls.length,1);
+  const picture='/legacies/1/visual-companion/display-picture/content?revision=11111111-1111-4111-8111-111111111111';
+  await auth.authenticatedVisualFetch(picture);await auth.authenticatedVisualFetch(picture.replace('revision=','revision=approved-'));
+  assert.equal(calls.length,3);assert.equal(calls[2].options.redirect,'error');
+  for(const bad of [picture+'&token=x',picture.replace('revision=','x='),picture.replace('/legacies/1/','/legacies/../')])assert.throws(()=>auth.authenticatedVisualFetch(bad));
 });
 async function bundleHarness() {
   const bytes={poster:new Uint8Array([1,2]),texture_atlas:new Uint8Array([3,4])},rig=rigFixture();rig.atlas_sha256=hash(bytes.texture_atlas);rig.poster_sha256=hash(bytes.poster);bytes.rig=new TextEncoder().encode(JSON.stringify(rig));

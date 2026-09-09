@@ -40,19 +40,19 @@ if (adapter && entry) {
     releasePortrait();
     if (context?.mode !== "legacy" || !active || finishing || finished) return;
     const token = serial, load = visualEpoch, snapshot = context, account = window.LegaryaAuthApi.getSessionEpoch?.();
-    const portraitStatus=find('[data-live-portrait-status]');portraitStatus.hidden=false;portraitStatus.textContent='Loading approved face…';
+    const portraitStatus=find('[data-live-portrait-status]');portraitStatus.hidden=false;portraitStatus.textContent='Loading photo…';
     const guard = () => account === window.LegaryaAuthApi.getSessionEpoch?.() && token === serial && load === visualEpoch && context === snapshot && active && !finishing && !finished && context.mode === "legacy";
     // Optional loading runs beside audio startup; failures never reach client.fail.
-    void Promise.all([import("./visual-presence-client.mjs?v=l19c1"), import("./visual-presence-controller.mjs?v=face6"), import("./legacy-portrait-renderer.mjs?v=face6")]).then(([api, controller, renderer]) => {
+    void import("./display-picture.mjs?v=dp1").then((picture) => {
       if (!guard()) return;
-      visualPresence = controller.createVisualPresence({ host: find(".live-call-presence"), client: api.createVisualClient(window.LegaryaAuthApi), legacyId: snapshot.legacyId,
-        name: snapshot.name || "L", guard, rendererFactory: renderer.createPortraitRenderer, onState:state=>{
+      visualPresence = picture.createDisplayPicture({ host: find(".live-call-presence"), client: picture.createPictureClient(window.LegaryaAuthApi), legacyId: snapshot.legacyId,
+        name: snapshot.name || "L", guard, onState:state=>{
           if(!guard())return;
           portraitStatus.hidden=!['LOADING','ERROR','DISABLED'].includes(state);
-          portraitStatus.textContent=state==='DISABLED'?'No approved face is available for this Legacy.':state==='ERROR'?'The approved face could not load. Voice can continue.':'Loading approved face…';
+          portraitStatus.textContent=state==='DISABLED'?'No display picture has been set.':state==='ERROR'?'The display picture could not load. Voice can continue.':'Loading photo…';
         } });
       return visualPresence.start();
-    }).catch(() => { if (guard()) {releasePortrait();portraitStatus.hidden=false;portraitStatus.textContent='The approved face could not load. Voice can continue.';} });
+    }).catch(() => { if (guard()) {releasePortrait();portraitStatus.hidden=false;portraitStatus.textContent='The display picture could not load. Voice can continue.';} });
   }
   function releasePresence() {
     releasePortrait();
@@ -174,7 +174,7 @@ if (adapter && entry) {
     const visual = find(".live-call-presence"), soundButton = find("[data-live-ambience]");
     visual.replaceChildren();
     soundButton.hidden = context.mode !== "rya";
-    if (context.mode === "legacy") find("#liveCallDisclosure").textContent = "AI Legacy · An approved AI-animated portrait, not a recording. Standard AI voice, grounded in preserved memories.";
+    if (context.mode === "legacy") find("#liveCallDisclosure").textContent = "AI Legacy · Display picture provided by the owner. AI voice, grounded in preserved memories.";
     if (context.mode === "rya") {
       previousPresenceActive = Boolean(window.RyaEnergyControl?.active);
       window.RyaEnergyControl?.setActive(false);

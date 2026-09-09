@@ -257,7 +257,8 @@
   const authenticatedVisualFetch = (path, options = {}) => {
     const uuid = "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}";
     const route = new RegExp(`^/legacies/[1-9][0-9]*/visual-companion/(active|versions/${uuid})/assets/${uuid}/content$`);
-    if (!route.test(path) || (options.method && options.method !== "GET") || options.body) {
+    const pictureRoute = new RegExp(`^/legacies/[1-9][0-9]*/visual-companion/display-picture/content\\?revision=(approved-)?${uuid}$`);
+    if ((!route.test(path) && !pictureRoute.test(path)) || (options.method && options.method !== "GET") || options.body) {
       throw new ApiError("Invalid visual request.", { kind: "validation" });
     }
     const base = config.mediaBaseUrl || API_BASE_URL;

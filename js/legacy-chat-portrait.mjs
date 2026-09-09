@@ -1,12 +1,10 @@
-import { createVisualClient } from './visual-presence-client.mjs?v=face4';
-import { createVisualPresence } from './visual-presence-controller.mjs?v=face6';
-import { createPortraitRenderer } from './legacy-portrait-renderer.mjs?v=face6';
+import {createPictureClient,createDisplayPicture} from './display-picture.mjs?v=dp1';
 
 // The same approved, leased face is visible in chat and in the live-call view.
 // Chat yields its renderer while the call owns the visible portrait.
 export function installChatPortrait({environment=window, document=environment.document,
-  client=createVisualClient(environment.LegaryaAuthApi), createPresence=createVisualPresence,
-  rendererFactory=createPortraitRenderer}={}) {
+  client=createPictureClient(environment.LegaryaAuthApi), createPresence=createDisplayPicture,
+  rendererFactory=undefined}={}) {
   const stage=document.querySelector('#legacyChatFace'),host=document.querySelector('#legacyChatFaceImage'),status=document.querySelector('#legacyChatFaceStatus');
   if(!stage||!host||!status)return ()=>{};
   let portrait=null,epoch=0,scope=null,disposed=false,sessionEnded=false;
@@ -22,7 +20,7 @@ export function installChatPortrait({environment=window, document=environment.do
     portrait=createPresence({host,client,legacyId:current.legacyId,name:current.name||'L',guard,rendererFactory,onState:state=>{
       if(!guard())return;
       stage.hidden=state==='DISABLED';
-      status.textContent=state==='ERROR'?'The approved face could not load. Your chat is still available.':state==='LOADING'?'Loading approved face…':'AI-animated portrait · Not a recording';
+      status.textContent=state==='ERROR'?'The display picture could not load. Your chat is still available.':state==='LOADING'?'Loading photo…':'Legacy photo';
     }});
     void portrait.start();
   }

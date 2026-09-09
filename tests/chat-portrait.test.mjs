@@ -28,7 +28,8 @@ test('scope changes, hidden page and logout synchronously retire private portrai
  f.logout();assert.equal(f.stage.hidden,true);assert.equal(f.instances.at(-1).disposed,true);
  const count=f.instances.length;f.set({});assert.equal(f.instances.length,count,'late chat events after logout cannot restart a private face');f.dispose();
 });
-test('live UI defaults to motion without a manual static-photo switch',async()=>{
+test('live UI uses a static display picture with no animation or photo-mode switch',async()=>{
  const source=await readFile(new URL('../js/live-voice.mjs',import.meta.url),'utf8');
- assert.doesNotMatch(source,/data-live-static|Show static photo/);assert.match(source,/data-live-portrait-status/);
+  assert.doesNotMatch(source,/data-live-static|Show static photo/);assert.match(source,/data-live-portrait-status/);
+  assert.match(source,/picture.createDisplayPicture/);assert.doesNotMatch(source,/createPortraitRenderer|AI-animated/);
 });

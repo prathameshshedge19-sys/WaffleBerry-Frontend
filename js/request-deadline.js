@@ -1,5 +1,6 @@
 "use strict";
 (() => {
+  if (typeof window === 'undefined') return;
   // A stuck fetch/refresh must not hold a screen disabled indefinitely. Callers
   // still fence their own UI epoch: abort cannot undo an already committed POST.
   async function withDeadline(work, {signal, timeoutMs=15000}={}) {
