@@ -44,7 +44,8 @@
 .visual-preview .visual-presence-canvas,.visual-preview .visual-presence-poster { display:block; width:100%; height:100%; object-fit:contain; grid-area:1/1; }
 .visual-warning { padding:16px; border:1px solid #b0875c; border-radius:12px; background:#5e3d1b22; }
 .visual-error { color:#ffc4b9; }
-.live-call[data-mode=legacy] .live-call-presence { width:clamp(160px,30dvh,290px); height:auto; aspect-ratio:1; margin:18px 0; border-radius:18px; overflow:hidden; }
+.live-call[data-mode=legacy] .live-call-presence { width:min(360px,42dvh,calc(100vw - 80px)); height:auto; aspect-ratio:1; margin:24px 0; border-radius:50%; overflow:hidden; background:#211d16; border:1px solid #80664766; }
+.live-call[data-mode=legacy] .live-call-presence .legacy-display-picture { width:100%; height:100%; object-fit:cover; object-position:center; border-radius:50%; }
 .live-call[data-mode=legacy] .visual-presence-canvas,.live-call[data-mode=legacy] .visual-presence-poster { display:block; grid-area:1/1; width:100%; height:100%; object-fit:contain; }
 .visual-preview [hidden],.live-call-presence [hidden] { display:none!important; }
 .live-call button[data-live-static] { min-height:40px; margin-top:8px; padding:6px 14px; border-color:transparent; background:transparent; color:#d5c2a7; font-size:12px; }

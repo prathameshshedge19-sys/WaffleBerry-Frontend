@@ -15,16 +15,16 @@ function fixture(){
  }});
  return {stage,instances,environment,document,dispose,set:update=>{state={...state,...update};environment.dispatchEvent(new Event('legarya:chat-context'));},logout(){account++;environment.dispatchEvent(new Event('legarya:session-ending'));}};
 }
-test('approved chat portrait mounts automatically and repeated context events do not reload',()=>{
- const f=fixture();assert.equal(f.stage.hidden,false);assert.equal(f.instances.length,1);f.set({});assert.equal(f.instances.length,1);assert.equal(f.instances[0].options.version,undefined);f.dispose();
+test('shared private picture mounts hidden and repeated context events do not reload',()=>{
+ const f=fixture();assert.equal(f.stage.hidden,true);assert.equal(f.instances.length,1);f.set({});assert.equal(f.instances.length,1);assert.equal(f.instances[0].options.version,undefined);f.dispose();
 });
 test('chat yields the portrait to a live call and restores after it closes',()=>{
- const f=fixture();f.set({live:true});assert.equal(f.stage.hidden,true);assert.equal(f.instances[0].disposed,true);assert.equal(f.instances[0].options.guard(),false);f.set({live:false});assert.equal(f.instances.length,2);assert.equal(f.stage.hidden,false);f.dispose();
+ const f=fixture();f.set({live:true});assert.equal(f.stage.hidden,true);assert.equal(f.instances[0].disposed,true);assert.equal(f.instances[0].options.guard(),false);f.set({live:false});assert.equal(f.instances.length,2);assert.equal(f.stage.hidden,true);f.dispose();
 });
 test('scope changes, hidden page and logout synchronously retire private portraits',()=>{
  const f=fixture();f.set({legacyId:8});assert.equal(f.instances[0].options.guard(),false);assert.equal(f.instances[0].disposed,true);
  f.document.hidden=true;f.document.dispatchEvent(new Event('visibilitychange'));assert.equal(f.stage.hidden,true);
- f.document.hidden=false;f.document.dispatchEvent(new Event('visibilitychange'));assert.equal(f.stage.hidden,false);
+ f.document.hidden=false;f.document.dispatchEvent(new Event('visibilitychange'));assert.equal(f.stage.hidden,true);
  f.logout();assert.equal(f.stage.hidden,true);assert.equal(f.instances.at(-1).disposed,true);
  const count=f.instances.length;f.set({});assert.equal(f.instances.length,count,'late chat events after logout cannot restart a private face');f.dispose();
 });
