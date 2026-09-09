@@ -43,7 +43,7 @@ if (adapter && entry) {
     const portraitStatus=find('[data-live-portrait-status]');portraitStatus.hidden=false;portraitStatus.textContent='Loading approved face…';
     const guard = () => account === window.LegaryaAuthApi.getSessionEpoch?.() && token === serial && load === visualEpoch && context === snapshot && active && !finishing && !finished && context.mode === "legacy";
     // Optional loading runs beside audio startup; failures never reach client.fail.
-    void Promise.all([import("./visual-presence-client.mjs?v=l19c1"), import("./visual-presence-controller.mjs?v=l19c1"), import("./legacy-portrait-renderer.mjs?v=l19c1")]).then(([api, controller, renderer]) => {
+    void Promise.all([import("./visual-presence-client.mjs?v=l19c1"), import("./visual-presence-controller.mjs?v=face6"), import("./legacy-portrait-renderer.mjs?v=face6")]).then(([api, controller, renderer]) => {
       if (!guard()) return;
       visualPresence = controller.createVisualPresence({ host: find(".live-call-presence"), client: api.createVisualClient(window.LegaryaAuthApi), legacyId: snapshot.legacyId,
         name: snapshot.name || "L", guard, rendererFactory: renderer.createPortraitRenderer, onState:state=>{

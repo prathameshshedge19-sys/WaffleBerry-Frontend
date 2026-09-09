@@ -32,7 +32,10 @@ export class SquareCrop {
 export function mountCropControls(root, bitmap, { onChange=()=>{}, initial=null }={}) {
   const doc=root.ownerDocument, crop=new SquareCrop(bitmap.width,bitmap.height);
   if (initial) {
-    while (crop.rotation !== initial.rotation) crop.rotate();
+    const rotation=initial.rotation??0;
+    if(![0,90,180,270].includes(rotation)||!['x','y','width','height'].every(key=>Number.isFinite(initial[key]))
+      ||initial.x<0||initial.y<0||initial.width<=0||initial.height<=0||initial.x+initial.width>1||initial.y+initial.height>1)throw new Error('Saved framing is invalid. Please upload the photo again.');
+    while (crop.rotation !== rotation) crop.rotate();
     crop.edge=initial.width*crop.width; crop.x=initial.x*crop.width; crop.y=initial.y*crop.height; crop.pan(0,0);
   }
   const canvas=doc.createElement("canvas"); canvas.width=canvas.height=512; canvas.className="visual-crop-canvas"; canvas.tabIndex=0;

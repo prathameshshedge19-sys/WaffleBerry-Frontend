@@ -22,6 +22,7 @@
       <p class="gateway-eyebrow">Your Legacy journey</p>
       <h1>How would you like to begin?</h1>
       <p id="gatewayWelcome" class="gateway-welcome"></p>
+      <button id="gatewayRetry" type="button" hidden>Retry connection</button>
       <p id="legacyDeletedNotice" class="gateway-welcome" role="status" hidden>Legacy removed from your account. File deletion may still be finishing in the background.</p>
       <div class="gateway-choices">
         <a class="gateway-card" href="chat.html">
@@ -64,7 +65,7 @@
         <div id="legacyCodeStep">
           <label for="legacyCode">Legacy code</label>
           <input id="legacyCode" name="code" autocomplete="off" maxlength="13" placeholder="LEG-XXXX-XXXX" required />
-          <button class="join-primary" type="submit">Continue</button>
+          <button id="previewLegacyCode" class="join-primary" type="submit">Continue</button>
         </div>
         <div id="legacyConfirmStep" hidden>
           <div class="join-identity"><strong id="legacyPreviewName"></strong><span>AI Legacy · Read-only conversation</span></div>
@@ -75,8 +76,9 @@
       </form>
     </dialog>
     <script src="js/auth-config.js?v=1.1"></script>
-    <script src="js/auth-api.js?v=1.4"></script>
+    <script src="js/auth-api.js?v=face6"></script>
     <script src="js/workspace-role.js?v=1.0"></script>
-    <script src="js/gateway.js?v=delete1"></script>
+    <script src="js/request-deadline.js?v=face6"></script>
+    <script src="js/gateway.js?v=face6"></script>
   </body>
 </html>

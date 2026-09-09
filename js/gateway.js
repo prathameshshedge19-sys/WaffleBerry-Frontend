@@ -1,73 +1,66 @@
 "use strict";
 (() => {
-  const { apiRequest, ensureAuthenticated, logout } = window.LegaryaAuthApi;
-  const deletionNotice = document.querySelector("#legacyDeletedNotice");
-  if (deletionNotice) deletionNotice.hidden = new URLSearchParams(location.search).get("legacyDeleted") !== "1";
-  const dialog = document.querySelector("#joinDialog");
-  const form = document.querySelector("#joinForm");
-  const codeInput = document.querySelector("#collaboratorCode");
-  const codeStep = document.querySelector("#codeStep");
-  const confirmStep = document.querySelector("#confirmStep");
-  const status = document.querySelector("#joinStatus");
-  let code = "";
-  const legacyDialog = document.querySelector("#legacyJoinDialog");
-  const legacyForm = document.querySelector("#legacyJoinForm");
-  const legacyCodeInput = document.querySelector("#legacyCode");
-  const legacyCodeStep = document.querySelector("#legacyCodeStep");
-  const legacyConfirmStep = document.querySelector("#legacyConfirmStep");
-  const legacyStatus = document.querySelector("#legacyJoinStatus");
-  let legacyCode = "";
-
-  const reset = () => { code = ""; codeStep.hidden = false; confirmStep.hidden = true; status.textContent = ""; form.reset(); };
-  const showCodeStep = () => { codeStep.hidden = false; confirmStep.hidden = true; status.textContent = ""; codeInput.focus(); };
-  const formatCode = (value) => {
-    const clean = value.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^COL/, "").slice(0, 8);
-    return `COL-${clean.slice(0, 4)}${clean.length > 4 ? `-${clean.slice(4)}` : ""}`;
-  };
-  codeInput.addEventListener("input", () => { codeInput.value = formatCode(codeInput.value); });
-  document.querySelector("#openJoin").addEventListener("click", () => { reset(); dialog.showModal(); requestAnimationFrame(() => codeInput.focus()); });
-  document.querySelector("#closeJoin").addEventListener("click", () => dialog.close());
-  document.querySelector("#changeCode").addEventListener("click", showCodeStep);
-  dialog.addEventListener("close", reset);
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault(); code = codeInput.value.trim(); status.textContent = "Checking code…";
-    try {
-      const preview = await apiRequest("/collaborations/preview", { method: "POST", authenticated: true, body: { code } });
-      if (preview.access_role === "revoked") { status.textContent = "The owner must restore your collaboration access."; return; }
-      if (preview.access_role === "owner") { location.href = `chat.html?legacy=${preview.legacy_id}`; return; }
-      document.querySelector("#joinLegacyName").textContent = `You're joining ${preview.subject_name}'s Legacy`;
-      document.querySelector("#joinOwnerName").textContent = `Owner: ${preview.owner_name}`;
-      codeStep.hidden = true; confirmStep.hidden = false; status.textContent = "";
-    } catch (error) { status.textContent = error.message || "That collaborator code isn't valid."; }
-  });
-  document.querySelector("#confirmJoin").addEventListener("click", async () => {
-    const button = document.querySelector("#confirmJoin"); button.disabled = true; status.textContent = "Joining collaboration…";
-    try { const result = await apiRequest("/collaborations/join", { method: "POST", authenticated: true, body: { code } }); sessionStorage.setItem(window.LegaryaWorkspaceRole.COLLABORATION_GREETING_KEY, String(result.legacy_id)); location.href = `chat.html?legacy=${result.legacy_id}`; }
-    catch (error) { button.disabled = false; status.textContent = error.message || "Unable to join this Legacy."; }
-  });
-  const resetLegacy = () => { legacyCode = ""; legacyCodeStep.hidden = false; legacyConfirmStep.hidden = true; legacyStatus.textContent = ""; legacyForm.reset(); };
-  const formatLegacyCode = (value) => {
-    const clean = value.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^LEG/, "").slice(0, 8);
-    return `LEG-${clean.slice(0, 4)}${clean.length > 4 ? `-${clean.slice(4)}` : ""}`;
-  };
-  legacyCodeInput.addEventListener("input", () => { legacyCodeInput.value = formatLegacyCode(legacyCodeInput.value); });
-  document.querySelector("#openLegacyJoin").addEventListener("click", () => { resetLegacy(); legacyDialog.showModal(); requestAnimationFrame(() => legacyCodeInput.focus()); });
-  document.querySelector("#closeLegacyJoin").addEventListener("click", () => legacyDialog.close());
-  document.querySelector("#changeLegacyCode").addEventListener("click", () => { legacyCodeStep.hidden = false; legacyConfirmStep.hidden = true; legacyStatus.textContent = ""; legacyCodeInput.focus(); });
-  legacyDialog.addEventListener("close", resetLegacy);
-  legacyForm.addEventListener("submit", async (event) => {
-    event.preventDefault(); legacyCode = legacyCodeInput.value.trim(); legacyStatus.textContent = "Checking Legacy code…";
-    try {
-      const preview = await apiRequest("/legacy-access/preview", { method: "POST", authenticated: true, body: { code: legacyCode } });
-      document.querySelector("#legacyPreviewName").textContent = `You're about to talk with ${preview.subject_name}'s Legacy`;
-      legacyCodeStep.hidden = true; legacyConfirmStep.hidden = false; legacyStatus.textContent = "";
-    } catch (error) { legacyStatus.textContent = error.message || "That Legacy code isn't valid."; }
-  });
-  document.querySelector("#beginLegacyConversation").addEventListener("click", async () => {
-    const button = document.querySelector("#beginLegacyConversation"); button.disabled = true; legacyStatus.textContent = "Opening AI Legacy…";
-    try { const result = await apiRequest("/legacy-access/join", { method: "POST", authenticated: true, body: { code: legacyCode } }); location.href = `legacy-chat.html?legacy=${result.legacy_id}`; }
-    catch (error) { button.disabled = false; legacyStatus.textContent = error.message || "Unable to open this Legacy."; }
-  });
-  document.querySelector("#gatewayLogout").addEventListener("click", async () => { await logout(); location.replace("auth.html?mode=login"); });
-  ensureAuthenticated().then((user) => { document.querySelector("#gatewayWelcome").textContent = `Welcome, ${user.full_name || "friend"}.`; }).catch(() => location.replace("auth.html?mode=login"));
+  const {apiRequest,ensureAuthenticated,logout}=window.LegaryaAuthApi;
+  const {withDeadline}=window.LegaryaAsync;
+  const find=s=>document.querySelector(s);
+  const deletionNotice=find('#legacyDeletedNotice');
+  if(deletionNotice)deletionNotice.hidden=new URLSearchParams(location.search).get('legacyDeleted')!=='1';
+  function installJoin({prefix,route,dialog,form,input,codeStep,confirmStep,status,open,close,change,previewButton,joinButton,showPreview,destination}) {
+    let epoch=0,busy=false,abort=null,code='',preview=null;
+    const elements={dialog,form,input,codeStep,confirmStep,status,open,close,change,previewButton,joinButton};
+    for(const key of Object.keys(elements))elements[key]=find(elements[key]);
+    const e=elements;
+    const lock=value=>{busy=value;e.previewButton.disabled=value;e.joinButton.disabled=value;e.input.disabled=value;e.form.setAttribute('aria-busy',String(value));};
+    const reset=()=>{++epoch;abort?.abort();abort=null;lock(false);code='';preview=null;e.codeStep.hidden=false;e.confirmStep.hidden=true;e.status.textContent='';};
+    const current=token=>epoch===token&&e.dialog.open;
+    async function request(path,work){
+      if(busy)return;
+      const token=epoch,submitted=code;abort=new AbortController();lock(true);
+      try{
+        const result=await withDeadline(signal=>apiRequest(route+path,{method:'POST',authenticated:true,signal,body:{code:submitted}}),{signal:abort.signal});
+        if(current(token))work(result);
+      }catch(error){if(current(token)&&error.name!=='AbortError')e.status.textContent=error.message||'Unable to open this Legacy. Please retry.';}
+      finally{if(current(token)){abort=null;lock(false);if(path==='/preview'&&preview&&!e.confirmStep.hidden)e.joinButton.focus();}}
+    }
+    e.input.addEventListener('input',()=>{const clean=e.input.value.toUpperCase().replace(/[^A-Z0-9]/g,'').replace(new RegExp('^'+prefix),'').slice(0,8);e.input.value=`${prefix}-${clean.slice(0,4)}${clean.length>4?'-'+clean.slice(4):''}`;});
+    e.open.addEventListener('click',()=>{reset();e.form.reset();e.dialog.showModal();requestAnimationFrame(()=>e.input.focus());});
+    e.close.addEventListener('click',()=>{reset();e.dialog.close();});
+    e.dialog.addEventListener('close',reset);e.dialog.addEventListener('cancel',reset);
+    e.change.addEventListener('click',()=>{reset();e.input.focus();});
+    e.form.addEventListener('submit',event=>{
+      event.preventDefault();if(busy||e.codeStep.hidden)return;
+      code=e.input.value.trim();e.status.textContent='Checking code…';
+      void request('/preview',result=>{
+        if(!Number.isSafeInteger(result.legacy_id)||result.legacy_id<1)throw new Error('Unable to verify this Legacy. Please retry.');
+        if(result.access_role==='revoked')throw new Error('The owner must restore your access to this Legacy.');
+        if(prefix==='COL'&&result.access_role==='owner'){location.href=destination(result.legacy_id);return;}
+        preview=result;showPreview(result);e.codeStep.hidden=true;e.confirmStep.hidden=false;e.status.textContent='';
+      });
+    });
+    e.joinButton.addEventListener('click',()=>{
+      if(busy||!preview||e.confirmStep.hidden)return;
+      e.status.textContent='Opening your conversation…';
+      void request('/join',result=>{
+        if(result.legacy_id!==preview.legacy_id)throw new Error('This Legacy changed. Please check the code again.');
+        if(prefix==='COL'){try{sessionStorage.setItem(window.LegaryaWorkspaceRole.COLLABORATION_GREETING_KEY,String(result.legacy_id));}catch{/* Optional greeting must not block entry. */}}
+        location.href=destination(result.legacy_id);
+      });
+    });
+    // BFCache/cancelled navigation must not restore a locked form or let an old
+    // code's late response redirect into the wrong Legacy.
+    window.addEventListener('pagehide',reset);window.addEventListener('pageshow',event=>{if(event.persisted)reset();});reset();
+  }
+  installJoin({prefix:'LEG',route:'/legacy-access',dialog:'#legacyJoinDialog',form:'#legacyJoinForm',input:'#legacyCode',codeStep:'#legacyCodeStep',confirmStep:'#legacyConfirmStep',status:'#legacyJoinStatus',open:'#openLegacyJoin',close:'#closeLegacyJoin',change:'#changeLegacyCode',previewButton:'#previewLegacyCode',joinButton:'#beginLegacyConversation',
+    showPreview:result=>{find('#legacyPreviewName').textContent=result.subject_name?`You're about to talk with ${result.subject_name}'s Legacy`:'You’re about to talk with this Legacy';},destination:id=>`legacy-chat.html?legacy=${id}`});
+  installJoin({prefix:'COL',route:'/collaborations',dialog:'#joinDialog',form:'#joinForm',input:'#collaboratorCode',codeStep:'#codeStep',confirmStep:'#confirmStep',status:'#joinStatus',open:'#openJoin',close:'#closeJoin',change:'#changeCode',previewButton:'#previewCode',joinButton:'#confirmJoin',
+    showPreview:result=>{find('#joinLegacyName').textContent=`You're joining ${result.subject_name||'this person'}'s Legacy`;find('#joinOwnerName').textContent=`Owner: ${result.owner_name||'Legacy owner'}`;},destination:id=>`chat.html?legacy=${id}`});
+  find('#gatewayLogout').addEventListener('click',async()=>{await logout();location.replace('auth.html?mode=login');});
+  const retry=find('#gatewayRetry');let authenticating=false;
+  async function authenticate(){
+    if(authenticating)return;authenticating=true;retry.hidden=true;
+    try{const user=await withDeadline(()=>ensureAuthenticated());find('#gatewayWelcome').textContent=`Welcome, ${user.full_name||'friend'}.`;}
+    catch(error){if(error.status===401)location.replace('auth.html?mode=login');else{find('#gatewayWelcome').textContent='Connection interrupted. Please retry signing in.';retry.hidden=false;}}
+    finally{authenticating=false;}
+  }
+  retry.addEventListener('click',authenticate);void authenticate();
 })();

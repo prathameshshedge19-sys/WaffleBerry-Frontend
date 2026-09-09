@@ -48,18 +48,30 @@
   const retryOpen = document.createElement("button");
   retryOpen.type = "button"; retryOpen.className = "legacy-chat-retry"; retryOpen.textContent = "Retry opening chat"; retryOpen.hidden = true;
   status.after(retryOpen);
-  let initializing = false;
+  let initializing = false, bootEpoch=0, bootAbort=null;
   const initialize = async () => {
     if (initializing) return;
     if (!Number.isInteger(legacyId) || legacyId < 1) return location.replace("gateway.html");
-    initializing = true; liveReady = false; retryOpen.hidden = true; input.disabled = true; updateSend();
+    const token=++bootEpoch;bootAbort=new AbortController();
+    initializing = true; liveReady = false; retryOpen.hidden = true; input.disabled = true; emptyState.hidden=true; updateSend();
     setStatus("Opening Legacy chat…");
     try {
-      const user = await ensureAuthenticated();
-      const [identity] = await Promise.all([
-        apiRequest(`/legacy-access/${legacyId}/identity`, {authenticated:true}),
-        fetchVisitorProfile(),
-      ]);
+      // Stage results off-screen so cancelled/late requests cannot mutate a
+      // subsequent attempt's conversation, visitor identity or readiness.
+      const {user,identity,visitor,items,active,history}=await window.LegaryaAsync.withDeadline(async signal=>{
+        const user=await ensureAuthenticated();signal.throwIfAborted();
+        const [identity,visitor,items]=await Promise.all([
+          apiRequest(`/legacy-access/${legacyId}/identity`,{authenticated:true,signal}),
+          apiRequest(`/legacy-conversations/visitor-profile?legacy_id=${legacyId}`,{authenticated:true,signal}),
+          apiRequest(`/legacy-conversations?legacy_id=${legacyId}`,{authenticated:true,signal}),
+        ]);signal.throwIfAborted();
+        let stored=null;try{stored=Number(localStorage.getItem(storageKey()));}catch{}
+        const active=items.find(item=>item.id===stored)||items[0];
+        const history=active?await apiRequest(`/legacy-conversations/${active.id}/messages?legacy_id=${legacyId}`,{authenticated:true,signal}):[];
+        return {user,identity,visitor,items,active,history};
+      },{signal:bootAbort.signal,timeoutMs:20000});
+      if(token!==bootEpoch)return;
+      visitorProfile=visitor.profile;visitorGreeting=visitor.greeting;renderVisitorIdentity();
       subjectName = identity.subject_name || "this Legacy";
       document.title = `${subjectName} · AI Legacy | LegaRya`;
       ["legacyName","sidebarLegacyName","emptyLegacyName"].forEach(id => document.querySelector(`#${id}`).textContent = subjectName);
@@ -67,12 +79,13 @@
       document.querySelector("#userName").textContent = user.full_name;
       document.querySelector("#userEmail").textContent = user.email;
       document.querySelector("#accountInitial").textContent = (user.full_name || user.email).charAt(0).toUpperCase();
-      await fetchConversations();
-      const stored = Number(localStorage.getItem(storageKey()));
-      const active = conversations.find(item => item.id === stored) || conversations[0];
-      if (active) await loadConversation(active.id); else showEmpty();
+      conversations=items;activeId=active?.id||null;
+      if(activeId){try{localStorage.setItem(storageKey(),String(activeId));}catch{}}
+      messages.replaceChildren();if(history.length)history.forEach(message=>addMessage(message.role,message.content,false,message.web_sources||[],message.id));else showEmpty();
+      renderList();setStatus();
       liveReady = true; input.disabled = false; updateSend(); input.focus();
     } catch (error) {
+      if(token!==bootEpoch)return;
       liveReady = false; emptyState.hidden = true; updateSend();
       if (!handleAccessError(error)) {
         setStatus(error?.status === 401
@@ -80,8 +93,10 @@
           : "Your Legacy chat could not finish loading. Please retry. You do not need to accept the invitation again.", true);
         retryOpen.hidden = false;
       }
-    } finally { initializing = false; }
+    } finally { if(token===bootEpoch){initializing=false;bootAbort=null;} }
   };
+  window.addEventListener('pagehide',()=>{++bootEpoch;bootAbort?.abort();bootAbort=null;initializing=false;liveReady=false;updateSend();});
+  window.addEventListener('pageshow',event=>{if(event.persisted)void initialize();});
   retryOpen.addEventListener("click", initialize);
   initialize();
   window.LegaryaLiveChat = Object.freeze({

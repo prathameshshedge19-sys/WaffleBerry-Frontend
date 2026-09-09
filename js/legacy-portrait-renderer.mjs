@@ -1,8 +1,9 @@
 import * as THREE from "./three.module.min.js";
+import {motionRig,idlePose} from './portrait-motion.mjs?v=face6';
 
 // A flat, source-derived mesh. No scene inference, generated video, or audio owner.
 export function createPortraitRenderer(host, bundle, { environment = globalThis, sample = () => ({}), staticPhoto = false, onFallback = () => {} } = {}) {
-  const doc = host.ownerDocument, rig = bundle.rig;
+  const doc = host.ownerDocument, rig = motionRig(bundle.rig);
   const poster = doc.createElement("img");
   poster.src = bundle.posterUrl; poster.alt = ""; poster.className = "visual-presence-poster";
   host.replaceChildren(poster);
@@ -35,22 +36,25 @@ export function createPortraitRenderer(host, bundle, { environment = globalThis,
   }
   function frame(now) {
     raf = null; if (disposed || !renderer || staticPhoto || motion?.matches || doc.hidden) return;
-    const interval = tier ? 50 : 1000 / 30;
+    const interval = tier===2?1000/15:tier?50:1000/30;
     if (now - last >= interval - .5) {
       const start = environment.performance.now(), dt = Math.min(.2, previous ? (now - previous) / 1000 : interval / 1000);
       previous = last = now; elapsed += dt;
       try {
         const pose = sample(dt, now) || {};
-        if (elapsed >= nextBlink && tier < 2) { blinkStart = elapsed; nextBlink = elapsed + 3 + (Math.sin(++frameCount * 12.9898) + 1) * 2; }
+        if (elapsed >= nextBlink) { blinkStart = elapsed; nextBlink = elapsed + 3 + (Math.sin(++frameCount * 12.9898) + 1) * 2; }
         const phase = elapsed - blinkStart;
-        const blink = tier < 2 && blinkStart >= 0 && phase < .16 ? Math.sin(phase / .16 * Math.PI) : 0;
-        const idle = tier < 2 && !["LOADING", "ERROR", "DISABLED", "INTERRUPTED"].includes(pose.state);
-        render(Math.min(1, Math.max(0, Number(pose.mouth) || 0)), blink, idle ? .002 * (1 + Math.sin(elapsed * 1.15)) : 0, idle ? .004 * Math.sin(elapsed * .45) : 0);
+        const blink = blinkStart >= 0 && phase < .22 ? Math.sin(phase / .22 * Math.PI) : 0;
+        const idle=idlePose(elapsed,pose.state);
+        render(Math.min(1, Math.max(0, Number(pose.mouth) || 0)), blink, idle.scale-1,idle.tilt);
         costs.push(environment.performance.now() - start); if (costs.length > 120) costs.shift(); ++stats.frames;
         if (costs.length >= 30) {
           stats.p95Ms = [...costs].sort((a,b) => a-b)[Math.ceil(costs.length * .95) - 1];
           slow = stats.p95Ms > 4 ? slow + 1 : 0;
-          if (slow >= 30) { slow = 0; costs.length = 0; stats.tier = ++tier; if (tier >= 3) return fallback(); }
+          if (slow >= 30) { slow = 0; costs.length = 0; stats.tier = ++tier; if (tier >= 3) return fallback();
+            // Reduce pixel work before surrendering motion on slower devices.
+            renderer.setPixelRatio(1);renderer.setSize(tier===1?256:160,tier===1?256:160,false);
+          }
         }
       } catch { return fallback(); }
     }

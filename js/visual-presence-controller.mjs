@@ -68,6 +68,9 @@ export function createVisualPresence({ host, client, legacyId, version = null, n
       if (!manifest) return;
       energy = Math.min(1, Math.max(0, Number(event.value) || 0));
       energyUntil = now() + Math.max(0, Math.min(20, (event.expires - event.audio_time) * 1000));
+      // Audio windows are 20ms but drawing may be 33–67ms apart. Consume the
+      // due output window now, so speech isn't lost between animation frames.
+      if(energyUntil>now())mouth.step(energy,(energyUntil-now())/1000);
       if (energy > .04) {
         clearTimer(quietTimer); const token=epoch, output=playbackEpoch;
         quietTimer=environment.setTimeout(()=>{quietTimer=null;if(valid(token)&&output===playbackEpoch)reset(false);},energyUntil-now()+150);

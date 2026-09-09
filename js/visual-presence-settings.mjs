@@ -1,7 +1,7 @@
 import { createVisualClient, visualError } from "./visual-presence-client.mjs?v=face4";
-import { mountCropControls } from "./visual-crop.mjs?v=face5";
-import { createVisualPresence } from "./visual-presence-controller.mjs?v=l19c1";
-import { createPortraitRenderer } from "./legacy-portrait-renderer.mjs?v=l19c1";
+import { mountCropControls } from "./visual-crop.mjs?v=face6";
+import { createVisualPresence } from "./visual-presence-controller.mjs?v=face6";
+import { createPortraitRenderer } from "./legacy-portrait-renderer.mjs?v=face6";
 import { waitForVisualSource } from "./visual-source-ready.mjs?v=l19c2";
 
 const auth=window.LegaryaAuthApi, entry=document.querySelector("#openVisualPresence");

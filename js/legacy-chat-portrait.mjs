@@ -1,6 +1,6 @@
 import { createVisualClient } from './visual-presence-client.mjs?v=face4';
-import { createVisualPresence } from './visual-presence-controller.mjs?v=l19c1';
-import { createPortraitRenderer } from './legacy-portrait-renderer.mjs?v=l19c1';
+import { createVisualPresence } from './visual-presence-controller.mjs?v=face6';
+import { createPortraitRenderer } from './legacy-portrait-renderer.mjs?v=face6';
 
 // The same approved, leased face is visible in chat and in the live-call view.
 // Chat yields its renderer while the call owns the visible portrait.

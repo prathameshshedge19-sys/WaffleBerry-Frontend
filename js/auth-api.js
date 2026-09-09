@@ -82,20 +82,36 @@
     storeSession(response.access_token, response.user);
   };
 
-  const refreshSession = async () => {
-    let response;
+  let refreshInFlight = null;
+  const performRefresh = async () => {
+    const epoch = sessionEpoch;
+    const controller=typeof AbortController==='function'?new AbortController():null;
+    let timer;
     try {
-      response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch {
-      return false;
+      const result=await Promise.race([
+        (async()=>{const response=await fetch(`${API_BASE_URL}/auth/refresh`,{method:'POST',credentials:'include',signal:controller?.signal});return {response,data:await parseResponse(response)};})(),
+        new Promise(resolve=>{timer=window.setTimeout?.(()=>{controller?.abort();resolve(null);},12000);}),
+      ]);
+      if(!result)throw new ApiError('The connection timed out. Please try again.',{kind:'network'});
+      if(!result.response.ok){
+        if(result.response.status===401)return false;
+        throw new ApiError('Sign-in could not be checked. Please retry.',{status:result.response.status,kind:'network'});
+      }
+      if(epoch!==sessionEpoch)return false;
+      storeAuthenticatedSession(result.data);
+      return true;
+    } catch (error) {
+      if(error instanceof ApiError)throw error;
+      throw new ApiError('Unable to check your sign-in. Please try again.',{kind:'network'});
+    } finally {
+      window.clearTimeout?.(timer);
     }
-    const data = await parseResponse(response);
-    if (!response.ok) return false;
-    storeAuthenticatedSession(data);
-    return true;
+  };
+  // Concurrent page bootstrap/API reads share one rotating-cookie refresh.
+  // Parallel refreshes could otherwise invalidate one another during entry.
+  const refreshSession = () => {
+    if (!refreshInFlight) refreshInFlight = performRefresh().finally(() => { refreshInFlight = null; });
+    return refreshInFlight;
   };
 
   const apiRequest = async (path, options = {}) => {
