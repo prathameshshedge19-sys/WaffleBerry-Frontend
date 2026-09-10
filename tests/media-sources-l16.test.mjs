@@ -120,7 +120,7 @@ test('new Legacy uploads and manages originals immediately without preserving me
   assert.ok(s.calls.some(([, options]) => options.method === 'DELETE')); s.panel.close();
 });
 test("upload navigation and library heading use plain-language photo and document labels", () => {
-  assert.match(read("chat.html"), /id="openMediaSources"[^>]*>[\s\S]*?<span>Upload photos &amp; documents<\/span>/);
+  assert.match(read("chat.html"), /id="openMediaSources"[^>]*aria-label="Upload photos &amp; documents"/);
   assert.match(read("js/media-sources.js"), /el\("h2", "Photos & documents"\)/);
   assert.match(read("js/media-sources.js"), /"Close photos & documents"/);
 });

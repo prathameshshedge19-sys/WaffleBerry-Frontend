@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/rya-core.css?v=1.0" />
-    <link rel="stylesheet" href="css/chat.css?v=4.1" />
+    <link rel="stylesheet" href="css/chat.css?v=4.2" />
       <link rel="stylesheet" href="css/personality-dashboard.css?v=l13d1">
 <link rel="stylesheet" href="css/live-voice.css?v=l15ui1">
     <link rel="stylesheet" href="css/visual-presence.css?v=dp2">
@@ -66,9 +66,6 @@
             <span class="memories-button-icon" aria-hidden="true">◇</span><span>Memories</span>
           </button>
           <button id="openVisualPresence" class="memories-button" type="button" hidden><span class="memories-button-icon" aria-hidden="true">◌</span><span>Legacy photo</span></button>
-          <button id="openMediaSources" class="memories-button" type="button" hidden>
-            <span class="memories-button-icon" aria-hidden="true">▤</span><span>Upload photos &amp; documents</span>
-          </button>
 
           <button id="openCollaborators" class="memories-button" type="button" hidden>
             <span class="memories-button-icon" aria-hidden="true">◎</span><span>Access</span>
@@ -139,6 +136,7 @@
 
           <div class="composer-wrap">
             <div class="composer-call-row"><form id="composer" class="composer">
+              <button id="openMediaSources" class="attachment-button" type="button" aria-label="Upload photos &amp; documents" title="Upload photos &amp; documents" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
               <button id="microphoneButton" class="microphone-button" type="button" aria-label="Start voice input" title="Voice input"><span class="voice-icon" data-voice-icon aria-hidden="true"></span></button>
               <label class="sr-only" for="messageInput">Message Rya</label>
               <textarea id="messageInput" rows="1" maxlength="12000" placeholder="Message Rya..." required></textarea>
