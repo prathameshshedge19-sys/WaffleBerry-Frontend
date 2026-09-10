@@ -9,6 +9,8 @@ export function liveVoiceAvailability(context, enabled, env = globalThis) {
 }
 
 export function liveVoiceError(error) {
+  if ([error?.code, error?.kind].includes('plan_limit_reached')) return 'Your daily call allowance is used. It resets at midnight UTC.';
+  if ([error?.code, error?.kind].includes('plan_check_unavailable')) return 'Usage could not be checked. Please try again; no allowance was used.';
   if (error?.code === "realtime_session_expired") return "This call has reached its time limit. Return to chat and start a new call when you are ready.";
   if (["realtime_access_changed", "realtime_not_authorized"].includes(error?.code)) return "Your access to this chat has changed. Return to your workspace and sign in again if needed.";
   if (error?.code === "realtime_setup_incomplete") return "Complete this Legacy's identity setup before starting Live Voice.";

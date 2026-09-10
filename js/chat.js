@@ -111,6 +111,7 @@
 
   const chatFailure = (error, fallback = "The chat request could not be completed.") => {
     const kind = error instanceof ApiError ? error.kind : "stream_failed";
+    if (['plan_limit_reached', 'plan_check_unavailable'].includes(kind)) return { category: kind, message: error.message };
     if (kind === "legacy_mismatch" || kind === "conversation_scope_mismatch" || kind === "stream_legacy_mismatch") {
       return { category: "legacy_mismatch", message: "This chat no longer matches the selected Legacy. Reload the workspace and try again." };
     }
@@ -997,6 +998,11 @@
         return;
       }
       if (!isCurrentStream) return;
+      if (['plan_limit_reached', 'plan_check_unavailable'].includes(error?.kind)) {
+        pending.remove(); optimisticUserMessage.remove(); input.value = content;
+        if (voiceOrigin) window.LegaryaVoice?.restoreVoiceOrigin();
+        resizeInput(); setChatStatus(error.message, true); return;
+      }
       const failure = chatFailure(error, "Rya couldn't finish that response. Try again.");
       logChatFailure(failure.category, error, {
         stage: failureStage,

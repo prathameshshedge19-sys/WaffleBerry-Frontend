@@ -6,7 +6,7 @@
   let language = 'en';
   try { const saved = localStorage.getItem(storageKey); if (supported.has(saved)) language = saved; } catch {}
   document.documentElement.lang = language;
-  const catalogs = new Map([['en', {}]]), pending = new Map();
+  const catalogs = new Map([['en', {}]]), pending = new Map(), supplements = new Map();
   let dictionary = {}, folded = new Map(), patterns = [], revision = 0, frame = 0;
   const texts = new WeakMap(), attributes = new WeakMap(), dirty = new Set();
   const normalize = value => String(value).replace(/\s+/g, ' ').trim();
@@ -30,6 +30,7 @@
   ].join(',');
   const isProtected = (el) => !!el?.closest(protectedSelector);
   function installCatalog(catalog) {
+    catalog = { ...catalog, ...supplements.get(language) };
     dictionary = catalog; folded = new Map(); patterns = [];
     for (const [source, value] of Object.entries(catalog)) {
       folded.set(fold(source), value);
@@ -145,7 +146,11 @@
   // Native prompts stay synchronous, preserving the application's existing control flow.
   for (const name of ['alert','confirm','prompt']) { const original=window[name].bind(window); window[name]=(message,...args)=>original(t(message),...args); }
   let ready;
-  window.LegaryaI18n = Object.freeze({ t, setLanguage, translate, get language() { return language; }, get ready() { return ready; } });
+  const register = (code, copy) => {
+    supplements.set(code, { ...supplements.get(code), ...copy });
+    if (code === language) { installCatalog(catalogs.get(code) || {}); translate(document.documentElement); }
+  };
+  window.LegaryaI18n = Object.freeze({ t, setLanguage, translate, register, get language() { return language; }, get ready() { return ready; } });
   ready = setLanguage(language,false);
   const boot = () => {
     document.querySelectorAll('[data-language-select]').forEach(attachSelector);

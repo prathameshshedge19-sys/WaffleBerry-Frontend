@@ -1,5 +1,5 @@
 import { RealtimeClient } from "./realtime-client.mjs?v=l19c1";
-import { liveVoiceAvailability, liveVoiceError, liveWebsocketUrl } from "./live-voice-policy.mjs";
+import { liveVoiceAvailability, liveVoiceError, liveWebsocketUrl } from "./live-voice-policy.mjs?v=plans1";
 import { createRyaRenderer } from "./rya-renderer.mjs";
 import "./legarya-soundscape.js?v=3.6";
 
@@ -114,6 +114,8 @@ if (adapter && entry) {
       if (state === "listening") show(state);
     } else if (event.type === "disconnected") {
       void reconcile();
+    } else if (event.type === "quota_warning") {
+      help.textContent = 'Your daily call allowance is almost used. This call will end when it runs out.';
     } else if (event.type === "error") {
       void finish(liveVoiceError(event), true);
     } else if (event.type === "ended") {

@@ -43,6 +43,9 @@
   };
 
   const errorMessage = (status, data) => {
+    if (['plan_limit_reached', 'plan_check_unavailable'].includes(data?.detail?.code)) {
+      try { window.dispatchEvent(new CustomEvent('legarya:plan-limit', {detail:data.detail})); } catch {}
+    }
     if (status === 401) return "Your session has expired. Please sign in again.";
     if (status === 422) return validationMessage(data?.detail);
     if (typeof data?.detail?.message === "string") return data.detail.message;
@@ -65,6 +68,7 @@
     accessToken = accessTokenValue;
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+    try { window.dispatchEvent(new Event('legarya:session-ready')); } catch {}
   };
 
   const clearStoredSession = () => {
@@ -161,6 +165,9 @@
         kind,
         details: data,
       });
+    }
+    if (authenticated && method !== 'GET') {
+      try { window.dispatchEvent(new Event('legarya:usage-changed')); } catch {}
     }
     return data;
   };
@@ -323,5 +330,6 @@
     refreshSession,
     storeAuthenticatedSession,
     getSessionEpoch: () => sessionEpoch,
+    hasAuthenticatedSession: () => Boolean(accessToken && sessionIdentity),
   });
 })();
