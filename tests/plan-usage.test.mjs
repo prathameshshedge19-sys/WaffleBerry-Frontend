@@ -25,3 +25,9 @@ test('all post-login experiences load versioned optional usage UI',async()=>{
 test('blocked submissions retain their draft in both experiences',async()=>{
  for(const name of ['chat','legacy-chat']){const source=await readFile(new URL(`../js/${name}.js`,import.meta.url),'utf8');assert.match(source,/plan_limit_reached/);assert.match(source,/input.value\s*=\s*content/);}
 });
+test('live quota warnings and guidance never share a hidden portrait-status element',async()=>{
+ const source=await readFile(new URL('../js/live-voice.mjs',import.meta.url),'utf8');
+ assert.match(source,/data-live-quota-warning/);assert.match(source,/warning.hidden = false/);
+ assert.match(source,/help = find\("\[data-live-guidance\]"\)/);
+ assert.match(source,/find\('\[data-live-quota-warning\]'\).hidden=true/);
+});

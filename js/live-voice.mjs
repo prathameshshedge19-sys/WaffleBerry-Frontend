@@ -16,7 +16,8 @@ if (adapter && entry) {
     <h1 id="liveCallTitle">Rya</h1><p id="liveCallDisclosure" class="live-call-disclosure">Your AI companion for preserving memories</p>
     <p class="live-call-state" role="status" aria-live="polite" aria-atomic="true">Connecting</p>
     <p data-live-portrait-status class="live-call-help" role="status" hidden></p>
-    <p class="live-call-help">You can speak naturally and interrupt at any time.</p>
+    <p data-live-quota-warning class="live-call-help" role="status" aria-live="polite" hidden></p>
+    <p data-live-guidance class="live-call-help">You can speak naturally and interrupt at any time.</p>
     <p class="live-call-transcript" aria-label="Live speech preview"></p>
     <div class="live-call-controls"><button type="button" data-live-mute aria-pressed="false">Mute microphone</button><button type="button" data-live-stop>Stop speaking</button><button type="button" data-live-end class="live-call-end">End call</button></div>
     <button type="button" data-live-resume hidden>Resume microphone</button>
@@ -26,7 +27,7 @@ if (adapter && entry) {
   </div>`;
   document.body.append(dialog);
   const find = (selector) => dialog.querySelector(selector);
-  const stateLabel = find(".live-call-state"), help = find(".live-call-help"), preview = find(".live-call-transcript");
+  const stateLabel = find(".live-call-state"), help = find("[data-live-guidance]"), preview = find(".live-call-transcript");
   const mute = find("[data-live-mute]"), stop = find("[data-live-stop]"), end = find("[data-live-end]");
   const resume = find("[data-live-resume]"), close = find("[data-live-close]");
   let enabled = false, active = false, finishing = false, finished = false, reconnecting = false;
@@ -115,7 +116,9 @@ if (adapter && entry) {
     } else if (event.type === "disconnected") {
       void reconcile();
     } else if (event.type === "quota_warning") {
-      help.textContent = 'Your daily call allowance is almost used. This call will end when it runs out.';
+      const warning = find('[data-live-quota-warning]');
+      warning.hidden = false;
+      warning.textContent = 'Your daily call allowance is almost used. This call will end when it runs out.';
     } else if (event.type === "error") {
       void finish(liveVoiceError(event), true);
     } else if (event.type === "ended") {
@@ -171,6 +174,7 @@ if (adapter && entry) {
     find("#liveCallDisclosure").textContent = context.mode === "legacy" ? "AI Legacy · A standard AI voice, grounded in preserved memories" : "Your AI companion for preserving memories";
     dialog.dataset.mode = context.mode;
     find('[data-live-portrait-status]').hidden=true;
+    find('[data-live-quota-warning]').hidden=true;
     adapter.setLive(true);
     dialog.showModal();
     const visual = find(".live-call-presence"), soundButton = find("[data-live-ambience]");
