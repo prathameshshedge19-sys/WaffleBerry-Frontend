@@ -1,6 +1,9 @@
 .lg-help-launcher,.lg-help button,.lg-coach button,.lg-celebration button { font:500 12px/1.4 Inter,system-ui,sans-serif; cursor:pointer; }
 .lg-help-launcher { min-height:44px; padding:10px 15px; border:1px solid #b18b5059; border-radius:99px; color:#f5ddb3; background:#19150f; white-space:nowrap; }
 .lg-help-launcher:hover { background:#34281a; border-color:#e8c58d; }
+.gateway-header .lg-tutorial-launcher { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:10px 17px; border:1px solid #dcb57780; border-radius:99px; background:linear-gradient(135deg,#3b2b16,#211a10); color:#ffe2ae; font:500 12px/1.4 Inter,system-ui,sans-serif; cursor:pointer; }
+.gateway-header .lg-tutorial-launcher:hover { background:#48331b; border-color:#ffe2ae; }
+.gateway-header .lg-tutorial-launcher:focus-visible { outline:2px solid #ffe0a3; outline-offset:3px; }
 .lg-help-floating { position:fixed; right:18px; bottom:max(18px,env(safe-area-inset-bottom)); z-index:90; box-shadow:0 6px 25px #0005; }
 .lg-has-help .lg-help-launcher { justify-self:end; }
 .lg-help,.lg-coach,.lg-celebration-card { box-sizing:border-box; color:#f5eddf; font:14px/1.65 Inter,system-ui,sans-serif; border:1px solid #bb92545c; background:linear-gradient(145deg,#211b13,#100e0b 65%); box-shadow:0 22px 90px #0009,inset 0 1px #fff1d510; }

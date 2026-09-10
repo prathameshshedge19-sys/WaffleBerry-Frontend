@@ -47,6 +47,18 @@ try {
       assert.equal(await page.locator('.lg-help details').count() >= 2, true);
       if (out && width === 390 && name === 'gateway.html') await page.screenshot({ path: resolve(out, 'help-mobile.png') });
       await page.keyboard.press('Escape'); assert.equal(await page.locator('.lg-help').isVisible(), false); checks++;
+      if (name === 'gateway.html') {
+        await inside('.lg-tutorial-launcher');
+        await page.getByRole('button', { name: 'Tutorial', exact: true }).click();
+        await inside('.lg-coach'); assert.match(await page.locator('.lg-coach h2').innerText(), /Build your legacy/);
+        if (out) await page.screenshot({ path: resolve(out, `gateway-tutorial-${width}.png`) });
+        await page.locator('.lg-coach').getByRole('button', { name: 'Next', exact: true }).click();
+        assert.match(await page.locator('.lg-coach p').innerText(), /COL collaborator code/);
+        await page.locator('.lg-coach').getByRole('button', { name: 'Next', exact: true }).click();
+        assert.match(await page.locator('.lg-coach p').innerText(), /LEG Legacy code/);
+        await page.locator('.lg-coach').getByRole('button', { name: "Let's begin" }).click();
+        assert.equal(await page.locator('.lg-tutorial-launcher').getAttribute('aria-expanded'), 'false'); checks += 4;
+      }
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, name + ' overflow at ' + width);
     }
     await page.evaluate(() => localStorage.removeItem('legarya:guide:v1:42:chat.html'));

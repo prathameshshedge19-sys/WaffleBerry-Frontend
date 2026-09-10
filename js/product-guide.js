@@ -39,7 +39,11 @@
   else { launcher.classList.add("lg-help-floating"); document.body.append(launcher); }
   document.body.append(help);
 
-  const steps = page === "chat.html" ? [
+  const steps = page === "gateway.html" ? [
+    { target: ".gateway-card[href='chat.html']", title: "Build your legacy with Rya", text: "Start here to create a legacy for yourself or someone you love. Rya guides you through collecting memories and stories. Come back here whenever you want to add more." },
+    { target: "#openJoin", title: "Help someone preserve their story", text: "Choose Collaborate when a legacy owner invites you to contribute. Enter their COL collaborator code to help build that legacy." },
+    { target: "#openLegacyJoin", title: "Talk with the AI legacy", text: "Choose this for a conversation grounded in a person's preserved memories. Enter their LEG Legacy code. This is separate from Rya's builder chat and doesn't edit the legacy." },
+  ] : page === "chat.html" ? [
     { target: ".rya-heading", title: "Meet Rya, your legacy guide", text: "Rya helps you collect stories and build a legacy. The conversation with the AI legacy lives in a separate place." },
     { target: "#composer", title: "Start with a person. Then a memory.", text: "Tell Rya whose legacy you're creating. Answer her questions in your own words. Try a favourite moment, a small habit or a story you don't want to lose.", action: "Write to Rya", run: () => $("#messageInput")?.focus(), next: "Explore the tools" },
     { target: "#openMediaSources", title: "Add pieces of their story", text: "The + opens Photos & documents. Upload a memory source here; it won't change the legacy's display picture.", action: "Open photos & documents", run: () => $("#openMediaSources")?.click() },
@@ -50,17 +54,19 @@
     { target: "#composer", title: "Start by saying hello", text: "Introduce yourself and your relationship. Ask about a memory or favourite story. You can type, dictate with the microphone or use the phone button when available.", action: "Start a conversation", run: () => $("#messageInput")?.focus() },
     { target: ".premium-back", title: "Have another story to preserve?", text: "Use Back and choose Build with Rya or Collaborate to add memories. This legacy conversation doesn't edit the preserved memories." },
   ] : null;
-  const coach = make("section", null, "lg-coach"); coach.hidden = true; coach.setAttribute("role", "region"); coach.setAttribute("aria-label", "Getting started tutorial");
+  const coach = make("section", null, "lg-coach"); coach.id = "legaryaWalkthrough"; coach.hidden = true; coach.setAttribute("role", "region"); coach.setAttribute("aria-label", "Getting started tutorial");
   const spot = make("div", null, "lg-spotlight"); spot.hidden = true; spot.setAttribute("aria-hidden", "true");
   document.body.append(spot, coach);
   let tour = null, target = null, sidebarOpened = false, frame = 0, celebration = null, timer = null, sessionEnded = false;
   let pendingCelebration = null;
+  const tutorialLauncher = page === "gateway.html" ? button("Tutorial", () => { tour = null; startTour(true); }, "lg-tutorial-launcher") : null;
+  if (tutorialLauncher) { tutorialLauncher.setAttribute("aria-controls", coach.id); tutorialLauncher.setAttribute("aria-expanded", "false"); $("#gatewayLogout").before(tutorialLauncher); }
   const visible = (el) => el && !el.hidden && el.getClientRects().length && getComputedStyle(el).visibility !== "hidden";
   const blocking = () => !!document.querySelector("dialog[open], [aria-modal='true']:not([hidden])") || !!celebration;
   const saveTour = (done = false) => { if (userId()) write(tourKey(), { step: tour?.index || 0, done }); };
   function pauseTour() { coach.hidden = spot.hidden = true; }
   function closeSidebar() { if (sidebarOpened) { $("#closeSidebar")?.click(); sidebarOpened = false; } }
-  function finishTour() { saveTour(true); tour = null; pauseTour(); closeSidebar(); launcher.focus(); }
+  function finishTour() { saveTour(true); tour = null; pauseTour(); closeSidebar(); tutorialLauncher?.setAttribute("aria-expanded", "false"); (tutorialLauncher || launcher).focus(); }
   function layout() {
     frame = 0;
     if (!tour || blocking()) { pauseTour(); return; }
@@ -90,12 +96,14 @@
     if (step.action) { const act = button(step.action, () => { step.run(); scheduleLayout(); }, "lg-primary"); act.dataset.guideAction = ""; controls.append(act); }
     if (tour.index > 0) controls.append(button("Back", () => { tour.index--; saveTour(); renderStep(true); }, "lg-secondary"));
     const next = button(tour.index === steps.length - 1 ? "Let's begin" : step.next || "Next", () => { if (tour.index === steps.length - 1) finishTour(); else { tour.index++; saveTour(); renderStep(true); } }, step.action ? "lg-secondary" : "lg-primary");
-    controls.append(next); coach.append(controls); layout(); if (focus && !coach.hidden) next.focus({ preventScroll: true });
+    controls.append(next); coach.append(controls);
+    if (page === "gateway.html") { const choice = $(step.target); const rect = choice?.getBoundingClientRect(); if (rect && (rect.top < 0 || rect.bottom > innerHeight)) choice.scrollIntoView({ block: "center", behavior: "instant" }); }
+    layout(); if (focus && !coach.hidden) next.focus({ preventScroll: true });
   }
   function startTour(replay = false) {
-    if (!steps || tour || sessionEnded || !userId()) return;
+    if (!steps || tour || (page !== "gateway.html" && (sessionEnded || !userId()))) return;
     const saved = read(tourKey()); if (!replay && saved?.done) return;
-    tour = { index: replay ? 0 : Math.max(0, Math.min(steps.length - 1, Number(saved?.step) || 0)) }; renderStep(replay);
+    tour = { index: replay ? 0 : Math.max(0, Math.min(steps.length - 1, Number(saved?.step) || 0)) }; tutorialLauncher?.setAttribute("aria-expanded", "true"); renderStep(replay);
   }
   if (steps) helpFooter.append(button("Replay walkthrough", () => { help.close(); tour = null; startTour(true); }, "lg-primary"));
   help.addEventListener("close", () => { scheduleLayout(); tryCelebration(); });

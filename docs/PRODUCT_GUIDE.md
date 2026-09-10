@@ -3,6 +3,8 @@
 Every HTML page includes `product-guide.js` and `product-guide.css`. Help sits in
 the chat header or the lower-right corner of other pages and explains that page.
 The Help dialog also offers a walkthrough replay in both chat experiences.
+The gateway's top-bar Tutorial button provides a replayable three-step tour of
+Build with Rya, Collaborate (COL code), and Talk with a Legacy (LEG code).
 
 The builder walkthrough starts after an authenticated legacy context is ready.
 The legacy-conversation walkthrough starts after that conversation is ready.
