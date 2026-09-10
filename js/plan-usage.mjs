@@ -16,7 +16,12 @@ if (typeof window !== 'undefined' && window.LegaryaAuthApi) {
   const trigger = make('button', t('Plans & usage'), 'plan-launcher'); trigger.type = 'button';
   trigger.setAttribute('aria-haspopup', 'dialog');
   const host = document.querySelector('.gateway-header, .chat-header');
-  host?.append(trigger);
+  if (host?.matches('.chat-header')) {
+    host.querySelector('.header-spacer')?.remove();
+    let actions = host.querySelector('.chat-header-actions');
+    if (!actions) { actions = make('div', null, 'chat-header-actions'); host.append(actions); }
+    actions.append(trigger);
+  } else host?.append(trigger);
   const dialog = make('dialog', null, 'plan-dialog'); dialog.setAttribute('aria-labelledby', 'planTitle');
   const heading = make('header'), title = make('h2', t('Plans & usage')); title.id = 'planTitle';
   const close = make('button', '×', 'plan-close'); close.type = 'button'; close.setAttribute('aria-label', t('Close'));
@@ -80,7 +85,7 @@ if (typeof window !== 'undefined' && window.LegaryaAuthApi) {
     clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { notice.hidden = true; }, 15000); void refresh();
   });
   window.addEventListener('legarya:usage-changed', () => { setTimeout(refresh, 750); });
-  window.addEventListener('legarya:language-change', () => { title.textContent = t('Plans & usage'); refreshButton.textContent = t('Refresh usage'); close.setAttribute('aria-label', t('Close')); render(); });
+  window.addEventListener('legarya:language-change', () => { title.textContent = t('Plans & usage'); refreshButton.textContent = t('Refresh usage'); close.setAttribute('aria-label', t('Close')); if (!snapshot) trigger.textContent = t('Plans & usage'); render(); });
   // Optional reads never gate chat, call startup, or a user's ability to retry.
   let poll = setInterval(refresh, 30000);
   window.addEventListener('legarya:session-ending', () => { retired = true; snapshot = null; clearInterval(poll); clearTimeout(noticeTimer); dialog.close(); content.replaceChildren(); notice.hidden = true; trigger.textContent = t('Plans & usage'); });

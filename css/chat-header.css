@@ -1,0 +1,65 @@
+/* Three stable slots. Optional controls never become implicit grid rows. */
+.chat-header:has(.chat-header-actions) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-rows: 1fr;
+  gap: 12px;
+  min-height: 0;
+}
+.chat-header .legacy-persona-heading { max-width: 100%; min-width: 0; overflow: hidden; }
+.chat-header .legacy-persona-heading > div:last-child { min-width: 0; }
+.chat-header .legacy-persona-heading h1,
+.chat-header .legacy-persona-heading p { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  gap: 8px;
+  min-width: 0;
+}
+.chat-header-actions > button { flex: none; margin: 0; }
+.chat-header-actions .plan-launcher {
+  box-sizing: border-box;
+  min-height: 44px;
+  max-width: 180px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  font: 500 12px/1.2 Inter, system-ui, sans-serif;
+  white-space: nowrap;
+  align-content: center;
+}
+.conversation-pane > .composer-wrap { grid-row: 2; }
+.chat-header-actions .plan-launcher small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+}
+/* Alerts must not occupy the conversation's fixed-height grid track. */
+.chat-main > .plan-notice {
+  position: absolute;
+  top: 72px;
+  right: 16px;
+  z-index: 30;
+  max-width: min(460px, calc(100% - 32px));
+  margin: 0;
+}
+@media (max-width: 1100px) {
+  .chat-header.lg-has-help:has(.chat-header-actions) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .chat-header-actions { gap: 6px; }
+  .chat-header-actions .plan-launcher { max-width: 112px; padding: 7px 10px; font-size: 11px; }
+  .chat-header-actions .plan-launcher small { display: none; }
+  .chat-header-actions .lg-help-launcher { padding: 8px 10px; }
+  .chat-header .rya-heading { justify-self: center; min-width: 0; }
+  .chat-header .rya-heading h1 { font-size: 23px; }
+}
+@media (max-width: 520px) {
+  .chat-header .header-navigation .premium-back { min-width: 36px; width: 36px; padding: 8px; }
+  .chat-header .header-navigation .premium-back span { display: none; }
+  .chat-header-actions { gap: 4px; }
+  .chat-header-actions .plan-launcher { max-width: 86px; white-space: normal; padding: 6px 8px; }
+  .chat-header .rya-heading > .rya-core-icon { display: none; }
+  .chat-main > .plan-notice { top: 66px; }
+}

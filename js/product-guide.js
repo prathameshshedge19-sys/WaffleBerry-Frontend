@@ -35,7 +35,13 @@
   const launcher = button("?  Help", () => { pauseTour(); help.showModal(); }, "lg-help-launcher"); launcher.setAttribute("aria-haspopup", "dialog"); launcher.setAttribute("aria-controls", help.id);
   // Keep the chat composer unobstructed and put Help next to the page's navigation.
   const chatHeader = $(".chat-header");
-  if (chatHeader) { chatHeader.classList.add("lg-has-help"); $(".header-spacer")?.remove(); chatHeader.append(launcher); }
+  if (chatHeader) {
+    chatHeader.classList.add("lg-has-help");
+    chatHeader.querySelector(".header-spacer")?.remove();
+    let actions = chatHeader.querySelector(".chat-header-actions");
+    if (!actions) { actions = make("div", null, "chat-header-actions"); chatHeader.append(actions); }
+    actions.prepend(launcher);
+  }
   else { launcher.classList.add("lg-help-floating"); document.body.append(launcher); }
   document.body.append(help);
 
