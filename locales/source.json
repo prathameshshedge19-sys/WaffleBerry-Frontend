@@ -1,0 +1,9199 @@
+[
+  {
+    "source": "-20% 0px -55%",
+    "files": [
+      "js/site.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": ", used only with clear permission and care.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "? Help",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "· audio from video",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "(max-width: 800px)",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "(prefers-reduced-motion: reduce)",
+    "files": [
+      "js/chat.js",
+      "js/site.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "). WaffleBerry uses this information only to authenticate you, create or link your WaffleBerry account, and maintain your account identity.",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[data-rya-canvas], #rya-canvas",
+    "files": [
+      "js/rya.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[data-voice-icon], .voice-icon, span",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[LegaRya API] Request failed",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[LegaRya API] Stream request failed",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[LegaRya Chat] Request failed",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[LegaRya Chat] Rya speech animation could not be updated.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[LegaRya Chat] Rya visual state could not be synchronized.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[LegaRya Voice] Could not load voice preference.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[LegaRya Voice] Playback failed.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "[LegaRya Voice] Transcription failed.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "{0} · {1} · Joined {2}",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} · AI Legacy | LegaRya",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} · expires {1}",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} · Joined {1}",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} | LegaRya",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} access…",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} at {1}:{2}",
+    "files": [
+      "js/auth-diagnostics.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} code copied.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} code…",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} DAY STREAK",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} days",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} days of preserving {1}’s story.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} display picture",
+    "files": [
+      "js/display-picture.mjs"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} of 30 consecutive preservation days",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} of 30 days",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0} suggestions to review · {1} preserved",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0}-day preservation streak. {1}.",
+    "files": [
+      "js/progress-presentation.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0}-day streak",
+    "files": [
+      "js/progression.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0}'s Legacy",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "{0}% explored",
+    "files": [
+      "js/memory-dashboard.js",
+      "js/progression.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "← Back to timeline",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "→ Log out",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "<p class=\"fallback\"><span class=\"rya-glow\">Rya</span> needs JavaScript to become visible.</p>",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "0-day preservation streak. Today’s preservation not yet complete.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "0% explored",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "0px 0px -5%",
+    "files": [
+      "js/site.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "1. Beta Service",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "1. Information You Provide",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "2. AI-Generated Responses",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "2. Google Sign-In",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "3. How WaffleBerry Uses Information",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "3. Your Memories and Content",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "4. AI and Service Providers",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "4. Voice and Likeness",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "5. Acceptable Use",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "5. Sessions and Technical Information",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "6. Service Availability and Changes",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "6. Sharing and Disclosure",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "7. Security",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "8. Your Choices",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "9. Changes and Contact",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A conversation with an AI legacy",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A custom story",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A digital legacy asks for trust.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A digital legacy, made living",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A fuller picture",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A future dimension of",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A legacy grows through conversation.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A Legacy must be selected before starting a conversation.",
+    "files": [
+      "js/chat-session.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A little each day. A story that keeps growing.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A LITTLE GUIDANCE",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A little guidance, whenever you need it.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A living world of connected human memories",
+    "files": [
+      "index.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "A new password reset code has been sent.",
+    "files": [
+      "js/verify-reset-otp.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A new verification code has been sent.",
+    "files": [
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A place",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A place for the pieces of a life",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A place for the stories that matter",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A private, read-only conversation grounded in what has been preserved.",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A reflection of what has been preserved, with the memories behind it.",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A space to remember",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A story can be retold. A voice can be remembered. The meaning held between people can keep moving forward.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "A streak counts consecutive days.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AbortError",
+    "files": [
+      "js/auth-api.js",
+      "js/chat.js",
+      "js/gateway.js",
+      "js/legacy-chat.js",
+      "js/legacy-deletion.js",
+      "js/live-voice-policy.mjs",
+      "js/media-client.js",
+      "js/media-sources.js",
+      "js/microphone-ownership.js",
+      "js/request-deadline.js",
+      "js/timeline-dashboard.js",
+      "js/visual-presence-settings.mjs",
+      "js/visual-source-ready.mjs",
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Accept and continue",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Accept invitation",
+    "files": [
+      "invite.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Accepting invitation…",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Access",
+    "files": [
+      "chat.html",
+      "invite.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Access changes will appear here.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Access could not be loaded.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Access could not be updated.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Access granted. Opening your Legacy…",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Access restored.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Access revoked",
+    "files": [
+      "js/access-management.js",
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Access revoked. Existing history remains preserved.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Account",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "account and start preserving what matters.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "active",
+    "files": [
+      "js/access-management.js",
+      "js/chat.js",
+      "js/collaborators.js",
+      "js/media-sources.js",
+      "js/progression.js",
+      "js/stories-dashboard.js",
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Active",
+    "files": [
+      "js/access-management.js",
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Active Rya conversation",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Add a source file",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Add one file at a time so each source can finish safely.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Add one meaningful memory today to begin a preservation streak.",
+    "files": [
+      "chat.html",
+      "js/progression.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Add one meaningful memory today to continue the streak.",
+    "files": [
+      "js/progression.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Add pieces of their story",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Added",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Adjust framing (optional)",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "After the reset succeeds, sign in with your new password. If your reset session expired, request another code.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AI Legacy",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AI Legacy · A standard AI voice, grounded in preserved memories",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AI Legacy · Display picture provided by the owner. AI voice, grounded in preserved memories.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AI Legacy · Preserved with LegaRya",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AI Legacy · Read-only conversation",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AI Legacy | LegaRya",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AI Legacy access",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AI Legacy conversation",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "AI Legacy responses are grounded in preserved memories and may be incomplete.",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "AI-generated standard voice. AI Legacy voice cloning is not part of this experience.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Allows family or friends to talk privately with this Legacy.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Allows trusted people to help build and edit this Legacy.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Already have an account?",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Always",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Ambient sound is already attached to a call.",
+    "files": [
+      "js/legarya-soundscape.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Ambient sound off",
+    "files": [
+      "js/legarya-soundscape.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Ambient sound on",
+    "files": [
+      "js/legarya-soundscape.js",
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Ambient sound unavailable",
+    "files": [
+      "js/legarya-soundscape.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "An AI-powered digital legacy that learns memories, stories, relationships, personality, and voice - so they can live on for generations.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "An important event",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "and acknowledge the",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "and the test password provided with the local acceptance instructions.",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Another question",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Another voice feature is playing audio.",
+    "files": [
+      "js/audio-ownership.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Another voice feature is using the microphone.",
+    "files": [
+      "js/microphone-ownership.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "ApiError",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Approve as Legacy face",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Archive",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Archive this Story? Its memories and timeline will remain untouched.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Archiving Story…",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "ArrowDown",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "ArrowUp",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "As you preserve memories, important moments can appear here. Family memories belong here even when there is no source file.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "At {0}",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "audio",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Authentication mode",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Authorization",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Back",
+    "files": [
+      "auth.html",
+      "chat.html",
+      "forgot-password.html",
+      "gateway.html",
+      "index.html",
+      "invite.html",
+      "legacy-chat.html",
+      "privacy.html",
+      "realtime-dev.html",
+      "reset-password.html",
+      "terms.html",
+      "verify-email.html",
+      "verify-reset-otp.html",
+      "js/product-guide.js",
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Back to LegaRya home",
+    "files": [
+      "auth.html",
+      "gateway.html",
+      "privacy.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Back to password recovery",
+    "files": [
+      "verify-reset-otp.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Back to registration",
+    "files": [
+      "terms.html",
+      "verify-email.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Back to sign in",
+    "files": [
+      "forgot-password.html",
+      "reset-password.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Back to Stories",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Back to your Legacy journey",
+    "files": [
+      "chat.html",
+      "index.html",
+      "invite.html",
+      "legacy-chat.html",
+      "realtime-dev.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Bearer {0}",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Begin a conversation…",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Begin conversation",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Begin with what matters.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Begin your Legacy",
+    "files": [
+      "auth.html",
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Begin your Legacy.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "begins as an AI companion. As memories, stories, and experiences are shared, she learns the person being preserved.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Biography",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Biography · third person",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Build a legacy, one memory at a time",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Build Legacy person with Rya",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Build or improve a Legacy through conversation.",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Build with Rya",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Build your legacy with Rya",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Building {0}'s Legacy, one conversation at a time.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Built by WaffleBerry,",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "by {0}",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "By creating a WaffleBerry account, you confirm that you have read and agree to these Terms & Conditions.",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "By selecting a photo or clicking Regenerate, I confirm I have permission to use the pictured person's likeness for this Legacy's AI-generated Visual Companion, not a recording of that person.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "by WaffleBerry",
+    "files": [
+      "auth.html",
+      "forgot-password.html",
+      "index.html",
+      "privacy.html",
+      "reset-password.html",
+      "verify-email.html",
+      "verify-reset-otp.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "by WaffleBerry Beta",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Call ended because this page went into the background. Your saved messages remain in chat.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Calm · grounded",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "can become your digital legacy, or help preserve someone you love. She is designed to stay grounded in what people choose to share - not to invent a life that was never lived.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Cancel",
+    "files": [
+      "auth.html",
+      "js/chat.js",
+      "js/memory-dashboard.js",
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Cancel edit",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Cancelled",
+    "files": [
+      "js/request-deadline.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Career",
+    "files": [
+      "js/memory-dashboard.js",
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Cedar",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Change who I am to this Legacy",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Chapter {0}",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Chapter support is unavailable.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Chat with Rya | LegaRya",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Check the edited wording below, then choose Preserve edited memory.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Check who invited you",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Check your inbox",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Checking code…",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Checking current information…",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Checking status",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Checking the local session…",
+    "files": [
+      "realtime-dev.html",
+      "js/realtime-dev-auth.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Checking this Legacy…",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Checking your photo, then creating your private preview…",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Childhood",
+    "files": [
+      "js/memory-dashboard.js",
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose a JPEG, PNG or WebP image up to 20 MB.",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose a Legacy before sending a message.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose a legacy photo",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose a new password",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose a PDF, UTF-8 text file, JPEG, PNG or WebP image. Audio/video understanding is not available yet.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose a photo between 128 pixels and 24 megapixels, no more than 8192 pixels on either edge.",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose a secure password with at least eight characters, one letter and one number.",
+    "files": [
+      "reset-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose a source to see its original, evidence and Rya's suggestions.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose another experience",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose Collaborate and enter the COL code shared by the owner. You can contribute memories.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose Collaborate when a legacy owner invites you to contribute. Enter their COL collaborator code to help build that legacy.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose exactly what they can do. Invitations expire after 7 days and only work for the recipient.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose Talk with a Legacy and enter a LEG code. This opens the AI legacy conversation, separate from Rya's builder chat.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose the experience you want",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose the first card to create or continue a legacy. Rya is your guide for collecting stories.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose the original file with the same name and size to continue this upload.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose the standard voice used for Rya and AI Legacy playback.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose the standard voice used for Rya and this AI Legacy.",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose this for a conversation grounded in a person's preserved memories. Enter their LEG Legacy code. This is separate from Rya's builder chat and doesn't edit the legacy.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose your language",
+    "files": [
+      "language-selector"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose your normal workspace",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Choose your path | LegaRya",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Close",
+    "files": [
+      "gateway.html",
+      "js/display-picture-settings.mjs",
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Close Access",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Close conversations",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Close details",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Close Help",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Close Legacy Access",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Close Memory Dashboard",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Close navigation",
+    "files": [
+      "js/site.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Close photos & documents",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Close Recreate Legacy's Face",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Close Voice Settings",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Code could not be updated.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Code is ready.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "COL",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "COL-XXXX-XXXX",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Collaborate on a created Legacy",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborating on {0} Legacy · Owner {1}",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Collaboration access restored.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborations",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "collaborator",
+    "files": [
+      "js/access-management.js",
+      "js/chat.js",
+      "js/display-picture-settings.mjs",
+      "js/invite.js",
+      "js/media-sources.js",
+      "js/personality-dashboard.js",
+      "js/stories-dashboard.js",
+      "js/timeline-dashboard.js",
+      "js/visual-presence-settings.mjs",
+      "js/workspace-role.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborator",
+    "files": [
+      "js/access-management.js",
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborator — build and edit",
+    "files": [
+      "chat.html",
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborator access removed. Historical contributions remain.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborator code",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborator Code",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborator code copied.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborator Code helps trusted people build and edit. Legacy Code grants a private, read-only AI Legacy conversation.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborator code is ready.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborators",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "collaborators ·",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Collaborators could not be loaded.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Come back tomorrow to preserve another piece of the story.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Complete",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Complete a 30-day streak to earn 1 month of Legarya Plus.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Complete the Legacy identity setup before starting Live Voice.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Complete this Legacy's identity setup before starting Live Voice.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Confirm password",
+    "files": [
+      "reset-password.html",
+      "verify-email.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Connecting",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Connection interrupted. Please retry signing in.",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Connection restored. Tap Resume microphone when you are ready.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Contact",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Continue",
+    "files": [
+      "gateway.html",
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Continue naturally in any language.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Continue securely",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Continue upload",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Continue with Google",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Continue your memories, stories and conversations with",
+    "files": [
+      "auth.html",
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Contributor",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Conversation actions",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Conversation is outside the selected Legacy.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Conversation sidebar",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Conversation title",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Conversation with Rya",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "conversation-action conversation-action-delete",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Copy",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Copy code",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Copy was blocked. Select and copy the code manually.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Copy was blocked. Select the code and copy it manually.",
+    "files": [
+      "js/collaborators.js",
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Could not check the local session. Check that the local backend is running, then sign in.",
+    "files": [
+      "js/realtime-dev-auth.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Could not save the photo. Your previous picture is unchanged. Please try again.",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Could not sign in to the local backend.",
+    "files": [
+      "js/realtime-dev-auth.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Could not verify the local session. Please try signing in again.",
+    "files": [
+      "js/realtime-dev-auth.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Couldn’t start a new conversation. Try again.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Create a new password",
+    "files": [
+      "reset-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Create a story",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Create a Story",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Create Account",
+    "files": [
+      "auth.html",
+      "verify-email.html",
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Create an account or sign in to choose your path.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Create another Legacy",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Create password",
+    "files": [
+      "verify-email.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Create private draft",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Create your",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Creating private draft…",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Creating your account...",
+    "files": [
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Creating your private preview…",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Creating your private preview… Your current Legacy face is unchanged.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Crop zoom",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Current information · Sources",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Current Legacy face",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Date needs clarification · Two recollections are preserved.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Date unknown",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "DAY STREAK",
+    "files": [
+      "chat.html",
+      "js/progress-presentation.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Delete",
+    "files": [
+      "js/chat.js",
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "DELETE",
+    "files": [
+      "js/access-management.js",
+      "js/chat.js",
+      "js/collaborators.js",
+      "js/legacy-chat.js",
+      "js/legacy-deletion.js",
+      "js/media-client.js",
+      "js/memory-dashboard.js",
+      "js/share-legacy.js",
+      "js/timeline-client.js",
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Delete {0}",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Delete {0}?",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "DELETE LEGACY {0}",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Delete source",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Delete source and extracted material",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Delete this conversation?",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Delete this Legacy",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Delete this Legacy?",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Delete this private conversation?",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Delete this source?",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Deleting conversation...",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Deleting memory…",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Deleting this Legacy. Please wait…",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Deletion could not be confirmed. Check your connection and try again.",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Deletion could not be confirmed. Refresh before trying again.",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Deutsch",
+    "files": [
+      "language-selector"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Didn't receive the code?",
+    "files": [
+      "verify-email.html",
+      "verify-reset-otp.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Different from Collaborator Code",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Disable",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Disable new access through this Legacy code? Existing viewers will keep their read-only access.",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Disable new code joins? Everyone with existing access will keep it.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Disable this code? Existing collaborators will keep access.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "DISABLED",
+    "files": [
+      "js/display-picture.mjs",
+      "js/live-voice.mjs",
+      "js/visual-presence-controller.mjs",
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Disabling",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Discover",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "document",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Don't have an account?",
+    "files": [
+      "auth.html",
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Download",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Download original",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Draft",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "During a life period",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Edit",
+    "files": [
+      "js/media-sources.js",
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Edit chapter",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Edit memory",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Edit suggested memory",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Edited wording · ready for your approval",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Education",
+    "files": [
+      "js/memory-dashboard.js",
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Effective and last updated: August 23, 2026",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Email",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Email address",
+    "files": [
+      "auth.html",
+      "forgot-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Email verified. Create your password to finish registration.",
+    "files": [
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Empty transcription",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enable",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enabling",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "End",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "End call",
+    "files": [
+      "realtime-dev.html",
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Ending your call and returning to your saved conversation.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "English",
+    "files": [
+      "language-selector"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter",
+    "files": [
+      "js/chat.js",
+      "js/legacy-chat.js",
+      "js/stories-dashboard.js",
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter a conversation title.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter and confirm your new password, following the requirements shown in the form.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter builder",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter code",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter collaborator code",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter Legacy code",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter Legacy Code",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter the code on the next page. Never share your verification code with anyone.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter the password-reset code sent to your email. Use the resend option if it has expired.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter the verification code sent to your email address. Check spam if it hasn't arrived.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter your email",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter your email and we will send a six-digit verification code.",
+    "files": [
+      "forgot-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Enter your full name",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Enter your password",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "ERROR",
+    "files": [
+      "js/display-picture-settings.mjs",
+      "js/display-picture.mjs",
+      "js/legacy-chat-portrait.mjs",
+      "js/live-voice.mjs",
+      "js/visual-presence-controller.mjs",
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Escape",
+    "files": [
+      "js/access-management.js",
+      "js/chat.js",
+      "js/collaborators.js",
+      "js/memory-dashboard.js",
+      "js/product-guide.js",
+      "js/share-legacy.js",
+      "js/site.js",
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Every legacy starts with one memory. Today, you preserved one.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Existing conversation ID (leave empty for New Chat)",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Experience a preserved person through their shared Legacy code.",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Experiences told in the words and perspective of the person who lived them.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Explore Plans",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Explore the tools",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Extracted content · may contain errors",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Face preparation interrupted",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Face preparation is temporarily busy. Your photo is saved. Please retry shortly.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Face recreation is managed by the Legacy owner.",
+    "files": [
+      "js/visual-presence-client.mjs",
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Face recreation is not available for this Legacy right now.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Face recreation is temporarily unavailable. Your memories and voice conversations are unaffected.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "failed",
+    "files": [
+      "js/media-sources.js",
+      "js/personality-dashboard.js",
+      "js/visual-presence-settings.mjs",
+      "js/visual-source-ready.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Family",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Family & Relationships",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Family History",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "family memories",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "family memory",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Family memory",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Family memory · No source file is required.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Footer navigation",
+    "files": [
+      "index.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "For everyday use, open the path selection page and choose Build with Rya or Talk with a Legacy.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Forgot Password | LegaRya",
+    "files": [
+      "forgot-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Forgot password?",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Forgot your password?",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Frame one person's full face with some headroom, then click Regenerate above to update the preview.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Framing changed. Click Regenerate to create a preview of this frame before approving.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Français",
+    "files": [
+      "language-selector"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Full life story",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Full name",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Gathering the chronology…",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Gathering your sources…",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Generate",
+    "files": [
+      "chat.html",
+      "js/access-management.js",
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Generate code",
+    "files": [
+      "chat.html",
+      "js/collaborators.js",
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Generate Story",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Generating",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Generating code…",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Generating Legacy code…",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Generation is temporarily unavailable.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Generation stopped.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "GET",
+    "files": [
+      "js/auth-api.js",
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Get Started",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Getting started tutorial",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Give preserved moments a shape",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Give the legacy a familiar face",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Give the memories, relationships, and stories you treasure a place to endure.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "gives experiences, values, family history, and ways of speaking a place to remain connected over time.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Google sign-in failed. Please try again.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Google sign-in is temporarily unavailable.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Google Sign-In unavailable",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Grounded, not fabricated",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Habits",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Have another story to preserve?",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Help someone build",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Help someone preserve their story",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Help someone you trust preserve their stories using a collaborator code.",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Hi — you're collaborating on {0}'s Legacy. You can share stories, memories, corrections, or anything you think should be preserved. I'll help organize it.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Hi {0}. It’s good to see you again.",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Hi… who am I talking to?",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Hide",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Hide password",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Historical source · memory wording has changed",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Home",
+    "files": [
+      "index.html",
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "How are they connected to you?",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "How do you know {0}?",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "How it works",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "How It Works",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "How should it be told?",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "How would you like to begin?",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "I agree to the",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "I couldn’t transcribe that recording. Try again.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "I understand that this permanently deletes this Legacy and its contents.",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Identity",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "IDLE",
+    "files": [
+      "js/display-picture.mjs",
+      "js/legacy-chat-portrait.mjs",
+      "js/visual-presence-controller.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "If it has expired or been revoked, ask the owner for a fresh invitation.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "If WaffleBerry provides voice-cloning or voice-likeness features, you may only use voices that belong to you or that you have clear permission to use. You may not impersonate another person or use someone's voice or likeness without their consent.",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "If you choose Google Sign-In, WaffleBerry receives your verified Google email address, your Google account display or name information when available, and Google's stable account identifier (",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "image",
+    "files": [
+      "js/display-picture-settings.mjs",
+      "js/media-sources.js",
+      "js/visual-presence-settings.mjs",
+      "js/visual-source-ready.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Image observation",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Important moments from preserved memories. Dates and source files are optional.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "In your chat, the microphone dictates a message. The phone button starts a voice conversation when available.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Include one person's full face with some headroom.",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "INTERRUPTED",
+    "files": [
+      "js/visual-presence-controller.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "IntersectionObserver",
+    "files": [
+      "js/site.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Introduce yourself",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Introduce yourself and your relationship. Ask about a memory or favourite story. You can type, dictate with the microphone or use the phone button when available.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invalid conversation id.",
+    "files": [
+      "js/chat-session.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invalid display picture",
+    "files": [
+      "js/display-picture.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invalid email or password.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invalid Legacy.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invalid personality data",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invalid personality scope/state",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invalid source request.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invalid visual identifier.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invalid visual request.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invitation could not be sent.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invitation revoked.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invitation role",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Invitation sent. The link is private, single-use, and expires in 7 days.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invitation unavailable",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invitation unavailable?",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invite someone",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Invited by",
+    "files": [
+      "invite.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "is a WaffleBerry product.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "is being shaped around meaningful choice, responsible AI, and emotional wellbeing.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "is currently evolving as a beta product.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "is currently in beta. Plans will evolve alongside the ways people choose to build and preserve a Legacy.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Join {0}'s Legacy",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Join collaboration",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "JPEG, PNG or WebP, up to 20 MB. Upload only a picture you have permission to share with this Legacy's visitors. Identity setup is not required.",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Keep",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Keep going",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Keep Legacy",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Keep source",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Keep that legacy available for the people and generations who matter.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Keep this page open. Switching apps or locking your screen ends the call.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Keep your story growing",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Language",
+    "files": [
+      "language-selector"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Last updated",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Last updated: August 2026",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Learn",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "learns how that person remembers, speaks, and relates to others.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "LEG",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "LEG-XXXX-XXXX",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Lega",
+    "files": [
+      "auth.html",
+      "chat.html",
+      "forgot-password.html",
+      "gateway.html",
+      "index.html",
+      "invite.html",
+      "legacy-chat.html",
+      "privacy.html",
+      "reset-password.html",
+      "terms.html",
+      "verify-email.html",
+      "verify-reset-otp.html",
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy",
+    "files": [
+      "chat.html",
+      "invite.html",
+      "legacy-chat.html",
+      "js/access-management.js",
+      "js/display-picture-settings.mjs",
+      "js/display-picture.mjs",
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy access",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy Access",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy access could not be loaded.",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy actions",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Legacy code",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy Code · Read only",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy code copied.",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy code is ready.",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy conversations",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Legacy ID",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy Invitation | LegaRya",
+    "files": [
+      "invite.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy owner",
+    "files": [
+      "chat.html",
+      "js/chat.js",
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy photo",
+    "files": [
+      "chat.html",
+      "js/display-picture-settings.mjs",
+      "js/legacy-chat-portrait.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy photo sets the picture that represents this legacy. It's separate from photos uploaded as memories.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy photo: their display picture",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy progress",
+    "files": [
+      "chat.html",
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy removed from your account. File deletion may still be finishing in the background.",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy settings",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy Story",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy Story · first person",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy viewer",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Legacy viewers",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "LegaRya — Remember You, Always",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "LegaRya · Live Voice",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "LegaRya authentication is not configured.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "LegaRya home",
+    "files": [
+      "auth.html",
+      "chat.html",
+      "index.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "LegaRya user",
+    "files": [
+      "chat.html",
+      "legacy-chat.html",
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Let Rya ask me",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Let the current message finish before starting Live Voice.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Let's begin",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "LISTENING",
+    "files": [
+      "js/visual-presence-controller.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Listening… tap Stop when you’re done.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Live speech development test | LegaRya",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Live speech preview",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Live speech test",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Live Voice is currently unavailable. You can still type or use dictation.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Live Voice is unavailable in this browser. Try a current version of Chrome, Edge or Safari.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Live voice requires audio ownership support.",
+    "files": [
+      "js/audio-ownership.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Live voice requires microphone ownership support.",
+    "files": [
+      "js/microphone-ownership.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Living Legacy",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "LOADING",
+    "files": [
+      "js/display-picture.mjs",
+      "js/legacy-chat-portrait.mjs",
+      "js/live-voice.mjs",
+      "js/visual-presence-controller.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading access…",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading audio",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading chapter support…",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading collaborators…",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading confirmation…",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading conversation...",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading conversation…",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading conversations...",
+    "files": [
+      "chat.html",
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading conversations…",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading Legacy access…",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading memories…",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading Personality & Presence...",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading photo…",
+    "files": [
+      "js/legacy-chat-portrait.mjs",
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading private preview",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading published Stories…",
+    "files": [
+      "js/stories-visitor.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading Stories…",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading your Legacy face…",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading your sources…",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Loading…",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Log In",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Log out",
+    "files": [
+      "chat.html",
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Longest streak",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Low resolution: review the result carefully.",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Main navigation",
+    "files": [
+      "index.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Making Story private…",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Manage who can build, view, and speak with this Legacy.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Managed by the Legacy owner",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Marin",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Mark reviewed",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Media & Sources is not available for this Legacy yet.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Meet",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Meet Rya, Remember You, Always",
+    "files": [
+      "index.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Meet Rya, your legacy guide",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Meet the legacy",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Memories",
+    "files": [
+      "chat.html",
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Memories & access",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Memories could not be loaded.",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "memories, stories, relationships, and experiences in your own words.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Memory could not be deleted.",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Memory could not be updated.",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Memory Dashboard",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Memory preserved. It is available in Memories.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Memory removed from Rya’s active knowledge.",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Memory updated. Rya will use the new version immediately.",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "message message-{0}{1}",
+    "files": [
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Message Rya",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Message Rya...",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Message this Legacy",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "message-label-assistant",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "message-pending",
+    "files": [
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Microphone access was denied. Allow it in your browser settings to use voice input.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Microphone muted",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Microphone permission was denied. Allow microphone access in your browser settings, then try again.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Mission",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Mode",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Moments recalled with the meaning and emotion behind them.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Mute ambient sound",
+    "files": [
+      "js/legarya-soundscape.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Mute microphone",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Mute sound",
+    "files": [
+      "index.html",
+      "js/legarya-soundscape.js"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Myself",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Need a fresh code?",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Needs attention",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Needs review",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "New chat",
+    "files": [
+      "chat.html",
+      "legacy-chat.html",
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "New joins are disabled. Existing collaborators still have access.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "New joins disabled. Existing access remains active.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "New Legacy setup",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "New password",
+    "files": [
+      "reset-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "New viewer joins are disabled. Existing viewers still have access.",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Next",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Next area to explore · {0}. An invitation, never a requirement.",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "No {0} yet.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "No collaborators yet.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No conversations yet",
+    "files": [
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No display picture has been set.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No finalized speech yet.",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No memories yet. A meaningful Legacy begins in conversation.",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No microphone was found. Connect one and try again.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No microphone was found. You can still type your message.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No one has opened this Legacy yet.",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No pending invitations.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No saved conversation yet.",
+    "files": [
+      "js/realtime-dev.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No suggestions found",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "No verified familiar expressions have been preserved yet.",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "noopener noreferrer",
+    "files": [
+      "js/legacy-chat.js",
+      "js/markdown.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Not generated",
+    "files": [
+      "chat.html",
+      "js/access-management.js",
+      "js/collaborators.js",
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Not yet",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "NotAllowedError",
+    "files": [
+      "js/live-voice-policy.mjs",
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "NotFoundError",
+    "files": [
+      "js/live-voice-policy.mjs",
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "NotReadableError",
+    "files": [
+      "js/live-voice-policy.mjs",
+      "js/microphone-ownership.js",
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "NotSupportedError",
+    "files": [
+      "js/microphone-ownership.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Once the code is verified, you'll be able to choose a new password.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "One meaningful memory, every day.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Only an approved preview becomes the Legacy's face. Memories and voice are unchanged.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open conversations",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Open Legacy chat",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open Legacy photo in the sidebar to choose the picture that represents this legacy.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open Memories to review what has been preserved. Use Access to manage the sharing options available to you.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open menu for {0}",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Open navigation",
+    "files": [
+      "index.html",
+      "js/site.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open normal Legacy chat",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open normal Rya chat",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open photos & documents",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open Rya workspace",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open your invitation",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Open your Legacy",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Opening Legacy chat…",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Opening moment…",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Opening original source…",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Opening source…",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Opening Story…",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Opening your conversation…",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Opening your invitation…",
+    "files": [
+      "invite.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Optional source support",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "or continue with email",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "organizes what is shared into a growing, personal memory.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Original downloaded.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Original source no longer available",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Original source no longer available.",
+    "files": [
+      "js/media-client.js",
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Original source opened.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Original source: {0}",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Origins and traditions carried forward instead of lost between generations.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Other",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Our Mission",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Over time,",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "owner",
+    "files": [
+      "js/chat.js",
+      "js/display-picture-settings.mjs",
+      "js/gateway.js",
+      "js/legacy-deletion.js",
+      "js/media-sources.js",
+      "js/memory-dashboard.js",
+      "js/personality-dashboard.js",
+      "js/stories-dashboard.js",
+      "js/timeline-dashboard.js",
+      "js/visual-presence-settings.mjs",
+      "js/workspace-role.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Owner",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Owner · Identity setup in progress",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Owner controls",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Owner edit",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Owner: {0}",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Owner's edited wording",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Page {0}",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Pallavi’s teaching years",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Password",
+    "files": [
+      "auth.html",
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Password must be at least eight characters and include a letter and number.",
+    "files": [
+      "js/reset-password.js",
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Passwords do not match.",
+    "files": [
+      "js/reset-password.js",
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "PATCH",
+    "files": [
+      "js/chat.js",
+      "js/memory-dashboard.js",
+      "js/stories-client.js",
+      "js/timeline-client.js",
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "PDF or UTF-8 text up to {0} MB · JPEG, PNG or WebP up to {1} MB",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "pending",
+    "files": [
+      "js/media-client.js",
+      "js/media-sources.js",
+      "js/progression.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Pending invitations",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "People leave more behind than photographs.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Permanently delete Legacy",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Permission matters",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Personal by nature. Guided by care.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Personality",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Personality & Presence",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Personality & Presence is refreshing from the latest memories...",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Personality & Presence isn't available right now. Your memories and chat are unaffected.",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Photo preview is unavailable.",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Photo saved. Visitors will see it in chats and calls.",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Photo validation failed",
+    "files": [
+      "js/visual-source-ready.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Photo validation is taking longer. Select the uploaded photo again once it is ready.",
+    "files": [
+      "js/visual-source-ready.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Photos & documents",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Photos & documents: the + button",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Photos, letters and documents can help tell a life story. Rya's suggestions become memories only when the owner preserves them.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Plans",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Play response",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Play voice response",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please accept the Terms & Conditions to continue.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please check the information you entered.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please enter the six-digit verification code.",
+    "files": [
+      "js/verify-email.js",
+      "js/verify-reset-otp.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please enter your email address.",
+    "files": [
+      "js/forgot-password.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please enter your email again to reset your password.",
+    "files": [
+      "js/verify-reset-otp.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please enter your email and password.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please enter your full name and email.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please reposition the person inside the square frame, or choose another clear photo.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please sign in again to start another call. Your saved messages are safe.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please sign in again, then reopen your invitation or enter your Legacy code.",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please sign in again.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please sign in again. Your saved messages remain in chat.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please sign in to continue.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please start registration again.",
+    "files": [
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Please wait while LegaRya verifies this private link.",
+    "files": [
+      "invite.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "POST",
+    "files": [
+      "js/access-management.js",
+      "js/auth-api.js",
+      "js/auth-diagnostics.js",
+      "js/auth.js",
+      "js/chat.js",
+      "js/collaborators.js",
+      "js/display-picture-settings.mjs",
+      "js/forgot-password.js",
+      "js/gateway.js",
+      "js/invite.js",
+      "js/legacy-chat.js",
+      "js/media-client.js",
+      "js/progression.js",
+      "js/reset-password.js",
+      "js/share-legacy.js",
+      "js/stories-client.js",
+      "js/timeline-client.js",
+      "js/verify-email.js",
+      "js/verify-reset-otp.js",
+      "js/visual-presence-client.mjs",
+      "js/visual-presence-settings.mjs",
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preferences",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preparation is taking longer. Click Regenerate to check again, or reopen this panel later.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preparing preview…",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preparing the Story…",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preparing your account...",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preparing your microphone and voice connection.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preservation begins with information intentionally provided by people.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preservation streak",
+    "files": [
+      "chat.html",
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preserve",
+    "files": [
+      "index.html",
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preserve a meaningful memory each day. The streak updates when today's preservation is confirmed.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preserve edited memory",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preserve something today",
+    "files": [
+      "chat.html",
+      "js/progress-presentation.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preserve what makes",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preserved family material",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preserved from a private source",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preserved memory",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "preserves the stories, relationships, and personality behind them - the context that makes a memory human.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preview",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preview Cedar voice",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Preview edited wording",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preview Marin voice",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Preview not ready",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Preview preparation did not finish. Click Regenerate to retry, or upload another photo. Your current Legacy face is unchanged.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Previous previews are still being securely removed. Your photo is saved. Try Regenerate again shortly.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Privacy and trust",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Privacy Policy",
+    "files": [
+      "auth.html",
+      "index.html",
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Privacy Policy | LegaRya",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Private beta access",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Private email invitation",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Private Legacy invitation",
+    "files": [
+      "invite.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Private photo storage could not be reached. Click Regenerate to retry. Your current Legacy face is unchanged.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Private preview",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "processing",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Processing queued again.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Publication could not be updated.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Publication setting updated.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Publish",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Published",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Published Stories are not available right now.",
+    "files": [
+      "js/stories-visitor.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Published Stories will appear here when this Legacy’s owner chooses to share them.",
+    "files": [
+      "js/stories-visitor.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Publishing Story…",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "PUT",
+    "files": [
+      "js/display-picture.mjs",
+      "js/legacy-chat.js",
+      "js/media-client.js",
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Read before using Legarya",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Read the policy",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Read-only access · Joined {0}",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Read-only experience",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "ready",
+    "files": [
+      "js/media-client.js",
+      "js/media-sources.js",
+      "js/personality-dashboard.js",
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Ready for new speech. Unfinished speech may need repeating.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Ready to review",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Ready to talk with a legacy?",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Ready to test.",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Recent access activity",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Recent chats",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Reconcile dropped connection",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Recover your account",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Recreate Legacy's Face",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Refresh",
+    "files": [
+      "js/media-sources.js",
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Refresh saved messages",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Refresh the dashboard to view this memory.",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Regenerate",
+    "files": [
+      "js/access-management.js",
+      "js/collaborators.js",
+      "js/share-legacy.js",
+      "js/stories-dashboard.js",
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Regenerate this code? The previous code will stop working, while everyone with existing access keeps it.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Regenerate to update preview",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Regenerating code…",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Regenerating Legacy code…",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Regenerating this code will make the previous code stop working. Existing collaborators will keep access.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Regenerating this Legacy code will stop new access through the old code. Existing viewers will keep access.",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Relationships",
+    "files": [
+      "index.html",
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Remember",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Remember me on this device",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Remember You, Always.",
+    "files": [
+      "chat.html",
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Remove",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Remove {0}'s access? Their existing contributions will remain.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Remove from Timeline",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Remove this event from the timeline? Canonical memories, sources, and personality will remain.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Removing collaborator…",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Removing source",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rename",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Renaming conversation...",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Replay response",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Replay walkthrough",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Resend code",
+    "files": [
+      "verify-email.html",
+      "verify-reset-otp.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Reset crop",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Reset password",
+    "files": [
+      "reset-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Reset Password | LegaRya",
+    "files": [
+      "reset-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Reset visitor identity",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Reset who you are to this Legacy? Your private chats will not be deleted.",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Reset your password",
+    "files": [
+      "forgot-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Resetting your password...",
+    "files": [
+      "js/reset-password.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Response ended early.",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Response stopped.",
+    "files": [
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Response stopped. You can keep talking.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Restore",
+    "files": [
+      "js/access-management.js",
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Restoring",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Restoring access…",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Restoring your Legacy workspace...",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Restoring your saved chat. Unfinished speech may need repeating.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Resume microphone",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Retry connection",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Retry opening chat",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Retry processing",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Retry upload",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Return to chat",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Return to Legacy gateway",
+    "files": [
+      "invite.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Return to your journey",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Return when you're ready",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Review and shape what Rya remembers.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Review available",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Review complete",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Review complete. {0} preserved, {1} skipped.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Review the legacy and invitation details. Sign in with the account you want to use.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Reviewed",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Revoke",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Revoke {0}'s {1} access? Existing conversations and contributions will remain.",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Revoke this pending invitation?",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Revoking",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rotate 90°",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya",
+    "files": [
+      "auth.html",
+      "chat.html",
+      "forgot-password.html",
+      "gateway.html",
+      "index.html",
+      "invite.html",
+      "legacy-chat.html",
+      "privacy.html",
+      "reset-password.html",
+      "terms.html",
+      "verify-email.html",
+      "verify-reset-otp.html",
+      "js/auth.js",
+      "js/chat.js",
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya builder",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya could not connect to the response service. Try again.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya couldn't finish that response.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya couldn't finish that response. Try again.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya couldn’t open today’s question. Try again.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya couldn’t start the Legacy setup. Try again.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya didn't find any clear memories to suggest. You can still view and manage this source.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya guides you through preserving a person's memories, stories and personality.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya helps you build and improve a legacy. Tell her whose story you want to preserve, then share a specific memory, habit or life moment.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya helps you collect stories and build a legacy. The conversation with the AI legacy lives in a separate place.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya is opening today’s question...",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya is reviewing",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya is still learning how this person expressed themselves. Preserve more stories, values, habits, and familiar phrases to deepen their presence.",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya suggestion · not saved",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya voice",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "rya-core-icon rya-core-icon--message",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya's living memory consciousness",
+    "files": [
+      "index.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Rya's response ended before completion.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya's response was interrupted. Try again.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Rya's suggestions",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Save memory",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Save new version",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Saved as this Legacy's face. Upload a new photo whenever you want to change it.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Saved framing is invalid. Please upload the photo again.",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Saved speech",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "saved Stories",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Saving your new Story version…",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Saving your photo…",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Say who you are and how you know this person. Ask about a memory, a favourite story or something meaningful to you.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "SecurityError",
+    "files": [
+      "js/live-voice-policy.mjs",
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Select",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Select the original file to continue upload",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Select the test Legacy and start the microphone.",
+    "files": [
+      "js/realtime-dev.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Selected Legacy",
+    "files": [
+      "js/display-picture-settings.mjs",
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Selected Legacy: {0} (ID {1})",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Selection changed. Previous saved speech remains in its original chat.",
+    "files": [
+      "js/realtime-dev.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Send invitation",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Send message",
+    "files": [
+      "chat.html",
+      "legacy-chat.html",
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Send verification code",
+    "files": [
+      "forgot-password.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sending a new code...",
+    "files": [
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sending a new reset code...",
+    "files": [
+      "js/verify-reset-otp.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sending private invitation…",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sending your verification code...",
+    "files": [
+      "js/forgot-password.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Set a new password",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Set up a Legacy",
+    "files": [
+      "chat.html",
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Shape this chapter in your own words",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Share",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Share a separate code so family or friends can talk with this AI Legacy.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Share Legacy",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Share this code with family or friends so they can talk with this Legacy. It cannot be used to build or edit memories.",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "should remain grounded in shared memories and should not fabricate personal history.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Show",
+    "files": [
+      "auth.html",
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Show password",
+    "files": [
+      "auth.html",
+      "js/auth.js"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Sign in",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sign In",
+    "files": [
+      "auth.html",
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sign In | LegaRya",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sign in again",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sign in or create an account",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sign in to the local test account",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sign in to the local test account before starting the microphone.",
+    "files": [
+      "js/realtime-dev-auth.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sign-in could not be checked. Please retry.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sign-in failed: check the email and password for the local test account. Regular accounts are not in the disposable test database.",
+    "files": [
+      "js/realtime-dev-auth.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Signature expressions",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Signed in as {0}. Microphone test ready.",
+    "files": [
+      "js/realtime-dev-auth.mjs"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Signing in to the local backend…",
+    "files": [
+      "js/realtime-dev-auth.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Signing you in with Google...",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Signing you in...",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Skip",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Skip to content",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Skip tutorial",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Skipped",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Some preserved information used by this Story has changed. Review or regenerate when you are ready.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Someone I love",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "someone, them.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "SOMETHING WORTH CELEBRATING",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Sound unavailable",
+    "files": [
+      "js/legarya-soundscape.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source details",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source evidence",
+    "files": [
+      "js/media-client.js",
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source library",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source removal requested. Preserved memories remain.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source removed",
+    "files": [
+      "js/media-client.js",
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source selection retired",
+    "files": [
+      "js/visual-source-ready.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source transfers are not configured.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source unavailable",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source-backed support is additional to family memory.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Source: {0} · {1}",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Speak with",
+    "files": [
+      "chat.html",
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "SPEAKING",
+    "files": [
+      "js/visual-presence-controller.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Speech saved in conversation {0}. Waiting for Rya.",
+    "files": [
+      "js/realtime-dev.mjs"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Square crop: {0} × {1} source pixels. {2}",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Start a conversation",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Start by saying hello",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Start here to create a legacy for yourself or someone you love. Rya guides you through collecting memories and stories. Come back here whenever you want to add more.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Start microphone",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Start today",
+    "files": [
+      "chat.html",
+      "js/progression.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Start voice conversation",
+    "files": [
+      "chat.html",
+      "legacy-chat.html",
+      "js/live-voice.mjs"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Start voice input",
+    "files": [
+      "chat.html",
+      "legacy-chat.html",
+      "js/voice-chat.js"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Start with a letter, a favourite photograph or a note. Keep the original, explore its story, and choose what to preserve.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Start with a person. Then a memory.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Start your journey",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Starting a new Legacy...",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Status updates paused. Refresh to check again.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Stop generating",
+    "files": [
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Stop recording",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Stop speaking",
+    "files": [
+      "realtime-dev.html",
+      "js/live-voice.mjs",
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Stopping response...",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "stored memories",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Stored memories",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Stories",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Stories & Experiences",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Stories could not be loaded. Please try again.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Stories made from what your Legacy has preserved.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Story",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Story ready for review.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "story-button danger",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "story-button primary",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "story-form story-editor",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Suggestion skipped. Your source is unchanged.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Suggestions will appear here after processing.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Supported by {0} preserved {1}",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Supporting evidence · {0}",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Switching Legacy...",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "System",
+    "files": [
+      "js/access-management.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Talk with",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Talk with a Legacy",
+    "files": [
+      "gateway.html",
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Talk with the AI legacy",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Talk with the legacy",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Tap to awaken Rya",
+    "files": [
+      "index.html",
+      "js/legarya-soundscape.js"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Tell",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Tell Rya in your own words.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Tell Rya whose legacy you're creating. Answer her questions in your own words. Try a favourite moment, a small habit or a story you don't want to lose.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Tell Rya: yourself, or someone you care about.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Terms & Conditions",
+    "files": [
+      "auth.html",
+      "index.html",
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Terms of Service | LegaRya",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Text excerpt",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "That chat does not belong to the selected Legacy.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "That speech could not be saved. Please say it again.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The chat changed. Saved speech remains in its original conversation.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The chat request could not be completed.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The chat selection changed while opening today’s question.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The chat selection changed while starting the conversation.",
+    "files": [
+      "js/chat-session.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The connection timed out. Please try again.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The conversation does not belong to the selected Legacy.",
+    "files": [
+      "js/chat-session.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The deletion warning could not be loaded. Nothing was deleted.",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The details that make a person unmistakably themselves.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The display picture could not load. Voice can continue.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The display picture could not load. Your chat is still available.",
+    "files": [
+      "js/legacy-chat-portrait.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The disposable local backend uses its own test database. Use",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The edit could not be saved.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The idea",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The intelligence inside",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The invitation could not be accepted. Reopen this email to check your access.",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The invitation returned an invalid destination. Please try again.",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The Legacy owner manages this photo.",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The LegaRya service could not be reached. Try again.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The local backend could not verify the new session. Please sign in again.",
+    "files": [
+      "js/realtime-dev-auth.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The memories you share belong with the Legacy they were entrusted to.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The microphone is unavailable or already in use. Try again.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The names, bonds, and shared history that give a life its shape.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The original and extracted material will be removed. Already preserved memories remain, with a note that their original source is unavailable.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The original is kept as source material. Extracted text and suggestions are separate from the original.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The owner must restore your access to this Legacy.",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The page changed before microphone permission completed.",
+    "files": [
+      "js/microphone-ownership.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The page changed. Saved messages remain in their original chat.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The photo could not load. Close and reopen to retry.",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The request could not be completed.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The request timed out. Please try again.",
+    "files": [
+      "js/request-deadline.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The request was aborted.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The selected chat changed. Your saved speech remains in its original chat.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The selected Legacy changed. Close this warning and try again.",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The server returned an invalid authentication response.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The Story could not be archived.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The Story could not be created.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The stream returned the wrong conversation.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The stream returned the wrong Legacy.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The streaming response was unavailable.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "The timeline could not be loaded. Please try again.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "There are fewer preserved memories from some periods. These are invitations to remember more, not missing proof.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "There are fewer preserved memories from some periods. You can return to them whenever you feel ready.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "THINKING",
+    "files": [
+      "js/visual-presence-controller.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This call has reached its time limit. Return to chat and start a new call when you are ready.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This chat is not ready for Live Voice. Complete setup or finish your other call first.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This chat no longer matches the selected Legacy. Reload the workspace and try again.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This conversation draws on preserved memories. It is an AI representation, not the real person or Rya's builder chat.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This conversation is no longer available in the selected Legacy.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This conversation is read-only for the legacy's memories. Go Back and choose Build with Rya or Collaborate to contribute stories.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This development surface is available locally only.",
+    "files": [
+      "js/realtime-dev.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This file exceeds the upload limit.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This file format is not supported.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This file is empty. Choose a file with content.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This file is too large. The limit is {0} MB.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "This invitation is invalid, expired, or has already been used.",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This invitation link is incomplete.",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This is a standard AI voice, not the preserved person’s actual or cloned voice.",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This is an AI representation grounded in preserved memories, not the real person or the Rya builder.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This is the approved face. Upload a new photo whenever you want to change it.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This item changed in another session. Check its latest state before trying again.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This language could not load. Please try again.",
+    "files": [
+      "language-selector"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "this Legacy",
+    "files": [
+      "legacy-chat.html",
+      "js/chat.js",
+      "js/legacy-chat.js",
+      "js/progression.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This Legacy changed. Please check the code again.",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This Legacy changed. Refresh and review the current version before trying again.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This Legacy couldn't finish that response. Try again.",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This Legacy is already being deleted.",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This moment is no longer available.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This page explains how Legarya handles your information. Scroll through the sections for the details relevant to you.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This page sets out the terms for using the service. Review its sections and any contact information provided.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This permanently removes the selected Legacy, including its memories, chats, timeline, saved Stories, uploaded photos and documents, and prepared portraits. Visitors and collaborators will lose access.",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "this person",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This photo could not be opened. Try another JPEG, PNG or WebP image.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This photo is not available in the selected Legacy.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This private draft is ready for its first generation.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This service is temporarily unavailable. Please try again shortly.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This source is unavailable or Media & Sources is not enabled.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This source's extracted content has been removed.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This Story is no longer available.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "This visual is no longer available.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Timeline",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Timeline event",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "timeline events",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Title",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "To change this representation, edit the memories that support it.",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "To create an account with Google, please accept WaffleBerry's Terms & Conditions.",
+    "files": [
+      "auth.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Today",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Today complete",
+    "files": [
+      "js/progress-presentation.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Today complete — {0}’s preservation streak continues.",
+    "files": [
+      "js/progression.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Today’s preservation",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Today’s preservation complete",
+    "files": [
+      "js/progress-presentation.js",
+      "js/progression.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Today’s preservation is complete for {0}.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Today’s preservation not yet complete",
+    "files": [
+      "chat.html",
+      "js/progress-presentation.js",
+      "js/progression.js"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Today’s question",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Transcribing recording",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Transcribing…",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Transcript ready to review.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Trusted collaboration",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Turn ambient sound on",
+    "files": [
+      "js/legarya-soundscape.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Turn preserved memories and moments into stories that your family can read and revisit.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Turn sound on",
+    "files": [
+      "js/legarya-soundscape.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Tutorial",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Type {0} to confirm:",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Type or speak",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Type your message, use the microphone to dictate, or use the phone button when voice conversation is available.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to check your sign-in. Please try again.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to complete the response.",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to continue.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to create your account.",
+    "files": [
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to delete the conversation.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to disable the code.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to disable this code.",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to generate a code.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to generate a Legacy code.",
+    "files": [
+      "js/share-legacy.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to load Stories.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to load this conversation.",
+    "files": [
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to open this Legacy. Please retry.",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to reach Legarya. Please try again.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to rename the conversation.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to resend the code.",
+    "files": [
+      "js/verify-email.js",
+      "js/verify-reset-otp.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to reset your password.",
+    "files": [
+      "js/reset-password.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to send the verification code.",
+    "files": [
+      "js/forgot-password.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to start another Legacy.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to switch Legacy.",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to update collaborator access.",
+    "files": [
+      "js/collaborators.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to verify this Legacy. Please retry.",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to verify your email.",
+    "files": [
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unable to verify your reset code.",
+    "files": [
+      "js/verify-reset-otp.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Understand the terms",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Understand your privacy",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unhandled: {0}",
+    "files": [
+      "js/auth-diagnostics.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "unknown",
+    "files": [
+      "js/auth-api.js",
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unmute microphone",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unnamed Legacy",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Unpublish",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Up to date",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Update your password",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Updating memory…",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload a clear photo with one face. We find and frame it automatically—even with a background. JPEG, PNG or WebP, up to 20 MB. Your current face stays unchanged until you approve the new preview.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload a JPEG, PNG or WebP photo up to 20 MB.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload a photo to create a private preview automatically. Nothing changes until you approve.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload a photo. Review the private preview. Approve it as this Legacy's face. Identity setup is not required.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload a picture to show in this Legacy's chats and calls. Your full image is kept—no cropping or animation.",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload interrupted. You can continue it from this source.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload Legacy photo",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Upload not finished",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload photo",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload photo & create private preview",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Upload photos & documents",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Uploaded · waiting for Rya",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "uploaded files",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Uploaded photo",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Uploaded photo — preview not ready",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Uploading {0}…",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Uploading photo…",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Uploading your photo…",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use a different code",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use a disposable Legacy. Speak to Rya, interrupt by speaking, or use Stop speaking. Only fully played assistant responses are saved. End the call, then refresh saved messages to check the result.",
+    "files": [
+      "realtime-dev.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use a photo at least 128 pixels wide and high, no larger than 24 megapixels or 8192 pixels on either edge.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use a shared Legacy code to open a separate AI conversation grounded in preserved memories.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use Back and choose Build with Rya or Collaborate to add memories. This legacy conversation doesn't edit the preserved memories.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use Back to leave this page. Reading the policy doesn't change your account or sharing settings.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use Back to return to the home page.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use Back to return to the path selection page, then choose Talk with a Legacy and enter its Legacy code. This is a separate conversation from building with Rya.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use Back, choose Talk with a Legacy, then enter its Legacy code. Keep coming to Rya when you want to build or add memories.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use Forgot password to receive a recovery code. Once signed in, choose whether to build or talk with a legacy.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "use strict",
+    "files": [
+      "js/access-management.js",
+      "js/audio-ownership.js",
+      "js/auth-api.js",
+      "js/auth-config.js",
+      "js/auth-diagnostics.js",
+      "js/auth.js",
+      "js/chat-session.js",
+      "js/chat.js",
+      "js/collaborators.js",
+      "js/forgot-password.js",
+      "js/gateway.js",
+      "js/invite.js",
+      "js/legacy-chat.js",
+      "js/legacy-deletion.js",
+      "js/legarya-soundscape.js",
+      "js/markdown.js",
+      "js/media-client.js",
+      "js/media-sources.js",
+      "js/memory-dashboard.js",
+      "js/microphone-ownership.js",
+      "js/personality-dashboard.js",
+      "js/product-guide.js",
+      "js/progress-presentation.js",
+      "js/progression.js",
+      "js/request-deadline.js",
+      "js/reset-password.js",
+      "js/rya-intro.js",
+      "js/rya-speech-state.js",
+      "js/rya-touch-reactions.js",
+      "js/share-legacy.js",
+      "js/site.js",
+      "js/stories-client.js",
+      "js/stories-dashboard.js",
+      "js/stories-visitor.js",
+      "js/timeline-client.js",
+      "js/timeline-dashboard.js",
+      "js/verify-email.js",
+      "js/verify-reset-otp.js",
+      "js/voice-chat.js",
+      "js/workspace-role.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use the code shared by the Legacy owner.",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use the email address you signed up with. Request a reset code, then check your inbox and spam folder.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use the read-only code shared by the Legacy owner.",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use the resend option when available, then enter the newest code. Verification lets you continue into Legarya.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use the sign-in method already connected to this email.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Use your email and password. If you're new, choose the sign-up option and complete email verification.",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "UTC",
+    "files": [
+      "js/chat.js",
+      "js/memory-dashboard.js",
+      "js/progression.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Values & Beliefs",
+    "files": [
+      "js/memory-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Values, preferences, humor, and the small patterns that feel familiar.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verification code",
+    "files": [
+      "verify-email.html",
+      "verify-reset-otp.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verify code",
+    "files": [
+      "verify-reset-otp.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verify email",
+    "files": [
+      "verify-email.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verify Email | LegaRya",
+    "files": [
+      "verify-email.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verify reset code",
+    "files": [
+      "verify-reset-otp.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verify Reset Code | LegaRya",
+    "files": [
+      "verify-reset-otp.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verify your email",
+    "files": [
+      "verify-email.html",
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verify your recovery code",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verifying your email...",
+    "files": [
+      "js/verify-email.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Verifying your reset code...",
+    "files": [
+      "js/verify-reset-otp.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "View memory: {0}",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "View original",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "View preserved memory {0}",
+    "files": [
+      "js/personality-dashboard.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "viewer",
+    "files": [
+      "js/access-management.js",
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Viewer — talk, read only",
+    "files": [
+      "chat.html",
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "viewers",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Viewers",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Visitor",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Visitor identity reset.",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Visitor identity updated.",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "visitor-conversation-row conversation-item",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Visual bundle unavailable.",
+    "files": [
+      "js/visual-presence-client.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Visual lease expired.",
+    "files": [
+      "js/visual-presence-controller.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Visual transfers are not configured.",
+    "files": [
+      "js/auth-api.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Voice",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Voice and likeness should only be used with appropriate permission.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Voice controls",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Voice development workspace",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Voice input",
+    "files": [
+      "chat.html",
+      "legacy-chat.html",
+      "js/voice-chat.js"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Voice input isn’t supported in this browser. You can still type your message.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Voice playback unavailable.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Voice preference couldn’t be saved.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Voice recording couldn’t start. You can still type your message.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Voice Settings",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "WaffleBerry",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "WaffleBerry does not guarantee uninterrupted availability during the beta. Usage limits, features, plans, and functionality may change as the product develops. We may temporarily restrict or suspend parts of the service when required for maintenance, security, provider availability, or product updates.",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "WaffleBerry does not provide Google Sign-In data to access other Google services. Information may be shared with service providers as needed to operate WaffleBerry, or disclosed when reasonably necessary to comply with law, protect users, investigate abuse, or protect the security and rights of WaffleBerry and others.",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "WaffleBerry does not request access to Gmail, Google Drive, Google Calendar, Contacts, or other Google account services. WaffleBerry does not store Google access tokens or Google refresh tokens.",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "WaffleBerry is currently provided as a beta version. Features may change, contain bugs, become temporarily unavailable, or be modified as we continue developing and improving the service.",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "WaffleBerry may send information needed for a requested feature to service providers that help operate the product, including providers supporting artificial intelligence, hosting, authentication, email, and related infrastructure. These providers process information for the purpose of delivering those services. AI-generated output may be incomplete or inaccurate, so avoid relying on it for professional or emergency advice.",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "WaffleBerry uses artificial intelligence to generate responses based on the information and memories available to it. AI-generated responses may sometimes be incomplete, inaccurate, or misunderstand information. Users should not rely on WaffleBerry for medical, legal, financial, emergency, or other professional advice.",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "WaffleBerry uses cookies or browser storage needed to keep you signed in and maintain your session. The service and its infrastructure may also process basic technical information, such as request, device, browser, and error information, to deliver, secure, and troubleshoot the product.",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "WaffleBerry uses reasonable technical and organizational measures intended to protect information against unauthorized access, loss, misuse, or alteration. No internet service or storage system can guarantee absolute security, and users should protect their account credentials and sign out on shared devices.",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "waffleberry.app",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Want to add memories?",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Warm · expressive",
+    "files": [
+      "chat.html",
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Warning: this cannot be undone in the app.",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "We could not open the timeline right now.",
+    "files": [
+      "js/timeline-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "We could not prepare this photo. Open Adjust framing, include one clear face, then click Regenerate. You can also upload a different photo.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "We couldn't complete that action. Please try again.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "We couldn't finish reviewing this file. The original remains uploaded. The owner can retry processing.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "We may update this policy as WaffleBerry changes. The effective and last-updated date above will identify the current version. For privacy questions or requests, contact",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "We sent a six-digit code to {0}.",
+    "files": [
+      "js/verify-email.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "We sent a six-digit code to your email address.",
+    "files": [
+      "verify-email.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "We sent a six-digit password reset code to {0}.",
+    "files": [
+      "js/verify-reset-otp.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "We sent a six-digit password reset code to your email.",
+    "files": [
+      "verify-reset-otp.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "We use information to operate WaffleBerry, authenticate accounts, provide requested features, preserve and retrieve user-submitted memories and stories, maintain service security, diagnose problems, and improve the user experience. User-created content may be processed to provide WaffleBerry's memory, legacy, and artificial intelligence features.",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Welcome back",
+    "files": [
+      "auth.html",
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Welcome to Legarya",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Welcome, {0}.",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "What is this chapter based on?",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "What remains",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "What should Rya call {0}?",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "What should this Legacy call you?",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "What should this story focus on?",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "What this chapter is based on",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "What's on your mind?",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "What’s on your mind?",
+    "files": [
+      "chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "When you use WaffleBerry, you may provide account information such as your name, email address, password, and account preferences. You may also choose to submit memories, stories, messages, recordings, and other content. Please avoid submitting information that you do not have the right or permission to share.",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Who are we building this Legacy for?",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Write to Rya",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Written in first person, as the Legacy representation.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Written in third person about the Legacy.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You",
+    "files": [
+      "index.html",
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You agree not to misuse WaffleBerry for unlawful, harmful, fraudulent, abusive, or deceptive purposes, or attempt to interfere with, damage, exploit, or gain unauthorized access to the service.",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You already accepted this invitation. Your access is ready.",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You are responsible for the stories, memories, recordings, text, and other content you provide to WaffleBerry. You should only upload or share information that you have the right and permission to provide.",
+    "files": [
+      "terms.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You can choose what memories, stories, and other content to submit and whether to use Google Sign-In or the available email and password authentication flow. You may contact us with questions or requests concerning your personal information. Some information may need to be retained where reasonably necessary for security, legal obligations, or operation of the service.",
+    "files": [
+      "privacy.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You can see your own contributions. This Legacy's owner can read your uploads and reviews suggestions before preserving them.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You can speak naturally and interrupt at any time.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You choose what to share",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You no longer have permission for this action.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You were invited to help preserve and shape this Legacy.",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You were invited to privately speak with this Legacy in read-only mode.",
+    "files": [
+      "js/invite.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You're about to talk with {0}'s Legacy",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "You’re about to talk with this Legacy",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You're joining {0}'s Legacy",
+    "files": [
+      "js/gateway.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "You're now talking with an AI legacy",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "You're talking to Rya",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "your {0}",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Your {0}",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "YOUR 30-DAY JOURNEY",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your access to this chat has changed. Return to your workspace and sign in again if needed.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your access to this chat has changed. Return to your workspace to continue.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your access to this Legacy has changed.",
+    "files": [
+      "js/chat.js",
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your account and other Legacies will not be deleted. File cleanup can continue in the background. Protected backups are not immediately rewritten.",
+    "files": [
+      "js/legacy-deletion.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your account session changed. Saved messages remain in their original chat.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your AI companion for preserving memories",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your call has ended. Refresh the chat to load saved messages.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your call has ended. Saved messages are in this chat.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your conversations",
+    "files": [
+      "legacy-chat.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your dictation is still being prepared. Please try Live Voice again shortly.",
+    "files": [
+      "js/voice-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your edit is saved as a new version.",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your edit will be recorded as owner wording, not a quotation from the source.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your files are saved privately. You can view, download or delete them now. Memory suggestion review becomes available after identity setup with Rya.",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "YOUR FIRST STEPS · {0} / {1}",
+    "files": [
+      "js/product-guide.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Your Legacies",
+    "files": [
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your Legacy chat could not finish loading. Please retry. You do not need to accept the invitation again.",
+    "files": [
+      "js/legacy-chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your Legacy journey",
+    "files": [
+      "gateway.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your Legacy Stories",
+    "files": [
+      "js/stories-dashboard.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your legacy, your memories",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your life is more than photographs and files.",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your microphone is busy or unavailable. Close other recording apps and try again.",
+    "files": [
+      "js/live-voice-policy.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your password has been reset. You can now sign in.",
+    "files": [
+      "js/auth.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your password reset authorization is missing or expired. Request a new code.",
+    "files": [
+      "js/reset-password.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your photo could not finish validation. Click Regenerate to retry, or upload another photo.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your photo is saved automatically after upload.",
+    "files": [
+      "js/display-picture-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your photo is saved, but face preparation is temporarily unavailable. Reopen this panel to try again later.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your photo stays private until you approve its preview.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your previous upload is saved. Click Regenerate to create its private preview, or upload a new photo.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your private preview is ready. Approve it if you are happy with the result, or Regenerate.",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your saved messages are back in this chat.",
+    "files": [
+      "js/live-voice.mjs"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your session expired. Sign in again to continue.",
+    "files": [
+      "js/media-client.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your session has expired. Please sign in again.",
+    "files": [
+      "js/auth-api.js",
+      "js/chat.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your sources · {0}",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "template"
+  },
+  {
+    "source": "Your story begins here",
+    "files": [
+      "index.html"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Your uploaded photo, not yet approved as the Legacy face",
+    "files": [
+      "js/visual-presence-settings.mjs"
+    ],
+    "kind": "attribute"
+  },
+  {
+    "source": "Your wording",
+    "files": [
+      "js/media-sources.js"
+    ],
+    "kind": "text"
+  },
+  {
+    "source": "Zoom",
+    "files": [
+      "js/visual-crop.mjs"
+    ],
+    "kind": "text"
+  }
+]

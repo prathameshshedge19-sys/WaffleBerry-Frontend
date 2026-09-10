@@ -57,7 +57,7 @@
   };
 
   const metadata = (memory) => {
-    const learned = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(memory.created_at));
+    const learned = new Intl.DateTimeFormat(window.LegaryaI18n?.language, { dateStyle: "medium" }).format(new Date(memory.created_at));
     const contributor = memory.last_contributor_name || memory.contributor_name;
     return `${memory.last_contributor_user_id !== memory.contributor_user_id ? "Last updated" : "Added"}${contributor ? ` by ${contributor}` : ""} · ${learned}`;
   };

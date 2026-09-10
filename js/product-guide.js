@@ -110,6 +110,8 @@
   help.addEventListener("click", (e) => { if (e.target === help) { const r = help.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) help.close(); } });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && celebration) dismissCelebration(); else if (e.key === "Escape" && tour && !blocking()) finishTour(); });
   window.addEventListener("resize", scheduleLayout); document.addEventListener("scroll", scheduleLayout, true); window.visualViewport?.addEventListener("resize", scheduleLayout);
+  window.addEventListener("legarya:language-change", scheduleLayout);
+  new ResizeObserver(scheduleLayout).observe(coach);
   // Modal tools temporarily pause guidance. Resume at the same step on close.
   new MutationObserver((records) => { if (records.some((record) => record.target.matches("dialog, [aria-modal='true'], #openMediaSources, #openVisualPresence"))) { scheduleLayout(); tryCelebration(); } }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open", "hidden"] });
 

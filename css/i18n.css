@@ -1,0 +1,27 @@
+.language-bar { display:flex; align-items:center; justify-content:flex-end; gap:10px; width:100%; padding:7px max(20px,6vw); min-height:48px; color:#d9c4a3; background:#100d09eb; border-bottom:1px solid #e9c89218; font:12px/1.5 Inter,system-ui,sans-serif; }
+.language-bar svg { width:17px; height:17px; flex:none; }
+.language-bar label { white-space:nowrap; }
+.language-bar select,.i18n-help-language select { min-height:34px; max-width:180px; padding:5px 30px 5px 12px; border:1px solid #dbb47866; border-radius:99px; color:#ffe1ab; background:#211a11; font:13px/1.6 system-ui,sans-serif; cursor:pointer; }
+.language-bar option,.i18n-help-language option { background:#17120d; color:#f5ecdf; }
+.language-bar select:focus-visible,.i18n-help-language select:focus-visible { outline:2px solid #ffe1ab; outline-offset:3px; }
+#languageStatus:empty { display:none; }
+#languageStatus { position:absolute; top:48px; right:20px; padding:10px; max-width:280px; background:#20170e; color:#ffe1ab; border-radius:8px; }
+html:has(.language-bar) { scroll-padding-top:140px; }
+.i18n-help-language { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 0; border-top:1px solid #b18b502b; color:#e5c89c; }
+.i18n-file-native { position:absolute!important; width:1px!important; height:1px!important; overflow:hidden!important; opacity:0!important; padding:0!important; clip-path:inset(50%); }
+.i18n-file-control { display:flex; flex-wrap:wrap; align-items:center; gap:10px; max-width:100%; }
+.i18n-file-control > span { overflow-wrap:anywhere; color:#bba98e; font-size:12px; }
+.i18n-file-control button { min-height:44px; padding:10px 16px; border:1px solid #d0a76b77; border-radius:99px; color:#f1d3a1; background:#292016; cursor:pointer; }
+.i18n-file-control button:focus-visible { outline:2px solid #ffe1ab; outline-offset:3px; }
+html[lang="hi"] body,html[lang="mr"] body { font-family:"Nirmala UI","Mangal",system-ui,sans-serif; }
+html[lang="hi"] :is(h1,h2,h3,h4,p,button,input,select,textarea,small,span,a,label,summary),html[lang="mr"] :is(h1,h2,h3,h4,p,button,input,select,textarea,small,span,a,label,summary) { font-family:"Nirmala UI","Mangal",system-ui,sans-serif; letter-spacing:normal; }
+html[lang="hi"] :is(h1,h2,h3,h4),html[lang="mr"] :is(h1,h2,h3,h4) { line-height:1.5; }
+html[lang="hi"] .hero-lede,html[lang="mr"] .hero-lede { font-size:14px; line-height:1.75; }
+html:not([lang="en"]) .site-nav { gap:16px; }
+html:not([lang="en"]) .gateway-card h2 { overflow-wrap:anywhere; }
+html:not([lang="en"]) .dimension { min-width:0; overflow-wrap:anywhere; hyphens:auto; }
+html:not([lang="en"]) .sidebar-actions button { white-space:normal; text-align:left; }
+html:not([lang="en"]) .lg-coach small { letter-spacing:.04em; }
+@media(max-width:1080px) { .language-bar { padding-left:20px; padding-right:20px; } html:not([lang="en"]) .nav-actions { gap:6px; } html:not([lang="en"]) .nav-actions a { padding-left:12px; padding-right:12px; } }
+@media(max-width:840px) { .site-header:has(.language-bar) .site-nav { top:118px; } }
+@media(max-width:600px) { .language-bar { justify-content:space-between; padding:6px 16px; } .language-bar label { margin-right:auto; } html:has(.language-bar) .identity { top:139px; } }

@@ -12,7 +12,7 @@
     if (event.date_label) return event.date_label;
     if (event.date_precision === "life_period") return "During a life period";
     if (event.date_precision === "unknown") return "Date unknown";
-    if (event.date_start) return new Date(`${event.date_start}T00:00:00Z`).toLocaleDateString(undefined, { year: "numeric", month: event.date_precision === "day" ? "long" : undefined, day: event.date_precision === "day" ? "numeric" : undefined });
+    if (event.date_start) return new Date(`${event.date_start}T00:00:00Z`).toLocaleDateString(window.LegaryaI18n?.language, { year: "numeric", month: event.date_precision === "day" ? "long" : undefined, day: event.date_precision === "day" ? "numeric" : undefined });
     return "Date unknown";
   };
   const support = (event) => `${event.memory_count || 0} ${event.memory_count === 1 ? "family memory" : "family memories"} · ${event.source_count || 0} ${event.source_count === 1 ? "source" : "sources"}`;

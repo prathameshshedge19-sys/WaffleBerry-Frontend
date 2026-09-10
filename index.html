@@ -106,13 +106,23 @@
       });
     </script>
   <link rel="stylesheet" href="css/back-navigation.css?v=back1">
+    <link rel="stylesheet" href="css/i18n.css?v=languages1">
+    <script src="js/i18n.js?v=languages1"></script>
     <link rel="stylesheet" href="css/product-guide.css?v=guide2">
-    <script defer src="js/product-guide.js?v=guide2"></script>
+    <script defer src="js/product-guide.js?v=guide3"></script>
 </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
 
     <header class="site-header" data-site-header>
+      <div class="language-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 7h14M5 17h14"/></svg>
+        <label for="siteLanguage">Language</label>
+        <select id="siteLanguage" data-language-select aria-label="Choose your language">
+          <option value="en" translate="no">English</option><option value="de" translate="no">Deutsch</option><option value="fr" translate="no">Français</option><option value="hi" translate="no">हिन्दी</option><option value="mr" translate="no">मराठी</option>
+        </select>
+        <span id="languageStatus" role="status"></span>
+      </div>
       <div class="nav-shell">
         <div class="nav-brand-group"><a class="premium-back" href="gateway.html" aria-label="Back to your Legacy journey"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/><path d="M8 12h12"/></svg><span>Back</span></a><a class="wordmark" href="#home" aria-label="LegaRya home">
           <img class="rya-core-icon rya-core-icon--brand" src="favicon.svg?v=1" alt="" aria-hidden="true" />
@@ -139,7 +149,7 @@
         <div class="hero-copy">
           <p class="eyebrow">A digital legacy, made living</p>
           <h1 id="hero-title" class="legarya-brand legarya-brand-hero"><span class="legarya-prefix">Lega</span><span class="rya-glow">Rya</span></h1>
-          <p class="hero-statement">Preserve what makes<br />someone, them.</p>
+          <p class="hero-statement">Preserve what makes someone, them.</p>
           <p class="hero-lede">An AI-powered digital legacy that learns memories, stories, relationships, personality, and voice - so they can live on for generations.</p>
           <div class="button-row">
             <a class="button" href="auth.html?mode=register">Get Started <span aria-hidden="true">&#8599;</span></a>

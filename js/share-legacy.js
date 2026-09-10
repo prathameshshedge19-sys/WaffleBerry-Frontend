@@ -23,7 +23,7 @@
     data.viewers.forEach((viewer) => {
       const row = document.createElement("article"); row.className = "collaborator-row";
       const copy = document.createElement("div"); const name = document.createElement("strong"); name.textContent = viewer.full_name;
-      const meta = document.createElement("small"); meta.textContent = `Read-only access · Joined ${new Intl.DateTimeFormat(undefined,{dateStyle:"medium"}).format(new Date(viewer.joined_at))}`;
+      const meta = document.createElement("small"); meta.textContent = `Read-only access · Joined ${new Intl.DateTimeFormat(window.LegaryaI18n?.language,{dateStyle:"medium"}).format(new Date(viewer.joined_at))}`;
       copy.append(name, meta); row.append(copy); viewerList.append(row);
     });
   };

@@ -31,7 +31,7 @@
       const row = document.createElement("article"); row.className = "collaborator-row";
       const identity = document.createElement("div");
       const name = document.createElement("strong"); name.textContent = member.full_name;
-      const joined = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(member.joined_at));
+      const joined = new Intl.DateTimeFormat(window.LegaryaI18n?.language, { dateStyle: "medium" }).format(new Date(member.joined_at));
       const meta = document.createElement("small"); meta.textContent = `${member.status === "active" ? "Active" : "Access revoked"} · Joined ${joined}`;
       identity.append(name, meta);
       const action = document.createElement("button"); action.type = "button"; action.textContent = member.status === "active" ? "Remove" : "Restore";

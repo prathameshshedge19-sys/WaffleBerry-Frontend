@@ -7,7 +7,7 @@
   let legacyId = null, state = null;
   const say = (text = "", error = false) => { status.textContent = text; status.classList.toggle("is-error", error); };
   const empty = (text) => { const p = document.createElement("p"); p.className = "collaborator-empty"; p.textContent = text; return p; };
-  const date = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+  const date = (value) => new Intl.DateTimeFormat(window.LegaryaI18n?.language, { dateStyle: "medium" }).format(new Date(value));
 
   function renderMembers(role, members) {
     const list = memberLists[role]; list.replaceChildren();
