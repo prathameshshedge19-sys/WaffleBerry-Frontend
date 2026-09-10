@@ -1,0 +1,59 @@
+.lg-help-launcher,.lg-help button,.lg-coach button,.lg-celebration button { font:500 12px/1.4 Inter,system-ui,sans-serif; cursor:pointer; }
+.lg-help-launcher { min-height:44px; padding:10px 15px; border:1px solid #b18b5059; border-radius:99px; color:#f5ddb3; background:#19150f; white-space:nowrap; }
+.lg-help-launcher:hover { background:#34281a; border-color:#e8c58d; }
+.lg-help-floating { position:fixed; right:18px; bottom:max(18px,env(safe-area-inset-bottom)); z-index:90; box-shadow:0 6px 25px #0005; }
+.lg-has-help .lg-help-launcher { justify-self:end; }
+.lg-help,.lg-coach,.lg-celebration-card { box-sizing:border-box; color:#f5eddf; font:14px/1.65 Inter,system-ui,sans-serif; border:1px solid #bb92545c; background:linear-gradient(145deg,#211b13,#100e0b 65%); box-shadow:0 22px 90px #0009,inset 0 1px #fff1d510; }
+.lg-help { width:min(560px,calc(100vw - 28px)); max-height:calc(100dvh - 40px); padding:26px; border-radius:24px; }
+.lg-help::backdrop { background:#050504bd; backdrop-filter:blur(5px); }
+.lg-help header { display:flex; gap:18px; justify-content:space-between; align-items:start; }
+.lg-help small,.lg-coach small,.lg-celebration small,.lg-reward small { color:#d5ac70; font-size:10px; letter-spacing:.14em; }
+.lg-help h2,.lg-coach h2 { font:500 29px/1.15 "Cormorant Garamond",Georgia,serif; margin:10px 0 20px; color:#fff0d8; }
+.lg-help .lg-close { min-width:44px; min-height:44px; border:1px solid #b18b5038; border-radius:50%; background:#ffffff05; color:#f5ddb3; font-size:24px; }
+.lg-help-sections details { padding:16px 0; border-top:1px solid #b18b502b; }
+.lg-help-sections summary { cursor:pointer; font-weight:500; color:#f2d6ac; }
+.lg-help-sections p { color:#c9bcaa; margin:9px 0 0; font-size:13px; line-height:1.7; }
+.lg-help footer { display:flex; align-items:center; flex-wrap:wrap; gap:14px; padding-top:18px; border-top:1px solid #b18b502b; }
+.lg-help footer span { flex:1 1 180px; font-size:11px; color:#bbae99; }
+.lg-primary,.lg-secondary { min-height:44px; padding:10px 16px; border-radius:99px; border:1px solid #b18b5052; }
+.lg-primary { color:#241b10; background:linear-gradient(110deg,#ffe3b1,#e5b76d); }
+.lg-secondary { color:#f2d6ac; background:#ffffff05; }
+.lg-primary:hover { filter:brightness(1.08); }
+.lg-secondary:hover { background:#ffffff0d; }
+.lg-coach { position:fixed; z-index:1002; width:min(350px,calc(100vw - 24px)); padding:22px; border-radius:20px; overflow:auto; }
+.lg-coach[hidden],.lg-spotlight[hidden] { display:none; }
+.lg-coach-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.lg-coach .lg-skip { min-height:32px; padding:4px 0 4px 8px; background:none; border:0; color:#bdae98; font-size:10px; }
+.lg-coach h2 { margin:14px 0 10px; }
+.lg-coach p { color:#cbbda8; margin:0 0 18px; font-size:13px; }
+.lg-coach-controls { display:flex; gap:8px; flex-wrap:wrap; }
+.lg-spotlight { position:fixed; pointer-events:none; z-index:1001; border:1px solid #f8d79c; border-radius:16px; box-shadow:0 0 0 9999px #05050482,0 0 24px #efbf6540; box-sizing:border-box; }
+.lg-reward { padding-top:13px; margin-top:13px; border-top:1px solid #b18b502e; }
+.lg-reward strong { display:block; font-size:13px; margin:5px 0 9px; color:#f2d6ac; }
+.lg-reward progress { display:block; appearance:none; width:100%; height:4px; border:0; border-radius:9px; overflow:hidden; background:#fff1d510; }
+.lg-reward progress::-webkit-progress-bar { background:#fff1d510; }
+.lg-reward progress::-webkit-progress-value { background:linear-gradient(90deg,#b9813d,#ffe5b5); border-radius:9px; }
+.lg-reward progress::-moz-progress-bar { background:#e5b76d; }
+.lg-reward p { color:#e1c6a0; font-size:11px; line-height:1.6; margin:10px 0 5px; }
+.lg-reward > span { color:#a99b87; font-size:10px; }
+.lg-celebration { position:fixed; inset:0; z-index:1100; display:grid; place-items:center; box-sizing:border-box; width:100vw; height:100dvh; max-width:none; max-height:none; margin:0; padding:20px; border:0; background:#050504ab; backdrop-filter:blur(7px); }
+.lg-celebration:not([open]) { display:none; }
+.lg-celebration::backdrop { background:transparent; }
+.lg-celebration-card { width:min(440px,100%); max-height:calc(100dvh - 40px); overflow:auto; text-align:center; padding:32px 30px 27px; border-radius:30px; background:radial-gradient(ellipse at 50% 35%,#6a462936,transparent 65%),linear-gradient(145deg,#211b13,#100e0b 65%); animation:lg-arrive .45s ease-out both; }
+.lg-streak-art { position:relative; width:164px; height:164px; margin:22px auto 18px; display:grid; place-items:center; }
+.lg-orbit { position:absolute; inset:12px; border:3px solid #f4d18b; border-radius:50%; box-shadow:0 0 28px #f5bb5545,inset 0 0 22px #ffce7040; animation:lg-ring 1s cubic-bezier(.2,.8,.2,1) both; }
+.lg-orbit::after { content:""; position:absolute; inset:9px; border:1px solid #f5d69640; border-radius:50%; }
+.lg-spark { color:#ffe4a9; font-size:76px; line-height:1; text-shadow:0 0 30px #ffc65c99; animation:lg-spark 1s .15s both; }
+.lg-particle { position:absolute; top:50%; left:50%; width:4px; height:4px; background:#ffe4a9; border-radius:50%; transform:rotate(var(--angle)) translateX(82px); animation:lg-particle 1.7s var(--delay) ease-out both; }
+.lg-celebration h2 { margin:0; color:#ffe3ac; font:500 33px/1.2 "Cormorant Garamond",Georgia,serif; letter-spacing:.06em; }
+.lg-celebration-message { margin:14px auto 18px; color:#e5d8c4; max-width:300px; font-size:14px; }
+.lg-celebration-reward { padding:13px 16px; border:1px solid #c99b5138; border-radius:13px; color:#f1cd91; background:#f4c77608; font-size:12px; }
+.lg-celebration-card > span { display:block; color:#b9ab95; font-size:11px; margin:14px 0 20px; }
+.lg-help-launcher:focus-visible,.lg-help button:focus-visible,.lg-help summary:focus-visible,.lg-coach button:focus-visible,.lg-celebration button:focus-visible { outline:2px solid #ffe0a3; outline-offset:3px; }
+@keyframes lg-arrive { from { opacity:0; transform:translateY(16px) scale(.96); } to { opacity:1; transform:none; } }
+@keyframes lg-ring { from { opacity:0; transform:rotate(-100deg) scale(.65); } to { opacity:1; transform:none; } }
+@keyframes lg-spark { 0% { opacity:0; transform:scale(.25); } 65% { opacity:1; transform:scale(1.12); } 100% { transform:scale(1); } }
+@keyframes lg-particle { 0% { opacity:0; transform:rotate(var(--angle)) translateX(30px); } 30% { opacity:1; } 100% { opacity:.25; transform:rotate(var(--angle)) translateX(94px); } }
+@media(max-width:800px) { .chat-header.lg-has-help:has(.header-navigation) { grid-template-columns:auto minmax(0,1fr) auto; gap:7px; } .lg-has-help .lg-help-launcher { padding:8px 10px; font-size:11px; } .lg-has-help .rya-heading { min-width:0; } .lg-has-help .rya-heading p { display:none; } }
+@media(max-width:400px) { .lg-help { padding:20px; } .lg-coach { padding:18px; } .lg-coach h2 { font-size:26px; } .lg-celebration-card { padding:24px 20px; } }
+@media(prefers-reduced-motion:reduce) { .lg-celebration-card,.lg-orbit,.lg-spark,.lg-particle { animation:none; } .lg-celebration { backdrop-filter:none; } }
