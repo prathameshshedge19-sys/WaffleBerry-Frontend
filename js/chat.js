@@ -946,7 +946,7 @@
       failureStage = "stream-start";
       const response = await streamRequest(`/conversations/${requestConversationId}/messages/stream?legacy_id=${chatSession.selectedLegacyId}&timezone=${encodeURIComponent(localTimezone)}`, {
         method: "POST",
-        body: { content, input_mode: voiceOrigin ? "voice" : "text" },
+        body: { client_turn_id: crypto.randomUUID(), content, input_mode: voiceOrigin ? "voice" : "text" },
         authenticated: true,
         signal: controller.signal,
       });
