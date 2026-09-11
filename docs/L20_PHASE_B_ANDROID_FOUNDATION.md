@@ -1,6 +1,6 @@
 # L20 Phase B — Android Foundation and Feature Parity
 
-Status: **engineering implementation complete; release acceptance blocked by undeployed production origin/OAuth configuration and credentialed acceptance tests.**
+Status: **engineering implementation complete; final Phase B acceptance BLOCKED by unavailable QA credential handoff and one external Google OAuth console action.**
 
 This report records the Phase B implementation only. It does not authorize a Play release, production signing, an AAB upload, iOS work, Phase C device hardening, or an L20 tag.
 
@@ -62,9 +62,11 @@ The final ignored build output and debug APK embed frontend implementation commi
 - No `server.url` and no remote-shell navigation.
 - CSP permits only self, the one HTTPS backend, the one WSS backend, and the narrowly required `data:`/`blob:` image/media/worker cases. It contains no `unsafe-eval`; inline script/style remain required by the inherited static client.
 
-Backend support is additive and opt-in: `ANDROID_APP_ORIGIN=https://localhost` adds only that literal origin to existing HTTP CORS and realtime validation. The default is `None`, so Phase B does not alter production behavior. Wildcards, `capacitor://`, `file://`, and foreign origins remain denied.
+Backend support is additive and opt-in: `ANDROID_APP_ORIGIN=https://localhost` adds only that literal origin to existing HTTP CORS and realtime validation. The default remains `None`. Wildcards, `capacitor://`, `file://`, and foreign origins remain denied.
 
-A read-only production probe on 2026-09-11 returned `200` for `/health` and `400` for an `/api/v1/auth/refresh` preflight carrying `Origin: https://localhost`; the response deliberately omitted `Access-Control-Allow-Origin`. This is expected evidence that the Phase B opt-in was not deployed, and it blocks HTTP/auth/WSS runtime acceptance rather than weakening production.
+On 2026-09-11 the exact opt-in was narrowly enabled on the existing production backend after verifying host `WaffleBerry-server`, a clean checkout at baseline `41ad3f8bb56317ebdbf4d550a5d0ce30929d63d5`, database name `legarya`, all backend/media/personality/visual services active, expected local health identity, and unchanged `CORS_ORIGINS=https://waffleberry.app,https://www.waffleberry.app`. Only backend commit `73f67c2066eb3fccddb367a7b1cd2cb0f521b645` and `ANDROID_APP_ORIGIN=https://localhost` were applied; no migration or authorization/domain change ran. A timestamped pre-change environment backup was retained on the server.
+
+Post-change external probes returned `200` health for both backend and website. Preflight from `https://localhost` and `https://www.waffleberry.app` returned `200`, the exact matching `Access-Control-Allow-Origin`, and credentials allowed. `https://evil.example`, `capacitor://localhost`, and `file://` returned `400` without an allow-origin header. The installed debug app on API 33 and API 36 also completed a JSON preflight plus `credentials: include` fetch from its live `https://localhost` WebView. This establishes exact Android HTTP-origin acceptance without widening the web allowlist. Credentialed user authentication and WSS ticket acceptance still require the permanent QA credential noted below.
 
 ## Native host security
 
@@ -82,9 +84,11 @@ The existing model is preserved: access tokens remain in JavaScript memory, pass
 
 The Android session fence advances identity generation before cleanup, blocks new authenticated work, ends active Live Voice/dictation ownership, closes realtime, aborts registered work, revokes object URLs, clears user-scoped session presentation, releases native audio/URI grants, clears backend cookies on explicit logout/account switch, and replace-navigates to the signed-out root. Existing refresh-race tests prove a late refresh cannot restore a cleared identity.
 
-Email signup/OTP/password/login/reset/logout continue to use the shared screens and APIs. A native Google button invokes Android Credential Manager/Google ID, posts only the ID token to the existing `/auth/google` endpoint, handles cancellation, and stores no Google access/refresh token. Actual success/audience/account-change acceptance is blocked until Android OAuth configuration and test identity are supplied; no production OAuth change was made.
+Email signup/OTP/password/login/reset/logout continue to use the shared screens and APIs. A native Google button invokes Android Credential Manager/Google ID, posts only the ID token to the existing `/auth/google` endpoint, handles cancellation, and stores no Google access/refresh token. Production and bundled configuration use the existing server audience `480630043805-0vdcrq26tkag2iijmj78bi4kbh54cb67.apps.googleusercontent.com`.
 
-Credentialed login, cookie rotation, force-stop/reopen, revocation, and account-switch execution on API 24/33/36 are likewise blocked until the optional backend origin is deployed to a non-production acceptance environment and QA accounts are available. No Keystore fallback was introduced because no evidence disproved the HttpOnly-cookie design.
+The one external Google action is to create/confirm an **Android OAuth client in the existing Google Cloud project associated with that web client**, package `com.waffleberry.legarya`, debug SHA-1 `BB:0F:39:1E:73:5A:BF:F3:5C:B4:03:D9:2F:CF:37:0E:74:0A:EE:28`. No Play-signing fingerprint is to be added in Phase B. The available browser-control runtime had no connected authenticated browser, so the console action and native success/account-change/re-login checks could not be completed automatically.
+
+The permanent dedicated QA account still exists, but its password was absent from project environment files and Windows Credential Manager, and no authenticated browser session was connected. A safety boundary rejected using archived conversation logs as a credential source; that was not bypassed. Consequently actual login, HttpOnly/Secure refresh-cookie rotation, background/resume, force-stop/reopen, access-expiry refresh, logout, account switch, late-refresh fencing, and private-history Back checks on API 24/33/36 remain unexecuted. No Keystore fallback was introduced because the required real matrix has not produced evidence that the cookie design is unreliable.
 
 ## Lifecycle, Back, keyboard, and system UI
 
@@ -101,7 +105,7 @@ Pause never starts a microphone and synchronously ends transient voice ownership
 - Private media continues through authenticated fetch and short-lived object URLs, revoked on lifecycle/identity change.
 - A narrow app-cache `FileProvider` and logout cleanup boundary are present for future user-directed Open With/share work, but no product surface currently requires native export. Actual temporary-file creation/intent UX is therefore deferred to Phase C. No silent public export occurs.
 
-Credentialed end-to-end picker-to-upload/private-media tests require the same acceptance backend/accounts noted above. Contract, MIME, native picker, permission, and cleanup paths are implemented and covered structurally/unit-wise; interactive picker/upload parity is not claimed PASS without that run.
+Credentialed end-to-end picker-to-upload/private-media tests remain blocked by the unavailable QA credential handoff. Contract, MIME, native picker, permission, cancellation, cleanup, L16 reservation/idempotency, authenticated private fetch, and account/Legacy fencing paths are implemented and covered structurally/unit-wise; interactive picker/upload parity is not claimed PASS without the installed-app run.
 
 ## Static Legacy DP and Rya
 
@@ -113,31 +117,31 @@ Rya reuses the current visual. WebView Chromium versions below 80 and renderer f
 
 L12 retains browser `getUserMedia`/MediaRecorder and shared transcription. Native mediation requires an exact trusted origin, foreground state, Android `RECORD_AUDIO`, the correct L12/L15 owner, and an unconsumed user gesture no older than ten seconds. Video, multiple/unknown resources, stale/background requests, and untrusted origins are denied. Emulator tests prove permission and ownership plumbing plus supported mobile-format selection; meaningful microphone capture/codec and server transcription quality remain Phase C physical-device work.
 
-L15 retains the existing backend capability/session/ticket/WSS/AudioWorklet/AudioContext path. Android direct WSS configuration and origin are correct; background/session fence ends calls, releases focus, and prevents automatic restart. The native audio-focus interface covers request/grant/loss/release and idempotent cleanup. A production WSS handshake and credentialed silent open/end are blocked by undeployed exact-origin configuration. Phase C owns real microphone quality, echo, latency, barge-in, route/Bluetooth behavior, interruptions, network transitions, and the 20-session soak. L15 is not described as Android-hardened.
+L15 retains the existing backend capability/session/ticket/WSS/AudioWorklet/AudioContext path. Android direct WSS configuration and exact production origin support are now active; background/session fence ends calls, releases focus, and prevents automatic restart. The native audio-focus interface covers request/grant/loss/release and idempotent cleanup. The authenticated capability/session/ticket/WSS silent-open/end and zero-Conversation assertion remain blocked only by the unavailable QA credential handoff, not by origin configuration. Phase C owns real microphone quality, echo, latency, barge-in, route/Bluetooth behavior, interruptions, network transitions, and the 20-session soak. L15 is not described as Android-hardened.
 
 ## Feature parity matrix
 
 | Area | Phase B result | Evidence/remaining work |
 | --- | --- | --- |
-| Email auth | PARTIAL / config blocked | Shared UI/API and fencing retained; credentialed API-24/33/36 persistence matrix awaits acceptance origin/accounts |
-| Google login | PARTIAL / config blocked | Native Credential Manager foundation complete; production OAuth/audience acceptance not configured |
-| Rya text/visual | PASS | Shared text client bundled; modern renderer plus old-WebView/static fallback |
-| Legacy text | PASS | Shared conversation client bundled |
-| Static DP | PASS | Static-only resources/cache/revocation; L19 runtime excluded |
-| Memories | PASS (shared regression) | Existing shared UI/API bundled; credentialed emulator smoke pending environment |
-| Personality | PASS (shared regression) | Existing shared UI/API bundled |
-| Media & Sources | PARTIAL / config blocked | Picker/private-media/upload paths complete; credentialed server smoke pending |
-| Timeline | PASS (shared regression) | Existing shared UI/API bundled |
-| Stories read/edit | PASS (shared regression) | Existing shared UI/API bundled |
-| Current information | PASS | Shared citations; external links leave privileged WebView |
-| Visitor | PASS (shared regression) | Existing role policy bundled |
-| Collaborator | PASS (shared regression) | Existing role policy bundled |
-| Owner | PASS (shared regression) | Existing role policy bundled |
+| Email auth | BLOCKED / credentialed runtime | Shared UI/API and fencing retained; API-24/33/36 persistence matrix requires the existing QA credential handoff |
+| Google login | BLOCKED / one console action | Native Credential Manager foundation complete; existing project needs the package/debug SHA-1 Android client above |
+| Rya text/visual | PASS shared regression; credentialed Android smoke blocked | Shared text client bundled; modern renderer plus old-WebView/static fallback |
+| Legacy text | PASS shared regression; credentialed Android smoke blocked | Shared conversation client bundled |
+| Static DP | PASS shared regression; credentialed Android smoke blocked | Static-only resources/cache/revocation; L19 runtime excluded |
+| Memories | PASS shared regression; credentialed Android smoke blocked | Existing shared UI/API bundled |
+| Personality | PASS shared regression; credentialed Android smoke blocked | Existing shared UI/API bundled |
+| Media & Sources | BLOCKED / credentialed runtime | Picker/private-media/upload paths complete; actual system-picker/upload/private-read smoke not executed |
+| Timeline | PASS shared regression; credentialed Android smoke blocked | Existing shared UI/API bundled |
+| Stories read/edit | PASS shared regression; credentialed Android smoke blocked | Existing shared UI/API bundled |
+| Current information | PASS shared regression; credentialed Android smoke blocked | Shared citations; external links leave privileged WebView |
+| Visitor | PASS shared regression; credentialed Android smoke blocked | Existing role policy bundled |
+| Collaborator | PASS shared regression; credentialed Android smoke blocked | Existing role policy bundled |
+| Owner | PASS shared regression; credentialed Android smoke blocked | Existing role policy bundled |
 | Voice settings | PASS | Existing Marin/Cedar accessible controls bundled |
 | L12 | PARTIAL / PHASE C | Secure permission/ownership/API plumbing; real-device recording quality deferred |
-| L15 | PARTIAL / PHASE C + config blocked | WSS/audio foundation; production-origin handshake and physical hardening remain |
-| Account deletion | BLOCKED — hard pre-D gate | Shared account deletion is absent; design below |
-| AI response reporting | BLOCKED — hard pre-D gate | Shared bounded moderation storage/workflow is absent; design below |
+| L15 | PARTIAL / credentialed runtime + PHASE C | Exact origin active; authenticated WSS silent-open/end blocked by QA credential; physical hardening remains Phase C |
+| Account deletion | HARD PRE-D gate; not a Phase B blocker | Shared account deletion is absent; design below |
+| AI response reporting | HARD PRE-D gate; not a Phase B blocker | Shared bounded moderation storage/workflow is absent; design below |
 
 ## Play compliance gates
 
@@ -155,10 +159,10 @@ Other Phase D gates: reviewed privacy policy/Data Safety declarations, store lis
 
 | Profile | Effective width | WebView | Result |
 | --- | ---: | --- | --- |
-| API 24 phone | 360 dp | System WebView 53 package (runtime reported Chromium 69) | Origin instrumentation PASS; clean stable launch using static Rya fallback |
-| API 33 phone | ~393 dp | System WebView 109 | Origin instrumentation PASS; stable launch, no matching crash/syntax/asset errors |
-| API 36 phone | ~411 dp | System WebView 133 | Origin instrumentation PASS; branded splash and launch PASS |
-| API 36 tablet/resizable | 1280 × 800 dp | System WebView 133 | Origin instrumentation PASS and responsive layout rendered. The AVD was host-saturated and produced ANRs in System UI, Phone, Search, and eventually the app at ~84% CPU pressure; a 1280×800-pixel retry still produced a System UI ANR and Chromium tile-memory warnings, so tablet performance acceptance is emulator-environment blocked, not claimed PASS |
+| API 24 phone | 360 dp | System WebView 53 package (runtime reported Chromium 69) | Prior exact-origin instrumentation PASS and stable launch/static Rya fallback remain valid. The new production-fetch harness reached the app but the legacy emulator did not finish test shutdown in two bounded attempts; no credentialed acceptance claimed |
+| API 33 phone | ~393 dp | System WebView 109 | Installed-app exact origin plus production JSON preflight/`credentials: include` fetch PASS; credentialed user matrix not executed |
+| API 36 phone | ~411 dp | System WebView 133 | Installed-app exact origin plus production JSON preflight/`credentials: include` fetch PASS; branded splash/launch PASS; credentialed user matrix not executed |
+| API 36 tablet/resizable | 1280 × 800 dp initial; 2560 × 1600 px fresh retry | System WebView 133 | Initial origin assertion and responsive render PASS. Earlier system-wide System UI/Phone/Search/app ANRs established host saturation. The one authorized fresh retry booted and installed but instrumentation did not finish inside its bounded window; no new app crash was observed. Tablet performance remains environment-limited and physical/form-factor performance stays Phase C |
 
 Automated security tests cover cleartext/mixed-content denial, bundled-only config, top-level navigation, dangerous schemes, trusted microphone conditions/video denial, debugging, exports, backup, narrow FileProvider, secrets/signing-material exclusions, CSP, session race fencing, and bundle exclusions.
 
@@ -168,13 +172,13 @@ Final verification:
 - Frontend: 367 passed, 0 failed, 0 skipped.
 - Android web build: PASS twice-identical deterministic manifest; 128 hashed runtime files plus the manifest (129 total).
 - Android app unit tests: 4 passed, 0 failed (`TrustedRequestPolicyTest`).
-- Android instrumentation: `AppOriginInstrumentedTest` passed on the initial API 24 phone, API 33 phone, API 36 phone, and API 36 tablet runs. A later tablet retry failed to attach while Android system processes were also ANRing; the original tablet origin assertion remains the valid result.
+- Android instrumentation: the original exact-origin assertion remains PASS on API 24/33/36 phones and the initial API 36 tablet. The new actual production preflight/credentialed-fetch assertion passed on API 33 and API 36 phones. API 24 shutdown and the single fresh tablet attempt were bounded environment/harness timeouts and are not called PASS.
 - Gradle: `testDebugUnitTest`, `lintDebug`, `assembleDebug`, and `assembleDebugAndroidTest` PASS. Lint found no new issues; Capacitor's dependency baseline reported six stale baseline entries no longer present.
-- Backend Android-origin focus: 3 passed, 0 failed.
+- Backend focused Android-origin/auth/realtime: 60 passed, 0 failed (3 origin, 8 auth, 49 realtime). The origin test explicitly covers exact Android/web allow, foreign/Capacitor/file deny, and wildcard rejection.
 - Backend full regression on the idle host: 1395 passed, 205 skipped, 0 failed, 2 dependency deprecation warnings in 540.34 seconds. An earlier emulator-saturated run had two Alembic 90-second timeouts; both exact tests passed 2/2 after stopping the emulator, before the clean full rerun.
 - Syntax and whitespace: all changed JavaScript passed `node --check`; `git diff --check` is clean.
 
-The final debug APK is `android/app/build/outputs/apk/debug/app-debug.apk`, 7,798,069 bytes, SHA-256 `1DAA9B1E8E99B672F2B7A6C5C0ED24ED804EC0F96ED6D9884CCF7A084FBAE189`. `aapt` confirms package `com.waffleberry.legarya`, min 24, target/compile 36, and only `INTERNET` plus `RECORD_AUDIO` as platform permissions (AndroidX also emits its private signature-level dynamic-receiver permission). It is a debug artifact only.
+The final candidate debug APK is `android/app/build/outputs/apk/debug/app-debug.apk`, 7,798,069 bytes, SHA-256 `C0A63A7E3EAABCCEAF7C6D5A5B334CBFDE090BACE99133975D7371327509C4FC`. It embeds frontend implementation SHA `6badae9cff4974371b4cf12613731027c6557c7e`. `aapt` confirms package `com.waffleberry.legarya`, min 24, target/compile 36, and only `INTERNET` plus `RECORD_AUDIO` as platform permissions (AndroidX also emits its private signature-level dynamic-receiver permission). APK inspection found no environment/signing artifacts, secret patterns, development server URL, or QA fixture/customer data. It is a debug artifact only.
 
 ## Known Phase C work
 
@@ -186,4 +190,4 @@ The final debug APK is `android/app/build/outputs/apk/debug/app-debug.apk`, 7,79
 
 ## Release acceptance decision
 
-The reproducible Android foundation, hardened host, bundled app, exact origin support, native adapters, debug APK, automated regressions, and emulator-origin matrix are complete. Phase B remains **blocked for release acceptance** until a controlled acceptance backend enables only `https://localhost`, Android OAuth is configured, credentialed auth/cookie/upload/private-media/WSS matrices pass, and the two explicitly named Play compliance gates are completed before Phase D. No production configuration was changed in Phase B.
+The reproducible Android foundation, hardened host, bundled app, exact production origin support, native adapters, candidate debug APK, automated regressions, and core emulator-origin evidence are complete. Phase B remains **BLOCKED for final acceptance** because the permanent QA credential was not available through a supported source in this runtime, leaving the mandatory API-24/33/36 auth/cookie matrix, credentialed shared-feature/media smoke, and authenticated L15 WSS silent-open/end unexecuted. Google native identity additionally needs the one exact external console action documented above. Account deletion and AI-response reporting remain named hard pre-Phase-D/Play gates and are explicitly **not** Phase B closure blockers. No source branch was pushed because the prompt authorizes publication only after Phase B is green; no Play release, production signing key, AAB, iOS work, Phase C work, or L20 tag was created.
