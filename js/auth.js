@@ -150,6 +150,21 @@
 
   window.initializeLegaryaGoogleSignIn = () => {
     if (googleInitialized || !googleContainer) return;
+    if (window.LegaryaPlatform?.kind === "android") {
+      googleInitialized = true;
+      const button = googleContainer.querySelector("button");
+      button.disabled = false;
+      button.addEventListener("click", async () => {
+        if (submitting) return;
+        try {
+          const result = await window.LegaryaPlatform.googleSignIn({ serverClientId: config.googleClientId });
+          if (result?.idToken) await handleGoogleCredential({ credential: result.idToken });
+        } catch (error) {
+          if (error?.code !== "SIGN_IN_CANCELLED") showMessage("Google sign-in failed. Please try again.", true);
+        }
+      });
+      return;
+    }
     const googleAccounts = window.google?.accounts?.id;
     if (!config.googleClientId || !googleAccounts) {
       googleContainer.querySelector("button").textContent = "Google Sign-In unavailable";
@@ -209,6 +224,7 @@
 
   const requestedMode = new URLSearchParams(location.search).get("mode");
   setMode(requestedMode === "register" ? "register" : "login", false);
+  if (window.LegaryaPlatform?.kind === "android") window.initializeLegaryaGoogleSignIn();
   if (new URLSearchParams(location.search).get("reset") === "success") {
     showMessage("Your password has been reset. You can now sign in.");
   }

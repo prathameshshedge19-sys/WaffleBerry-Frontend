@@ -13,6 +13,7 @@
 
   async function capture(constraints, requireLock = true) {
     if (!constraints?.audio) return original(constraints);
+    const owner = requireLock ? "l15" : "l12";
     if (!navigator.locks) {
       if (requireLock) throw new DOMException("Live voice requires microphone ownership support.", "NotSupportedError");
       return original(constraints);
@@ -30,6 +31,13 @@
           await new Promise((done) => { unlock = done; resolve(); });
         }).catch(reject);
       });
+      if (window.LegaryaPlatform?.kind === "android") {
+        await window.LegaryaPlatform.armMicrophone(owner);
+        if (owner === "l15") {
+          const focus = await window.LegaryaPlatform.requestAudioFocus(owner);
+          if (!focus?.granted) throw new DOMException("Audio focus is unavailable.", "NotReadableError");
+        }
+      }
       const stream = await original(constraints);
       if (startedNavigation !== navigation) {
         stream.getTracks().forEach((track) => track.stop());
@@ -41,6 +49,7 @@
       const finished = (track) => {
         stopped.add(track);
         if (tracks.every((t) => stopped.has(t) || t.readyState === "ended")) {
+          if (owner === "l15") void window.LegaryaPlatform?.releaseAudioFocus?.();
           streams.delete(stream); release();
         }
       };

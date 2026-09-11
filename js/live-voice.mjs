@@ -186,7 +186,9 @@ if (adapter && entry) {
       window.RyaEnergyControl?.setActive(false);
       try {
         ambience = window.LegaryaSoundscape.acquireLive(soundButton);
-        presence = createRyaRenderer(visual, { live: true, onArc: detail => ambience?.arc(detail) });
+        presence = window.LEGARYA_FORCE_STATIC_RYA
+          ? { active: true, setActive() {}, setPlaybackEnergy() {}, setSpeechEnergy() {}, dispose() {} }
+          : createRyaRenderer(visual, { live: true, onArc: detail => ambience?.arc(detail) });
       } catch {
         // Optional atmosphere must not prevent a usable voice call.
         releasePresence();

@@ -1,0 +1,7 @@
+{
+  "apiBaseUrl": "https://89-167-14-211.sslip.io/api/v1",
+  "mediaBaseUrl": "https://89-167-14-211.sslip.io/api/v1",
+  "wssUrl": "wss://89-167-14-211.sslip.io/api/v1/realtime/connect",
+  "clientPlatform": "android",
+  "clientVersion": "1.0.0"
+}

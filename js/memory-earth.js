@@ -2,7 +2,7 @@ import * as THREE from "./three.module.min.js";
 
 const mount = document.querySelector("[data-memory-world]");
 
-if (mount) {
+if (mount && !window.LEGARYA_FORCE_STATIC_RYA) {
   try {
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
     const mobile = matchMedia("(max-width: 640px)").matches;
@@ -345,4 +345,9 @@ if (mount) {
   } catch (error) {
     console.error("Living Memory Earth failed", error);
   }
+}
+
+if (mount && window.LEGARYA_FORCE_STATIC_RYA) {
+  window.__ryaDiagnostics ||= { errors: [], frames: 0 };
+  window.__ryaDiagnostics.memoryStaticFallback = true;
 }

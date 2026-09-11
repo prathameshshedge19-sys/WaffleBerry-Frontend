@@ -77,6 +77,7 @@
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_CONVERSATION_ID);
+    try { window.dispatchEvent(new Event("legarya:session-cleared")); } catch {}
   };
 
   const storeAuthenticatedSession = (response) => {

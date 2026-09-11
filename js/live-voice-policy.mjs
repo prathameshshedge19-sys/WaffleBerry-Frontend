@@ -24,6 +24,7 @@ export function liveVoiceError(error) {
 }
 
 export function liveWebsocketUrl(config, location) {
+  if (config?.wssUrl) return config.wssUrl;
   if (["localhost", "127.0.0.1", "[::1]"].includes(location.hostname)) {
     const base = new URL(config.apiBaseUrl, location.href);
     base.pathname = base.pathname.replace(/\/$/, "") + "/realtime/connect";
