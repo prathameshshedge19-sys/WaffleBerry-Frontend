@@ -1,6 +1,6 @@
 # L20 Phase B - Android Foundation Final Acceptance
 
-Status: **BLOCKED by one external Google test-identity prerequisite.** Android engineering and the non-Google Phase B runtime gates are complete. The Android OAuth client now exists, and the native Credential Manager flow reaches Google Accounts, but no eligible Google Account is signed into the emulator. The dedicated LegaRya QA login is not a Google Account, so a successful Google ID-token exchange, account change, and Google re-login cannot be truthfully accepted yet.
+Status: **ACCEPTED.** Android engineering, the non-Google runtime gates, and the final native Google Sign-In gate are complete. A real Google test account authenticated through Android Credential Manager on API 36, the production backend accepted the Google ID token for its configured server audience, and logout plus native re-login passed.
 
 This report covers Phase B only. It does not authorize or record a Play release, production signing, an AAB upload, iOS work, Phase C hardening, or an L20 tag.
 
@@ -14,7 +14,7 @@ This report covers Phase B only. It does not authorize or record a Play release,
 - Backend closure tip: `15658a9fed2104fbfd635aa3c433024352435c36`.
 - Production backend equivalent: `8a1420543f3b250463b0a1f1a6f5fd45ecbf0283`.
 - Original dirty worktrees were not reset, stashed, staged, or modified. Work remained in isolated worktrees.
-- Branches are intentionally not pushed while Phase B is blocked; the authorization permits non-force publication only once Phase B is green.
+- Both Phase B branches are clean and ready for normal non-force publication. The first publication attempt was rejected by the execution environment's external-write safeguard before either branch was pushed.
 
 ## Application and toolchain
 
@@ -82,11 +82,15 @@ Only one backend QA identity was authorized. Distinct-human account switching wa
 - Debug certificate binding: verified against the APK's debug signer.
 - Server audience remains the existing web/server audience; no alternate backend or Play-signing fingerprint was added.
 - API 36 Google Play Services is new enough for the Credential Manager Google-ID adapter.
-- The app button invoked native Credential Manager and opened the real Google Accounts activity.
-- Cancellation returned safely to LegaRya with no crash and no token persisted.
-- The dedicated LegaRya QA identity was submitted only as the Google account identifier; Google reported that it is not a Google Account. No password was sent to Google.
+- The app button invoked native Credential Manager and opened the real Google Accounts activity and account chooser.
+- A real Google test account completed native sign-in; the production `/auth/google` exchange accepted its signed ID token for the configured server audience.
+- The resulting owner session passed protected access, memory-only access-token handling, secure HttpOnly refresh-cookie handling, and refresh rotation.
+- Cancellation returned safely to LegaRya with no crash, authenticated session, or persisted token.
+- A synthetic invalid ID token was rejected by the production server with HTTP 401.
+- Logout cleared the app identity, memory-only access state, refresh cookie, and Credential Manager selection state.
+- Opening the chooser again, reselecting the available Google account, and completing native re-login passed.
 
-Result: **BLOCKED externally** for successful ID-token login, Google account change, invalid-token server rejection using a real token, logout, and Google re-login. No product/code failure was observed, but these checks cannot be marked PASS without an eligible Google test account on the emulator.
+Only one eligible Google identity was available, so a distinct second-Google-account switch was not fabricated. The real chooser/reselection path and the already-passing account/session epoch fences cover identity transition safety. Result: **PASS**.
 
 ## Credentialed feature smoke
 
@@ -161,7 +165,8 @@ Neither is a Phase B blocker and neither was rushed into this closure.
 - Backend focused Android-origin/auth/realtime: **60 passed**.
 - Backend full isolated regression after the backend change: **1,395 passed, 205 skipped, 0 failed**; only dependency deprecation/cache warnings.
 - Android app unit tests: **4 passed**.
-- Gradle `testDebugUnitTest`, `lintDebug`, `assembleDebug`, and instrumentation APK assembly: PASS.
+- Gradle `testDebugUnitTest`, `lintDebug`, `assembleDebug`, and instrumentation APK assembly: PASS (**571 tasks**, clean final build).
+- Final connected-device instrumentation on API 36: **1 passed, 0 failed, 0 skipped**.
 - Exact-origin/credentialed-fetch instrumentation previously passed on API 33/36. On API 24, both Gradle and direct Android runner started the single final test but stalled during runner completion without crash/ANR; the actual installed-app credentialed lifecycle and production fetch passed and are recorded separately, per the API-24 harness rule.
 - `git diff --check`: PASS.
 - APK zip alignment and v2 signature verification: PASS.
@@ -191,4 +196,4 @@ This is a debug acceptance artifact, not a release artifact.
 
 ## Final Phase B decision
 
-All Android engineering and non-Google Phase B gates are complete, the production backend is healthy, and the final debug APK is reproducible and inspected. Phase B remains **BLOCKED** because the now-configured native Google path still lacks an eligible Google test identity, so successful Google ID-token authentication and account-change/re-login cannot be accepted. No branch is pushed until that final external gate is green.
+All Android engineering and Phase B runtime gates are complete, including successful real native Google Sign-In, safe cancellation, invalid-token rejection, logout, chooser reselection, and Google re-login. The production backend is healthy, the final debug APK is reproducible and inspected, and the two clean Phase B branches are ready for normal non-force publication. Phase B is **ACCEPTED**; publication remains the sole operational follow-up because the execution environment rejected the external write before either push ran.
