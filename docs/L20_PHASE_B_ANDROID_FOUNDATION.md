@@ -14,7 +14,7 @@ This report covers Phase B only. It does not authorize or record a Play release,
 - Backend closure tip: `15658a9fed2104fbfd635aa3c433024352435c36`.
 - Production backend equivalent: `8a1420543f3b250463b0a1f1a6f5fd45ecbf0283`.
 - Original dirty worktrees were not reset, stashed, staged, or modified. Work remained in isolated worktrees.
-- Both Phase B branches are clean and ready for normal non-force publication. The first publication attempt was rejected by the execution environment's external-write safeguard before either branch was pushed.
+- Both Phase B branches were published with normal non-force pushes after final acceptance.
 
 ## Application and toolchain
 
@@ -196,4 +196,4 @@ This is a debug acceptance artifact, not a release artifact.
 
 ## Final Phase B decision
 
-All Android engineering and Phase B runtime gates are complete, including successful real native Google Sign-In, safe cancellation, invalid-token rejection, logout, chooser reselection, and Google re-login. The production backend is healthy, the final debug APK is reproducible and inspected, and the two clean Phase B branches are ready for normal non-force publication. Phase B is **ACCEPTED**; publication remains the sole operational follow-up because the execution environment rejected the external write before either push ran.
+All Android engineering and Phase B runtime gates are complete, including successful real native Google Sign-In, safe cancellation, invalid-token rejection, logout, chooser reselection, and Google re-login. The production backend is healthy, the final debug APK is reproducible and inspected, and the approved Phase B branches are published with normal non-force pushes. Phase B is **ACCEPTED**.
