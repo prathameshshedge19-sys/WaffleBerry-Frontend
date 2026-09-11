@@ -150,6 +150,7 @@ window.LegaryaPlatform = Object.freeze({
   openExternal,
   googleSignIn: options => Native.googleSignIn(options),
   armMicrophone: owner => Native.armMicrophone({ owner }),
+  openMicrophoneSettings: () => Native.openAppSettings(),
   requestAudioFocus: owner => Native.requestAudioFocus({ owner }),
   releaseAudioFocus: () => Native.releaseAudioFocus(),
   pickPhoto: () => Native.pickPhoto(),

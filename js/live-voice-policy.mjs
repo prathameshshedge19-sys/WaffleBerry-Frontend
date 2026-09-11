@@ -14,7 +14,7 @@ export function liveVoiceError(error) {
   if (error?.code === "realtime_session_expired") return "This call has reached its time limit. Return to chat and start a new call when you are ready.";
   if (["realtime_access_changed", "realtime_not_authorized"].includes(error?.code)) return "Your access to this chat has changed. Return to your workspace and sign in again if needed.";
   if (error?.code === "realtime_setup_incomplete") return "Complete this Legacy's identity setup before starting Live Voice.";
-  if (["NotAllowedError", "SecurityError"].includes(error?.name)) return "Microphone permission was denied. Allow microphone access in your browser settings, then try again.";
+  if (error?.code === "MICROPHONE_DENIED" || ["NotAllowedError", "SecurityError"].includes(error?.name)) return "Microphone permission was denied. You can keep using text chat or allow access in Android app settings.";
   if (error?.name === "NotFoundError") return "No microphone was found. Connect one and try again.";
   if (["NotReadableError", "AbortError"].includes(error?.name)) return "Your microphone is busy or unavailable. Close other recording apps and try again.";
   if (error?.status === 401) return "Please sign in again to start another call. Your saved messages are safe.";

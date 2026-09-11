@@ -21,6 +21,7 @@ test("normal users never see arbitrary provider error details", () => {
     {name:"NotFoundError"},{name:"NotReadableError"},{name:"NotAllowedError"}]) {
     const text=liveVoiceError(error); assert.ok(text.length); assert.doesNotMatch(text,/sk-secret|SQL|provider internals/);
   }
+  assert.match(liveVoiceError({code:"MICROPHONE_DENIED"}),/Android app settings/);
 });
 test("hosted call uses direct secure backend; local call keeps local API host", () => {
   assert.equal(liveWebsocketUrl({apiBaseUrl:"/api/v1"},{hostname:"www.waffleberry.app",href:"https://www.waffleberry.app/chat.html"}),"wss://89-167-14-211.sslip.io/api/v1/realtime/connect");
@@ -67,6 +68,12 @@ test("both production pages keep separate live and L12 entries and no developer 
     assert.match(html,/type="module" src="js\/live-voice.mjs/);
     assert.doesNotMatch(html,/realtime-dev|l15-mic@example/);
   }
+});
+test("Android Live Voice denial exposes one deliberate settings recovery action", () => {
+  const source=fs.readFileSync(new URL("../js/live-voice.mjs",import.meta.url),"utf8");
+  assert.match(source,/data-live-settings hidden/);
+  assert.match(source,/openMicrophoneSettings/);
+  assert.match(source,/MICROPHONE_DENIED/);
 });
 
 function builderAdapter() {

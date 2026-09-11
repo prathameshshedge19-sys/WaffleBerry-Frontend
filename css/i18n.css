@@ -1,7 +1,7 @@
 .language-bar { display:flex; align-items:center; justify-content:flex-end; gap:10px; width:100%; padding:7px max(20px,6vw); min-height:48px; color:#d9c4a3; background:#100d09eb; border-bottom:1px solid #e9c89218; font:12px/1.5 Inter,system-ui,sans-serif; }
 .language-bar svg { width:17px; height:17px; flex:none; }
 .language-bar label { white-space:nowrap; }
-.language-bar select,.i18n-help-language select { min-height:34px; max-width:180px; padding:5px 30px 5px 12px; border:1px solid #dbb47866; border-radius:99px; color:#ffe1ab; background:#211a11; font:13px/1.6 system-ui,sans-serif; cursor:pointer; }
+.language-bar select,.i18n-help-language select { min-height:44px; max-width:180px; padding:5px 30px 5px 12px; border:1px solid #dbb47866; border-radius:99px; color:#ffe1ab; background:#211a11; font:13px/1.6 system-ui,sans-serif; cursor:pointer; }
 .language-bar option,.i18n-help-language option { background:#17120d; color:#f5ecdf; }
 .language-bar select:focus-visible,.i18n-help-language select:focus-visible { outline:2px solid #ffe1ab; outline-offset:3px; }
 #languageStatus:empty { display:none; }

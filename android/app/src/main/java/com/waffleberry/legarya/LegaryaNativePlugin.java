@@ -11,8 +11,11 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.CancellationSignal;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.webkit.CookieManager;
 import android.webkit.WebStorage;
 
@@ -115,11 +118,28 @@ public class LegaryaNativePlugin extends Plugin {
 
     @PermissionCallback
     private void microphonePermissionResult(PluginCall call) {
-        if (getPermissionState("microphone") != PermissionState.GRANTED || !appForeground) {
+        if (getPermissionState("microphone") != PermissionState.GRANTED) {
             call.reject("Microphone permission was denied.", "MICROPHONE_DENIED");
             return;
         }
-        arm(call.getString("owner", ""), call);
+        // Android may deliver the permission result just before onResume restores
+        // the foreground flag. Wait briefly for that ordered lifecycle handoff;
+        // a genuinely backgrounded app still fails closed after one second.
+        armAfterPermissionResume(call, 10);
+    }
+
+    private void armAfterPermissionResume(PluginCall call, int attemptsRemaining) {
+        if (appForeground) {
+            arm(call.getString("owner", ""), call);
+            return;
+        }
+        if (attemptsRemaining <= 0) {
+            call.reject("Microphone cannot start in the background.", "APP_BACKGROUND");
+            return;
+        }
+        new Handler(Looper.getMainLooper()).postDelayed(
+            () -> armAfterPermissionResume(call, attemptsRemaining - 1), 100L
+        );
     }
 
     private static synchronized void arm(String owner, PluginCall call) {
@@ -172,6 +192,21 @@ public class LegaryaNativePlugin extends Plugin {
     public void releaseAudioFocus(PluginCall call) {
         releaseAudioFocusInternal();
         call.resolve();
+    }
+
+    @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        Intent intent = new Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", getContext().getPackageName(), null)
+        );
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (RuntimeException error) {
+            call.reject("Application settings could not be opened.", "SETTINGS_UNAVAILABLE", error);
+        }
     }
 
     private void releaseAudioFocusInternal() {

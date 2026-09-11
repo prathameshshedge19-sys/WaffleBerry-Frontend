@@ -35,6 +35,9 @@ test("stopping recording automatically transcribes into an editable unsent compo
 
 test("permission and transcription failures preserve text chat", () => {
   assert.match(voice, /NotAllowedError/);
+  assert.match(voice, /MICROPHONE_DENIED/);
+  assert.match(voice, /Open microphone settings/);
+  assert.match(voice, /openMicrophoneSettings/);
   assert.match(voice, /NotFoundError/);
   assert.match(voice, /NotReadableError/);
   assert.match(voice, /I couldn\u2019t transcribe that recording\. Try again\./);

@@ -21,6 +21,7 @@ if (adapter && entry) {
     <p class="live-call-transcript" aria-label="Live speech preview"></p>
     <div class="live-call-controls"><button type="button" data-live-mute aria-pressed="false">Mute microphone</button><button type="button" data-live-stop>Stop speaking</button><button type="button" data-live-end class="live-call-end">End call</button></div>
     <button type="button" data-live-resume hidden>Resume microphone</button>
+    <button type="button" data-live-settings hidden>Open microphone settings</button>
     <button type="button" data-live-close hidden>Return to chat</button>
     <button type="button" data-live-ambience aria-pressed="true">Ambient sound on</button>
     <p class="live-call-footnote">Keep this page open. Switching apps or locking your screen ends the call.</p>
@@ -29,13 +30,18 @@ if (adapter && entry) {
   const find = (selector) => dialog.querySelector(selector);
   const stateLabel = find(".live-call-state"), help = find("[data-live-guidance]"), preview = find(".live-call-transcript");
   const mute = find("[data-live-mute]"), stop = find("[data-live-stop]"), end = find("[data-live-end]");
-  const resume = find("[data-live-resume]"), close = find("[data-live-close]");
+  const resume = find("[data-live-resume]"), settings = find("[data-live-settings]"), close = find("[data-live-close]");
   let enabled = false, active = false, finishing = false, finished = false, reconnecting = false;
   let context = null, state = "ended", boundId = null, serial = 0, restoreFocus = null;
   let refreshQueue = Promise.resolve();
   const partials = new Map();
   let presence = null, ambience = null, previousPresenceActive = false;
   let visualPresence = null, visualEpoch = 0;
+  const offerMicrophoneSettings = error => {
+    settings.hidden = !(window.LegaryaPlatform?.kind === "android"
+      && window.LegaryaPlatform.openMicrophoneSettings
+      && (error?.code === "MICROPHONE_DENIED" || ["NotAllowedError", "SecurityError"].includes(error?.name)));
+  };
   function releasePortrait() { ++visualEpoch; try { visualPresence?.dispose(); } catch {} visualPresence = null; }
   function startPortrait() {
     releasePortrait();
@@ -169,7 +175,7 @@ if (adapter && entry) {
     boundId = context.conversationId || null;
     client.muted = false;
     partials.clear(); preview.textContent = "";
-    close.hidden = resume.hidden = true;
+    close.hidden = resume.hidden = settings.hidden = true;
     find("#liveCallTitle").textContent = context.mode === "legacy" ? context.name : "Rya";
     find("#liveCallDisclosure").textContent = context.mode === "legacy" ? "AI Legacy · A standard AI voice, grounded in preserved memories" : "Your AI companion for preserving memories";
     dialog.dataset.mode = context.mode;
@@ -205,17 +211,18 @@ if (adapter && entry) {
     try {
       await client.start(context.conversationId ? { conversation_id: context.conversationId } : { legacy_id: context.legacyId, mode: context.mode });
       if (token === serial && !finishing && !finished && client.stream) show("listening", "You can speak naturally and interrupt at any time.");
-    } catch (error) { if (token === serial) await finish(liveVoiceError(error), true); }
+    } catch (error) { if (token === serial) { offerMicrophoneSettings(error); await finish(liveVoiceError(error), true); } }
   }
   entry.addEventListener("click", () => { if (!active) void start(); });
   mute.addEventListener("click", () => client.setMuted(!client.muted));
   stop.addEventListener("click", () => { client.stopSpeaking(); if (client.stream) show("listening", "Response stopped. You can keep talking."); });
   end.addEventListener("click", async () => { await finish(); if (state === "ended") close.click(); });
+  settings.addEventListener("click", () => { void window.LegaryaPlatform.openMicrophoneSettings(); });
   resume.addEventListener("click", async () => {
     resume.hidden = true;
     const token = serial;
     try { await client.resumeCapture(); if (token === serial && client.stream) { startPortrait(); show("listening", "Ready for new speech. Unfinished speech may need repeating."); } }
-    catch (error) { if (token === serial) await finish(liveVoiceError(error), true); }
+    catch (error) { if (token === serial) { offerMicrophoneSettings(error); await finish(liveVoiceError(error), true); } }
   });
   close.addEventListener("click", () => {
     dialog.close(); active = false; adapter.setLive(false); updateEntry(); restoreFocus?.focus();

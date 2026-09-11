@@ -47,6 +47,17 @@
     status.classList.toggle("error-state", error);
   };
 
+  const showMicrophoneSettings = () => {
+    setStatus("Microphone access was denied. You can keep using text chat or allow access in Android app settings.", true);
+    if (window.LegaryaPlatform?.kind !== "android" || !window.LegaryaPlatform.openMicrophoneSettings) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "microphone-settings-action";
+    button.textContent = "Open microphone settings";
+    button.addEventListener("click", () => { void window.LegaryaPlatform.openMicrophoneSettings(); });
+    status.append(" ", button);
+  };
+
   const renderState = () => {
     const recording = state === "recording";
     const transcribing = state === "transcribing";
@@ -180,11 +191,11 @@
       recorder = null;
       state = "idle";
       renderState();
-      const denied = error?.name === "NotAllowedError" || error?.name === "SecurityError";
+      const denied = error?.code === "MICROPHONE_DENIED" || error?.name === "NotAllowedError" || error?.name === "SecurityError";
       const missing = error?.name === "NotFoundError";
       const busy = error?.name === "NotReadableError" || error?.name === "AbortError";
-      setStatus(denied ? "Microphone access was denied. Allow it in your browser settings to use voice input."
-        : missing ? "No microphone was found. You can still type your message."
+      if (denied) showMicrophoneSettings();
+      else setStatus(missing ? "No microphone was found. You can still type your message."
         : busy ? "The microphone is unavailable or already in use. Try again."
         : "Voice recording couldn’t start. You can still type your message.", true);
     }

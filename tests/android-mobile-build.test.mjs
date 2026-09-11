@@ -127,6 +127,10 @@ test("native host denies cleartext, backup, broad files, camera and unrestricted
   assert.match(activity, /onPause\(\)[\s\S]*CookieManager\.getInstance\(\)\.flush\(\)[\s\S]*super\.onPause\(\)/);
   const nativePlugin = await readFile(path.join(root, "android", "app", "src", "main", "java", "com", "waffleberry", "legarya", "LegaryaNativePlugin.java"), "utf8");
   assert.match(nativePlugin, /runOnUiThread\([\s\S]*getWebView\(\)\.clearCache\(true\)/);
+  assert.match(nativePlugin, /armAfterPermissionResume\(call, 10\)/);
+  assert.match(nativePlugin, /Settings\.ACTION_APPLICATION_DETAILS_SETTINGS/);
+  const platform = await readFile(path.join(root, "mobile", "platform-entry.js"), "utf8");
+  assert.match(platform, /openMicrophoneSettings: \(\) => Native\.openAppSettings\(\)/);
 });
 
 test("Capacitor configuration is bundled-only and pins the expected origin contract", async () => {
@@ -137,4 +141,15 @@ test("Capacitor configuration is bundled-only and pins the expected origin contr
   assert.equal(config.server.androidScheme, "https");
   assert.equal(config.server.url, undefined);
   assert.equal(config.server.allowNavigation, undefined);
+});
+
+test("homepage mobile controls preserve minimum 44px touch targets", async () => {
+  const style = await readFile(path.join(root, "css", "style.css"), "utf8");
+  const i18n = await readFile(path.join(root, "css", "i18n.css"), "utf8");
+  assert.match(i18n, /\.language-bar select,[^{]+\{[^}]*min-height:44px/);
+  assert.match(style, /\.wordmark, \.footer-brand, \.footer-main nav a, \.footer-contact a \{[^}]*min-height: 44px/);
+  assert.match(style, /\.soundscape-toggle \{[^}]*width: 44px; height: 44px/);
+  assert.match(style, /@media \(pointer: coarse\) \{[\s\S]*\.soundscape-toggle \{ width: 44px; height: 44px/);
+  assert.match(style, /\.site-nav a \{[^}]*min-width: 44px; min-height: 44px/);
+  assert.match(style, /\.scroll-cue, \.soundscape-awaken \{ min-height: 44px/);
 });
