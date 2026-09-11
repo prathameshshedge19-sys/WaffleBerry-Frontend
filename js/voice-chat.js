@@ -31,6 +31,8 @@
   let selectedVoice = "marin";
   let playing = null;
   let contextVersion = 0;
+  let playbackVersion = 0;
+  let transcriptionController = null;
   const playbackAudio = new Audio();
   window.LegaryaAudioOwnership?.protect(playbackAudio);
   const audioCache = new Map();
@@ -62,7 +64,7 @@
     const recording = state === "recording";
     const transcribing = state === "transcribing";
     microphone.classList.toggle("is-recording", recording);
-    microphone.disabled = chatBusy || transcribing;
+    microphone.disabled = chatBusy || transcribing || state === "requesting";
     microphone.setAttribute("aria-label", recording ? "Stop recording" : transcribing ? "Transcribing recording" : "Start voice input");
     microphone.title = recording ? "Stop recording" : transcribing ? "Transcribing..." : "Voice input";
     setIcon(microphone, recording ? "stop" : transcribing ? "loading" : "microphone");
@@ -72,6 +74,8 @@
   };
 
   const stopSpeech = () => {
+    ++playbackVersion;
+    playbackAudio.pause();
     if (!playing) return;
     playing.audio.pause();
     playing.audio.currentTime = 0;
@@ -114,14 +118,18 @@
 
   const recorderType = () => SUPPORTED_TYPES.find((type) => window.MediaRecorder?.isTypeSupported(type)) || "";
 
-  const transcribe = async (blob, durationMs, mimeType) => {
+  const transcribe = async (blob, durationMs, mimeType, version) => {
+    if (version !== contextVersion) return;
+    const controller = new AbortController();
+    transcriptionController = controller;
     const extension = mimeType.includes("mp4") ? "m4a" : mimeType.includes("ogg") ? "ogg" : "webm";
     const data = new FormData();
     data.append("audio", blob, `recording.${extension}`);
     data.append("duration_ms", String(Math.round(durationMs)));
     try {
-      const response = await authenticatedFetch("/voice/transcribe", { method: "POST", body: data });
+      const response = await authenticatedFetch("/voice/transcribe", { method: "POST", body: data, signal: controller.signal });
       const result = await response.json();
+      if (version !== contextVersion) return;
       const transcript = typeof result.text === "string" ? result.text.trim() : "";
       if (!transcript) throw new Error("Empty transcription");
       input.value = input.value.trim() ? `${input.value.trim()} ${transcript}` : transcript;
@@ -131,37 +139,45 @@
       setStatus("Transcript ready to review.");
       input.focus();
     } catch (error) {
-      console.warn("[LegaRya Voice] Transcription failed.", error);
+      if (version !== contextVersion) return;
       state = "idle";
       setStatus("I couldn’t transcribe that recording. Try again.", true);
     } finally {
-      renderState();
+      if (transcriptionController === controller) transcriptionController = null;
+      if (version === contextVersion) renderState();
     }
   };
 
   const beginRecording = async () => {
+    if (chatBusy || ["requesting", "recording", "transcribing"].includes(state)) return;
+    const version = contextVersion;
     stopSpeech();
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
       setStatus("Voice input isn’t supported in this browser. You can still type your message.", true);
       return;
     }
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      state = "requesting"; renderState();
+      const captured = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (version !== contextVersion) { captured.getTracks().forEach(track => track.stop()); return; }
+      stream = captured;
       const mimeType = recorderType();
       recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       const chunks = [];
       recorder.addEventListener("dataavailable", (event) => { if (event.data.size) chunks.push(event.data); });
       recorder.addEventListener("stop", () => {
+        if (version !== contextVersion) return;
         const duration = Date.now() - startedAt;
         const actualType = recorder.mimeType || mimeType || "audio/webm";
         const blob = new Blob(chunks, { type: actualType });
         cleanupRecording();
         recorder = null;
-        void transcribe(blob, duration, actualType);
+        void transcribe(blob, duration, actualType, version);
       }, { once: true });
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       audioContext = new AudioContext();
       await audioContext.resume();
+      if (version !== contextVersion) return;
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 2048;
       audioContext.createMediaStreamSource(stream).connect(analyser);
@@ -187,6 +203,7 @@
       }, VOICE_ANALYSIS_INTERVAL_MS);
       maximumTimer = setTimeout(stopRecording, VOICE_MAX_RECORDING_MS);
     } catch (error) {
+      if (version !== contextVersion) return;
       cleanupRecording();
       recorder = null;
       state = "idle";
@@ -203,26 +220,32 @@
 
   const fetchAudio = async (path, body, key) => {
     if (audioCache.has(key)) return audioCache.get(key);
+    const version = contextVersion;
     const response = await authenticatedFetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const url = URL.createObjectURL(await response.blob());
+    const blob = await response.blob();
+    if (version !== contextVersion) throw new Error("Voice context changed.");
+    if (audioCache.has(key)) return audioCache.get(key);
+    const url = URL.createObjectURL(blob);
     audioCache.set(key, url);
+    if (audioCache.size > 32) { const first = audioCache.keys().next().value; URL.revokeObjectURL(audioCache.get(first)); audioCache.delete(first); }
     return url;
   };
 
   const play = async (button, path, body, key, expectedContext = contextVersion) => {
     if (playing?.button === button) return stopSpeech();
     stopSpeech();
+    const playback = playbackVersion;
     try {
       button?.classList.add("is-loading");
       button?.setAttribute("aria-label", "Loading audio");
       if (button) button.title = "Loading audio";
       setIcon(button, "loading");
       const url = await fetchAudio(path, body, key);
-      if (expectedContext !== contextVersion) return;
+      if (expectedContext !== contextVersion || playback !== playbackVersion) return;
       const audio = playbackAudio;
       audio.src = url;
       playing = { audio, button };
@@ -238,9 +261,9 @@
       audio.onerror = finish;
       await audio.play();
     } catch (error) {
+      if (expectedContext !== contextVersion || playback !== playbackVersion) return;
       button?.classList.remove("is-loading");
       stopSpeech();
-      console.warn("[LegaRya Voice] Playback failed.", error);
       setStatus("Voice playback unavailable.", true);
     }
   };
@@ -289,27 +312,38 @@
     const preview = event.target.closest("[data-preview-voice]");
     if (preview) void play(preview, "/voice/preview", { voice: preview.dataset.previewVoice }, `preview:${preview.dataset.previewVoice}`);
   });
-  window.addEventListener("pagehide", () => { stopSpeech(); if (state === "recording") stopRecording(); });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) { stopSpeech(); if (state === "recording") stopRecording(); } });
+  const retire = () => {
+    ++contextVersion; stopSpeech(); transcriptionController?.abort(); transcriptionController = null;
+    const previous = recorder; recorder = null;
+    if (previous && previous.state !== "inactive") { try { previous.stop(); } catch {} }
+    cleanupRecording();
+    for (const url of audioCache.values()) URL.revokeObjectURL(url);
+    audioCache.clear(); playbackAudio.removeAttribute?.("src");
+    state = "idle"; voiceDraft = false; renderState();
+  };
+  for (const name of ["pagehide", "popstate", "legarya:session-ending", "legarya:session-expired", "legarya:android-sensitive-stop"]) window.addEventListener(name, retire);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) retire(); });
   renderState();
   void initializeSettings();
 
   window.LegaryaVoice = Object.freeze({
     attachAssistant,
-    async prepareLive() {
+    async prepareLive(current = () => true) {
       stopSpeech();
+      if (state === "requesting") throw new Error("Microphone permission is still pending.");
       if (state === "recording") stopRecording();
       const deadline = Date.now() + 35000;
       while (state === "transcribing") {
+        if (!current()) return;
         if (Date.now() > deadline) throw new Error("Your dictation is still being prepared. Please try Live Voice again shortly.");
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
     },
     consumeVoiceOrigin() { const result = voiceDraft; voiceDraft = false; state = "idle"; renderState(); return result; },
     restoreVoiceOrigin() { voiceDraft = true; state = "ready_to_review"; renderState(); },
-    isCapturing() { return state === "recording" || state === "transcribing"; },
+    isCapturing() { return state === "requesting" || state === "recording" || state === "transcribing"; },
     setChatBusy(active) { chatBusy = Boolean(active); renderState(); },
-    stopAll() { contextVersion += 1; stopSpeech(); if (state === "recording") stopRecording(); },
+    stopAll: retire,
     stopSpeech,
     constants: Object.freeze({ VOICE_SILENCE_TIMEOUT_MS, VOICE_MAX_RECORDING_MS, VOICE_MIN_RMS, VOICE_MAX_RMS, VOICE_MEANINGFUL_FRAMES }),
   });

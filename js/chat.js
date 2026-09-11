@@ -1206,10 +1206,12 @@
       const legacy = activeLegacy();
       return { legacyId: chatSession.selectedLegacyId, conversationId: chatSession.activeConversationId,
         mode: "rya", name: "Rya", ready: legacy?.setup_status === "active",
-        busy: sending || preparingSend || Boolean(chatSession.pendingConversation), version: chatSession.navigationVersion };
+        busy: sending || preparingSend || Boolean(chatSession.pendingConversation), version: chatSession.navigationVersion,
+        accountEpoch: window.LegaryaAuthApi?.getSessionEpoch?.() };
     },
     setLive(value) { liveActive = value; window.LegaryaVoice?.setChatBusy(value || sending); },
     accept(snapshot, event) {
+      if (snapshot.accountEpoch !== window.LegaryaAuthApi?.getSessionEpoch?.()) return false;
       if (snapshot.version !== chatSession.navigationVersion || snapshot.legacyId !== chatSession.selectedLegacyId
           || event.legacy_id !== snapshot.legacyId || event.mode !== "rya"
           || (chatSession.activeConversationId && chatSession.activeConversationId !== event.conversation_id)) return false;
@@ -1217,9 +1219,13 @@
       localStorage.setItem(STORAGE_KEYS.ACTIVE_CONVERSATION_ID, String(event.conversation_id));
       return true;
     },
-    async refresh(snapshot, id) {
+    async refresh(snapshot, id, { guard = () => true, signal } = {}) {
+      if (!guard()) return;
+      if (snapshot.accountEpoch !== window.LegaryaAuthApi?.getSessionEpoch?.()) return;
       if (snapshot.version !== chatSession.navigationVersion || snapshot.legacyId !== chatSession.selectedLegacyId) return;
-      const history = await apiRequest(`/conversations/${id}/messages?legacy_id=${snapshot.legacyId}`, { authenticated: true });
+      const history = await apiRequest(`/conversations/${id}/messages?legacy_id=${snapshot.legacyId}`, { authenticated: true, signal });
+      if (!guard()) return;
+      if (snapshot.accountEpoch !== window.LegaryaAuthApi?.getSessionEpoch?.()) return;
       if (snapshot.version !== chatSession.navigationVersion || snapshot.legacyId !== chatSession.selectedLegacyId) return;
       chatSession.activateConversation(id, snapshot.legacyId);
       localStorage.setItem(STORAGE_KEYS.ACTIVE_CONVERSATION_ID, String(id));

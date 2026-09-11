@@ -102,3 +102,10 @@ test("navigation fences both late live admission and delayed saved-history refre
   assert.equal(h.rows.length,0);assert.equal(h.state.activeConversationId,null);
   assert.equal(h.adapter.accept(snapshot,{conversation_id:7,legacy_id:1,mode:"rya"}),false);
 });
+
+test("C2A a retired call in the same chat cannot apply its pending history",async()=>{
+  const h=builderAdapter(),snapshot=h.adapter.context();let current=true;
+  const pending=h.adapter.refresh(snapshot,7,{guard:()=>current});current=false;
+  h.resolve([{role:"assistant",content:"synthetic retired response",id:1}]);await pending;
+  assert.equal(h.rows.length,0);assert.equal(h.state.activeConversationId,null);
+});

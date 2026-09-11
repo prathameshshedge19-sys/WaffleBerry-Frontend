@@ -33,7 +33,13 @@ if (adapter && entry) {
   const resume = find("[data-live-resume]"), settings = find("[data-live-settings]"), close = find("[data-live-close]");
   let enabled = false, active = false, finishing = false, finished = false, reconnecting = false;
   let context = null, state = "ended", boundId = null, serial = 0, restoreFocus = null;
-  let refreshQueue = Promise.resolve();
+  let refreshQueue = null;
+  let accountEpoch;
+  const sameContext = () => {
+    const current = adapter.context();
+    return context && accountEpoch === window.LegaryaAuthApi.getSessionEpoch?.()
+      && current.legacyId === context.legacyId && current.mode === context.mode && current.version === context.version;
+  };
   const partials = new Map();
   let presence = null, ambience = null, previousPresenceActive = false;
   let visualPresence = null, visualEpoch = 0;
@@ -71,9 +77,32 @@ if (adapter && entry) {
   }
   const refresh = () => {
     const snapshot = context, id = boundId;
-    if (!snapshot || !id) return Promise.resolve();
-    refreshQueue = refreshQueue.catch(() => {}).then(() => adapter.refresh(snapshot, id));
-    return refreshQueue;
+    if (!snapshot || !id || !sameContext()) return Promise.resolve();
+    const token = serial;
+    if (refreshQueue?.token === token) { refreshQueue.again = true; return refreshQueue.promise; }
+    refreshQueue?.controller.abort();
+    const operation = { token, controller: new AbortController(), again: false };
+    const guard = () => token === serial && context === snapshot && sameContext() && !operation.controller.signal.aborted;
+    operation.promise = (async () => {
+      do {
+        operation.again = false;
+        let timer, abort;
+        try {
+          await Promise.race([
+            Promise.resolve().then(() => {
+              if (guard()) return adapter.refresh(snapshot, id, { guard, signal: operation.controller.signal });
+            }),
+            new Promise((_, reject) => {
+              abort = () => reject(new Error("Saved chat refresh interrupted."));
+              operation.controller.signal.addEventListener("abort", abort, { once: true });
+              timer = setTimeout(() => operation.controller.abort(), 12000);
+            }),
+          ]);
+        } finally { clearTimeout(timer); operation.controller.signal.removeEventListener("abort", abort); }
+      } while (operation.again && guard());
+    })().finally(() => { if (refreshQueue === operation) refreshQueue = null; });
+    refreshQueue = operation;
+    return operation.promise;
   };
   function show(next, message) {
     try { visualPresence?.setCallState(next); } catch { releasePortrait(); }
@@ -88,7 +117,7 @@ if (adapter && entry) {
     end.disabled = finishing || finished;
   }
   function onEvent(event) {
-    if (!active || finished || (finishing && event.type !== "transcript_final")) return;
+    if (!active || finished || finishing || !sameContext()) return;
     if (event.type === "input_energy" || event.type === "output_energy") {
       if ((event.type === "input_energy" && state === "listening") || (event.type === "output_energy" && state === "speaking")) {
         if (event.type === "output_energy") presence?.setPlaybackEnergy(event.value);
@@ -144,21 +173,28 @@ if (adapter && entry) {
     try {
       await client.reconnect();
       if (token !== serial || finished || finishing) return;
+      if (client.state !== "connected") throw new Error("Reconciliation was interrupted.");
       await refresh();
+      if (token !== serial || finished || finishing || !sameContext()) return;
+      if (client.state !== "connected") throw new Error("Reconciliation was interrupted.");
       resume.hidden = false;
       show("reconnecting", "Connection restored. Tap Resume microphone when you are ready.");
     } catch (error) {
       if (token === serial && !finishing && !finished) await finish(liveVoiceError(error), true);
-    } finally { reconnecting = false; }
+    } finally { if (token === serial) reconnecting = false; }
   }
   async function finish(message = "Your saved messages are back in this chat.", error = false) {
     if (finishing || finished || !active) return;
     finishing = true; ++serial;
+    refreshQueue?.controller.abort();
+    const token = serial;
     resume.hidden = true;
     show("ending", "Ending your call and returning to your saved conversation.");
     releasePresence();
     await client.stop();
+    if (token !== serial || !active) return;
     try { await refresh(); } catch { message = "Your call has ended. Refresh the chat to load saved messages."; error = true; }
+    if (token !== serial || !active) return;
     finishing = false; finished = true;
     partials.clear(); preview.textContent = "";
     show(error ? "error" : "ended", message);
@@ -166,7 +202,9 @@ if (adapter && entry) {
     close.focus();
   }
   async function start() {
+    if (active) return;
     context = adapter.context();
+    accountEpoch = window.LegaryaAuthApi.getSessionEpoch?.();
     const unavailable = liveVoiceAvailability(context, enabled);
     if (unavailable) { entry.title = unavailable; return; }
     restoreFocus = document.activeElement;
@@ -216,7 +254,11 @@ if (adapter && entry) {
   entry.addEventListener("click", () => { if (!active) void start(); });
   mute.addEventListener("click", () => client.setMuted(!client.muted));
   stop.addEventListener("click", () => { client.stopSpeaking(); if (client.stream) show("listening", "Response stopped. You can keep talking."); });
-  end.addEventListener("click", async () => { await finish(); if (state === "ended") close.click(); });
+  end.addEventListener("click", async () => {
+    const token = serial, snapshot = context;
+    await finish();
+    if (serial === token + 1 && context === snapshot && state === "ended") close.click();
+  });
   settings.addEventListener("click", () => { void window.LegaryaPlatform.openMicrophoneSettings(); });
   resume.addEventListener("click", async () => {
     resume.hidden = true;
@@ -229,19 +271,36 @@ if (adapter && entry) {
   });
   dialog.addEventListener("cancel", (event) => { event.preventDefault(); if (finished) close.click(); else void finish(); });
   document.addEventListener("visibilitychange", () => { if (document.hidden && active) void finish("Call ended because this page went into the background. Your saved messages remain in chat."); });
-  window.addEventListener("pagehide", () => { if (active) { ++serial; releasePresence(); client.invalidate(); } });
+  window.addEventListener("pagehide", retire);
   window.addEventListener("popstate", () => { if (active) void finish("The page changed. Saved messages remain in their original chat."); });
-  window.addEventListener("legarya:session-expired", () => { if (active) void finish("Please sign in again. Your saved messages remain in chat.", true); });
-  window.addEventListener("legarya:session-ending", () => { if (active) void finish("Your account session changed. Saved messages remain in their original chat."); });
+  function retire() {
+    ++serial;
+    refreshQueue?.controller.abort();
+    client.invalidate(); releasePresence(); partials.clear(); preview.textContent = "";
+    context = null; boundId = null; active = finishing = reconnecting = false; finished = true;
+    find(".live-call-presence").replaceChildren(); find("#liveCallTitle").textContent = "Live Voice";
+    dialog.close(); adapter.setLive(false); updateEntry();
+  }
+  const retireAccount = () => { enabled = false; retire(); };
+  window.addEventListener("legarya:session-expired", retireAccount);
+  window.addEventListener("legarya:session-ending", retireAccount);
   function updateEntry() {
     const reason = liveVoiceAvailability(adapter.context(), enabled);
     entry.disabled = Boolean(reason) || active;
     entry.title = reason || "Start voice conversation";
     document.querySelector("#liveVoiceAvailability").textContent = reason;
   }
-  window.addEventListener("legarya:chat-context", updateEntry);
+  window.addEventListener("legarya:chat-context", () => { if (active && !sameContext()) retire(); updateEntry(); });
   window.addEventListener("legarya:visual-invalidated", event => { if (context?.legacyId === event.detail?.legacyId) startPortrait(); });
   window.LegaryaLiveVoice = Object.freeze({ invalidate() { if (active) void finish("The chat changed. Saved speech remains in its original conversation."); } });
   updateEntry();
-  window.LegaryaAuthApi.apiRequest("/realtime/capabilities", { authenticated: true }).then((result) => { enabled = result.enabled === true; updateEntry(); }).catch(() => updateEntry());
+  const loadCapabilities = () => {
+    const account = window.LegaryaAuthApi.getSessionEpoch?.();
+    window.LegaryaAuthApi.apiRequest("/realtime/capabilities", { authenticated: true }).then(result => {
+      if (account !== window.LegaryaAuthApi.getSessionEpoch?.()) return;
+      enabled = result.enabled === true; updateEntry();
+    }).catch(() => updateEntry());
+  };
+  window.addEventListener("legarya:session-ready", loadCapabilities);
+  loadCapabilities();
 }

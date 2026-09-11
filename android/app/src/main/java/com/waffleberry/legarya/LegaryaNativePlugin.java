@@ -151,12 +151,8 @@ public class LegaryaNativePlugin extends Plugin {
         call.resolve(result);
     }
 
-    private final AudioManager.OnAudioFocusChangeListener focusListener = change -> {
-        JSObject event = new JSObject();
-        event.put("change", change);
-        event.put("owner", audioOwner);
-        notifyListeners("audioFocusChange", event, true);
-    };
+    private volatile long focusGeneration = 0;
+    private AudioManager.OnAudioFocusChangeListener focusListener;
 
     @PluginMethod
     public void requestAudioFocus(PluginCall call) {
@@ -166,9 +162,17 @@ public class LegaryaNativePlugin extends Plugin {
             return;
         }
         if (owner.equals(audioOwner)) {
-            JSObject unchanged = new JSObject(); unchanged.put("granted", true); unchanged.put("idempotent", true); call.resolve(unchanged); return;
+            JSObject unchanged = new JSObject(); unchanged.put("granted", true); unchanged.put("idempotent", true); unchanged.put("generation", focusGeneration); call.resolve(unchanged); return;
         }
         releaseAudioFocusInternal();
+        final long generation = focusGeneration;
+        focusListener = change -> {
+            if (generation != focusGeneration) return;
+            JSObject event = new JSObject();
+            event.put("change", change); event.put("owner", owner); event.put("generation", generation);
+            // Never retain a focus event to deliver to a future page/owner.
+            notifyListeners("audioFocusChange", event, false);
+        };
         audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         int result;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -185,7 +189,7 @@ public class LegaryaNativePlugin extends Plugin {
             result = audioManager.requestAudioFocus(focusListener, AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         }
         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) audioOwner = owner;
-        JSObject response = new JSObject(); response.put("granted", result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED); response.put("idempotent", false); call.resolve(response);
+        JSObject response = new JSObject(); response.put("granted", result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED); response.put("idempotent", false); response.put("generation", generation); call.resolve(response);
     }
 
     @PluginMethod
@@ -210,12 +214,14 @@ public class LegaryaNativePlugin extends Plugin {
     }
 
     private void releaseAudioFocusInternal() {
+        ++focusGeneration;
         if (audioManager != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && audioFocusRequest != null) audioManager.abandonAudioFocusRequest(audioFocusRequest);
             else audioManager.abandonAudioFocus(focusListener);
         }
         audioOwner = null;
         audioFocusRequest = null;
+        audioManager = null;
     }
 
     @PluginMethod

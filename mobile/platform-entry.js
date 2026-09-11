@@ -17,6 +17,8 @@ const SAFE_APP_PATHS = new Set([
 const SAFE_EXTERNAL_SCHEMES = new Set(["https:", "http:"]);
 let lifecycleGeneration = 0;
 let foreground = true;
+let focusGeneration = null;
+let focusLostThrough = -1;
 const chromiumMajor = Number(/(?:Chrome|Chromium)\/(\d+)/.exec(navigator.userAgent)?.[1] || 0);
 const staticVisualFallback = chromiumMajor > 0 && chromiumMajor < 80;
 
@@ -65,11 +67,18 @@ async function openExternal(value) {
 }
 
 async function endSensitivePresentation(reason) {
+  focusGeneration = null;
   window.LegaryaLiveVoice?.invalidate?.();
   window.LegaryaVoice?.stopAll?.();
   emit("legarya:android-sensitive-stop", { reason, generation: lifecycleGeneration });
   try { await Native.releaseAudioFocus(); } catch {}
 }
+
+Native.addListener("audioFocusChange", event => {
+  if (!Number.isSafeInteger(event.generation) || event.change >= 0) return;
+  focusLostThrough = Math.max(focusLostThrough, event.generation);
+  if (event.generation === focusGeneration) void endSensitivePresentation("audio-focus-loss");
+});
 
 function closeTopSurface() {
   const dialog = [...document.querySelectorAll("dialog[open]")].at(-1);
@@ -151,8 +160,17 @@ window.LegaryaPlatform = Object.freeze({
   googleSignIn: options => Native.googleSignIn(options),
   armMicrophone: owner => Native.armMicrophone({ owner }),
   openMicrophoneSettings: () => Native.openAppSettings(),
-  requestAudioFocus: owner => Native.requestAudioFocus({ owner }),
-  releaseAudioFocus: () => Native.releaseAudioFocus(),
+  requestAudioFocus: async owner => {
+    const lifecycle = lifecycleGeneration;
+    const result = await Native.requestAudioFocus({ owner });
+    if (lifecycle !== lifecycleGeneration || !foreground || result.generation <= focusLostThrough) {
+      if (result.granted) await Native.releaseAudioFocus();
+      return { granted: false };
+    }
+    if (result.granted) focusGeneration = result.generation;
+    return result;
+  },
+  releaseAudioFocus: () => { focusGeneration = null; return Native.releaseAudioFocus(); },
   pickPhoto: () => Native.pickPhoto(),
   pickDocument: () => Native.pickDocument(),
   clearSessionData: () => Native.clearSessionData(),

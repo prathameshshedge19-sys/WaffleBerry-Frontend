@@ -101,16 +101,21 @@
   initialize();
   window.LegaryaLiveChat = Object.freeze({
     context() { return { legacyId, conversationId: activeId, mode: "legacy", name: subjectName,
-      ready: liveReady, busy: sending, live: liveActive, version: navigationVersion }; },
+      ready: liveReady, busy: sending, live: liveActive, version: navigationVersion, accountEpoch: window.LegaryaAuthApi?.getSessionEpoch?.() }; },
     setLive(value) { liveActive = value; window.LegaryaVoice?.setChatBusy(value || sending); updateSend(); },
     accept(snapshot, event) {
+      if (snapshot.accountEpoch !== window.LegaryaAuthApi?.getSessionEpoch?.()) return false;
       if (snapshot.version !== navigationVersion || event.legacy_id !== legacyId || event.mode !== "legacy"
           || (activeId && activeId !== event.conversation_id)) return false;
       activeId = event.conversation_id; localStorage.setItem(storageKey(), String(activeId)); return true;
     },
-    async refresh(snapshot, id) {
+    async refresh(snapshot, id, { guard = () => true, signal } = {}) {
+      if (!guard()) return;
+      if (snapshot.accountEpoch !== window.LegaryaAuthApi?.getSessionEpoch?.()) return;
       if (snapshot.version !== navigationVersion) return;
-      const history = await apiRequest(`/legacy-conversations/${id}/messages?legacy_id=${legacyId}`, { authenticated: true });
+      const history = await apiRequest(`/legacy-conversations/${id}/messages?legacy_id=${legacyId}`, { authenticated: true, signal });
+      if (!guard()) return;
+      if (snapshot.accountEpoch !== window.LegaryaAuthApi?.getSessionEpoch?.()) return;
       if (snapshot.version !== navigationVersion) return;
       activeId = id; localStorage.setItem(storageKey(), String(id)); messages.replaceChildren();
       history.forEach(message => addMessage(message.role, message.content, false, message.web_sources || [], message.id));

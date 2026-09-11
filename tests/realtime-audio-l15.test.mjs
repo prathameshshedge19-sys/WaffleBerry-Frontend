@@ -111,7 +111,7 @@ function clientHarness() {
 async function started(h) {
   const pending = h.client.start({ legacy_id: 1, mode: "rya" });
   await new Promise(setImmediate);
-  const socket = h.sockets.at(-1); socket.open(); socket.event({ type: "ready", generation: 1 });
+  const socket = h.sockets.at(-1); socket.open(); socket.event({ type: "ready", session_id: "session", generation: 1 });
   await pending;
   return socket;
 }
@@ -120,7 +120,7 @@ test("ticket stays in first socket message; finals deduplicate and bind once", a
   const socket = await started(h);
   assert.ok(!socket.url.includes("ticket"));
   assert.deepEqual(socket.sent, [{ type: "authenticate", ticket: "secret-ticket" }]);
-  const final = { type: "transcript_final", message_id: 8, conversation_id: 4, legacy_id: 1, content: "Jasmine" };
+  const final = { type: "transcript_final", message_id: 8, conversation_id: 4, legacy_id: 1, mode: "rya", content: "Jasmine" };
   socket.event({ type: "transcript_provisional", item_id: "A", delta: "Jas" });
   assert.equal(h.client.receipts.size, 0);
   socket.event(final); socket.event({ ...final, state: "interrupted", replayed: true });
@@ -151,7 +151,7 @@ test("reconnect reconciles without reacquiring microphone or replaying frames", 
   socket.close();
   h.client.acquireMicrophone = () => assert.fail("reconnect cannot capture");
   const pending = h.client.reconnect(); await new Promise(setImmediate);
-  const replacement = h.sockets.at(-1); replacement.open(); replacement.event({ type: "ready" }); await pending;
+  const replacement = h.sockets.at(-1); replacement.open(); replacement.event({ type: "ready", session_id: "session", generation: 3 }); await pending;
   assert.equal(replacement.sent.length, 1);
   assert.ok(h.calls.at(-1).path.endsWith("/reconnect"));
   h.client.dispose();

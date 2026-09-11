@@ -24,7 +24,7 @@
       const held = unlock || await acquire("shared");
       if (started !== epoch) { held(); return; }
       unlock = held;
-      try { return await play(); } catch (error) { release(); throw error; }
+      try { return await play(); } catch (error) { if (started === epoch) release(); throw error; }
     };
     audio.pause = () => { pause(); release(); };
     audio.addEventListener("ended", release);
