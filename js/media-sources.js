@@ -126,7 +126,7 @@
     header.append(titleWrap, closeButton);
     const status = el("p", null, "media-status"); status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite");
     const body = el("div", null, "media-body"); dialog.append(header, status, body); document.body.append(dialog);
-    let opener = entry, blobUrl = null, preview = null, previewSource = null, resume = null, previewRequest = 0;
+    let opener = entry, blobUrl = null, preview = null, previewSource = null, resume = null, previewRequest = 0, pickerActive = false;
     const edits = new Map(); const confirmations = new Set();
     const revoke = () => { previewRequest++; if (blobUrl) URL.revokeObjectURL(blobUrl); blobUrl = null; preview = null; previewSource = null; };
     const client = root.LegaryaMedia.createClient(auth);
@@ -192,7 +192,8 @@
       toolbar.append(el("p", "Photos, letters and documents can help tell a life story. Rya's suggestions become memories only when the owner preserves them."));
       if (state.legacy.access_role === "collaborator") toolbar.append(el("p", "You can see your own contributions. This Legacy's owner can read your uploads and reviews suggestions before preserving them.", "media-note"));
       const input = el("input"); input.type = "file"; input.accept = state.capabilities.formats.flatMap((f) => f.extensions).join(","); input.setAttribute("aria-label", resume ? "Select the original file to continue upload" : "Add a source file"); input.disabled = state.busy.has("upload");
-      input.addEventListener("change", () => { if (input.files[0]) { panel.upload(input.files[0], resume); resume = null; } });
+      input.addEventListener("click", () => { pickerActive = true; });
+      input.addEventListener("change", () => { pickerActive = false; if (input.files[0]) { panel.upload(input.files[0], resume); resume = null; } });
       toolbar.append(input, el("small", `PDF or UTF-8 text up to ${Math.floor(state.capabilities.formats.find((f) => f.kind === "document").max_bytes / 1048576)} MB · JPEG, PNG or WebP up to ${Math.floor(state.capabilities.formats.find((f) => f.kind === "image").max_bytes / 1048576)} MB`));
       toolbar.addEventListener("dragover", (event) => event.preventDefault()); toolbar.addEventListener("drop", (event) => { event.preventDefault(); if (event.dataTransfer.files.length !== 1) panel.notice("Add one file at a time so each source can finish safely.", true); else panel.upload(event.dataTransfer.files[0]); });
       if (state.upload && !state.busy.has("upload")) toolbar.append(button("Retry upload", () => panel.upload(state.upload.file)));
@@ -238,7 +239,8 @@
     const contextChanged = () => { const legacy = getLegacy(); entry.hidden = !legacy || !["owner", "collaborator"].includes(legacy.access_role); if (panel.state.open && (entry.hidden || legacy?.id !== panel.state.legacy?.id || legacy?.access_role !== panel.state.legacy?.access_role || legacy?.setup_status !== panel.state.legacy?.setup_status)) panel.close(); };
     root.addEventListener("legarya-legacy-change", contextChanged);
     root.addEventListener("pagehide", () => panel.close());
-    document.addEventListener("visibilitychange", () => { if (document.hidden) panel.close(); });
+    document.addEventListener("visibilitychange", () => { if (document.hidden && !pickerActive) panel.close(); });
+    root.addEventListener("focus", () => { setTimeout(() => { pickerActive = false; }, 0); });
     contextChanged();
     root.LegaryaMediaPanel = { open: (legacyId, sourceId, trigger) => { if (getLegacy()?.id !== legacyId) return; opener = trigger || entry; panel.open(sourceId); } };
     return panel;

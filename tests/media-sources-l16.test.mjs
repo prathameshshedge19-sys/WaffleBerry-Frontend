@@ -65,6 +65,7 @@ test("client uses exact Phase B/C routes, versions and raw transfer", async () =
 });
 test("provenance tombstones have no broken links and edits are labeled historical", () => { assert.match(read("js/memory-dashboard.js"), /Original source no longer available/); assert.match(read("js/memory-dashboard.js"), /source.can_open/); assert.match(read("js/memory-dashboard.js"), /Historical source/); });
 test("native modal, safe text, focus restoration and private preview cleanup", () => { const js = read("js/media-sources.js"); assert.match(js, /showModal\(\)/); assert.match(js, /opener\?\.focus/); assert.match(js, /revokeObjectURL/); assert.match(js, /textContent/); assert.doesNotMatch(js, /innerHTML|localStorage|indexedDB/); });
+test("system picker suspension preserves the active upload panel until its result returns", () => { const js = read("js/media-sources.js"); assert.match(js, /pickerActive = true/); assert.match(js, /document\.hidden && !pickerActive/); assert.match(js, /input\.addEventListener\("change", \(\) => \{ pickerActive = false/); });
 test("mobile layout exposes touch controls without hover dependence", () => { const css = read("css/media-sources.css"); assert.match(css, /max-width: 720px/); assert.match(css, /min-height: 44px/); assert.match(css, /focus-visible/); assert.match(css, /overflow-wrap: anywhere/); });
 
 class Element {

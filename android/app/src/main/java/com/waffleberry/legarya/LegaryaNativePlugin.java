@@ -274,7 +274,11 @@ public class LegaryaNativePlugin extends Plugin {
         cookies.setCookie(BACKEND_ORIGIN, "legarya_refresh=; Max-Age=0; Path=/api/v1/auth; Secure; HttpOnly; SameSite=None");
         cookies.flush();
         WebStorage.getInstance().deleteAllData();
-        if (getBridge() != null) getBridge().getWebView().clearCache(true);
+        if (getBridge() != null) {
+            getActivity().runOnUiThread(() -> {
+                if (getBridge() != null) getBridge().getWebView().clearCache(true);
+            });
+        }
         deletePrivateShareTree(new File(getContext().getCacheDir(), "legarya-shared"));
 
         CredentialManager manager = CredentialManager.create(getActivity());

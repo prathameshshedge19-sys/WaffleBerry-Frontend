@@ -3,4 +3,14 @@
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors><certificates src="system" /></trust-anchors>
     </base-config>
+    <!-- Android 7.0 / API 24 predates the system trust-store inclusion of
+         ISRG Root X1. Trust the public root only for the production API so
+         minSdk 24 retains normal chain and hostname verification. -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">89-167-14-211.sslip.io</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/isrg_root_x1" />
+        </trust-anchors>
+    </domain-config>
 </network-security-config>

@@ -69,6 +69,14 @@ test("runtime bundle exposes only public TLS routing and contains no obvious sec
   assert.match(runtime, /https:\/\/89-167-14-211\.sslip\.io\/api\/v1/);
   assert.match(runtime, /wss:\/\/89-167-14-211\.sslip\.io\/api\/v1\/realtime\/connect/);
   assert.match(runtime, /"clientPlatform":"android"/);
+  for (const shim of ["entries", "values", "fromEntries"]) assert.match(runtime, new RegExp(`define\\(Object, "${shim}"`));
+  for (const shim of ["flat", "flatMap"]) assert.match(runtime, new RegExp(`define\\(Array\\.prototype, "${shim}"`));
+  for (const shim of ["padStart", "replaceAll"]) assert.match(runtime, new RegExp(`define\\(String\\.prototype, "${shim}"`));
+  assert.match(runtime, /define\(Promise\.prototype, "finally"/);
+  assert.match(runtime, /"replaceChildren"/);
+  assert.match(runtime, /!window\.AbortController/);
+  assert.match(runtime, /throwIfAborted/);
+  assert.match(runtime, /crypto\.randomUUID/);
   const files = await allFiles(dist);
   for (const file of files) {
     const info = await stat(path.join(dist, file));
@@ -101,11 +109,24 @@ test("native host denies cleartext, backup, broad files, camera and unrestricted
   }
   const paths = await readFile(path.join(root, "android", "app", "src", "main", "res", "xml", "file_paths.xml"), "utf8");
   assert.doesNotMatch(paths, /external-path|path="\."/);
+  const networkSecurity = await readFile(path.join(root, "android", "app", "src", "main", "res", "xml", "network_security_config.xml"), "utf8");
+  assert.match(networkSecurity, /<base-config cleartextTrafficPermitted="false">[\s\S]*<certificates src="system"/);
+  assert.match(networkSecurity, /<domain includeSubdomains="false">89-167-14-211\.sslip\.io<\/domain>/);
+  assert.match(networkSecurity, /<certificates src="@raw\/isrg_root_x1"/);
+  assert.doesNotMatch(networkSecurity, /src="user"|debug-overrides|overridePins/);
+  const isrgRoot = await readFile(path.join(root, "android", "app", "src", "main", "res", "raw", "isrg_root_x1.pem"), "utf8");
+  assert.match(isrgRoot, /^-----BEGIN CERTIFICATE-----[\s\S]+-----END CERTIFICATE-----\s*$/);
+  assert.equal(createHash("sha256").update(isrgRoot).digest("hex"), "22b557a27055b33606b6559f37703928d3e4ad79f110b407d04986e1843543d1");
   const activity = await readFile(path.join(root, "android", "app", "src", "main", "java", "com", "waffleberry", "legarya", "MainActivity.java"), "utf8");
   assert.match(activity, /MIXED_CONTENT_NEVER_ALLOW/);
   assert.match(activity, /setAllowFileAccess\(false\)/);
-  assert.match(activity, /setAllowContentAccess\(false\)/);
+  assert.match(activity, /setAllowContentAccess\(true\)/);
+  assert.match(activity, /setAllowFileAccessFromFileURLs\(false\)/);
+  assert.match(activity, /setAllowUniversalAccessFromFileURLs\(false\)/);
   assert.match(activity, /setWebContentsDebuggingEnabled\(\(getApplicationInfo\(\)\.flags & ApplicationInfo\.FLAG_DEBUGGABLE\) != 0\)/);
+  assert.match(activity, /onPause\(\)[\s\S]*CookieManager\.getInstance\(\)\.flush\(\)[\s\S]*super\.onPause\(\)/);
+  const nativePlugin = await readFile(path.join(root, "android", "app", "src", "main", "java", "com", "waffleberry", "legarya", "LegaryaNativePlugin.java"), "utf8");
+  assert.match(nativePlugin, /runOnUiThread\([\s\S]*getWebView\(\)\.clearCache\(true\)/);
 });
 
 test("Capacitor configuration is bundled-only and pins the expected origin contract", async () => {

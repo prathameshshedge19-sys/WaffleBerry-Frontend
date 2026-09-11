@@ -113,7 +113,46 @@ async function writeRuntimeConfig() {
     frontendSha,
   };
   if (!/^https:\/\//.test(runtime.apiBaseUrl) || !/^https:\/\//.test(runtime.mediaBaseUrl) || !/^wss:\/\//.test(runtime.wssUrl)) throw new Error("Android runtime endpoints must use HTTPS/WSS.");
-  await writeFile(path.join(output, "js", "android-runtime-config.js"), `window.LEGARYA_RUNTIME_CONFIG = Object.freeze(${JSON.stringify(runtime)});\n`);
+  const api24Compatibility = `(function () {
+  "use strict";
+  var define = function (target, name, value) {
+    if (!(name in target)) Object.defineProperty(target, name, { configurable: true, writable: true, value: value });
+  };
+  define(Object, "entries", function (object) { return Object.keys(object).map(function (key) { return [key, object[key]]; }); });
+  define(Object, "values", function (object) { return Object.keys(object).map(function (key) { return object[key]; }); });
+  define(Object, "fromEntries", function (entries) { var result = {}; Array.from(entries).forEach(function (entry) { result[entry[0]] = entry[1]; }); return result; });
+  define(Promise.prototype, "finally", function (callback) {
+    var constructor = this.constructor;
+    return this.then(function (value) { return constructor.resolve(callback()).then(function () { return value; }); }, function (reason) { return constructor.resolve(callback()).then(function () { throw reason; }); });
+  });
+  define(Array.prototype, "flat", function (depth) {
+    var flatten = function (values, remaining) { return values.reduce(function (result, value) { return result.concat(Array.isArray(value) && remaining > 0 ? flatten(value, remaining - 1) : value); }, []); };
+    return flatten(this, depth === undefined ? 1 : Number(depth) || 0);
+  });
+  define(Array.prototype, "flatMap", function (callback, thisArg) { return this.map(callback, thisArg).flat(); });
+  define(String.prototype, "padStart", function (length, fill) { var value = String(this), padding = String(fill === undefined ? " " : fill); if (!padding || value.length >= length) return value; while (padding.length < length - value.length) padding += padding; return padding.slice(0, length - value.length) + value; });
+  define(String.prototype, "replaceAll", function (search, replacement) {
+    if (search instanceof RegExp) { if (!search.global) throw new TypeError("replaceAll requires a global regular expression"); return this.replace(search, replacement); }
+    return this.split(String(search)).join(String(replacement));
+  });
+  var toNode = function (value) { return value instanceof Node ? value : document.createTextNode(String(value)); };
+  var parentPrototypes = [window.Element && Element.prototype, window.Document && Document.prototype, window.DocumentFragment && DocumentFragment.prototype].filter(Boolean);
+  parentPrototypes.forEach(function (prototype) {
+    define(prototype, "append", function () { var self = this; Array.prototype.forEach.call(arguments, function (value) { self.appendChild(toNode(value)); }); });
+    define(prototype, "prepend", function () { var fragment = document.createDocumentFragment(); Array.prototype.forEach.call(arguments, function (value) { fragment.appendChild(toNode(value)); }); this.insertBefore(fragment, this.firstChild); });
+    define(prototype, "replaceChildren", function () { while (this.firstChild) this.removeChild(this.firstChild); this.append.apply(this, arguments); });
+  });
+  if (window.crypto && !crypto.randomUUID && crypto.getRandomValues) define(crypto, "randomUUID", function () { var bytes = crypto.getRandomValues(new Uint8Array(16)); bytes[6] = bytes[6] & 15 | 64; bytes[8] = bytes[8] & 63 | 128; return Array.from(bytes).map(function (byte, index) { return (index === 4 || index === 6 || index === 8 || index === 10 ? "-" : "") + byte.toString(16).padStart(2, "0"); }).join(""); });
+  if (!window.AbortController) {
+    window.AbortController = function AbortController() {
+      var listeners = [];
+      this.signal = { aborted: false, reason: undefined, addEventListener: function (name, listener) { if (name === "abort") listeners.push(listener); }, removeEventListener: function (name, listener) { if (name === "abort") listeners = listeners.filter(function (item) { return item !== listener; }); }, throwIfAborted: function () { if (this.aborted) throw this.reason || new DOMException("Aborted", "AbortError"); } };
+      this.abort = function (reason) { if (this.signal.aborted) return; this.signal.aborted = true; this.signal.reason = reason; listeners.slice().forEach(function (listener) { listener.call(this.signal, new Event("abort")); }, this); };
+    };
+  }
+}());
+`;
+  await writeFile(path.join(output, "js", "android-runtime-config.js"), `${api24Compatibility}window.LEGARYA_RUNTIME_CONFIG = Object.freeze(${JSON.stringify(runtime)});\n`);
 }
 
 async function writeFonts() {

@@ -27,7 +27,12 @@ public class MainActivity extends BridgeActivity {
         WebView webView = bridge.getWebView();
         WebSettings settings = webView.getSettings();
         settings.setAllowFileAccess(false);
-        settings.setAllowContentAccess(false);
+        // The WebView needs ContentResolver access to consume the one URI
+        // explicitly returned by Android's system picker. With no storage
+        // permissions, the OS grant remains scoped to that selected item.
+        settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setMediaPlaybackRequiresUserGesture(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) WebView.startSafeBrowsing(this, null);
@@ -50,6 +55,9 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onPause() {
         LegaryaNativePlugin.setAppForeground(false);
+        // Persist the rotating cross-site refresh cookie before Android may
+        // reclaim this process while it is backgrounded.
+        CookieManager.getInstance().flush();
         super.onPause();
     }
 
