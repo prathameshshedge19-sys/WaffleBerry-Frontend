@@ -10,6 +10,8 @@ public class TrustedRequestPolicyTest {
     @Test public void exactForegroundAudioGestureIsAllowed() {
         assertTrue(TrustedRequestPolicy.isAllowedMicrophoneRequest("https://localhost",
             new String[] { PermissionRequest.RESOURCE_AUDIO_CAPTURE }, true, true, "l15", NOW - 100, NOW));
+        assertTrue(TrustedRequestPolicy.isAllowedMicrophoneRequest("https://localhost",
+            new String[] { PermissionRequest.RESOURCE_AUDIO_CAPTURE }, true, true, "enrollment", NOW - 100, NOW));
     }
 
     @Test public void foreignOriginAndVideoAreDenied() {
@@ -36,5 +38,20 @@ public class TrustedRequestPolicyTest {
         assertFalse(TrustedRequestPolicy.isSafeExternalScheme("file"));
         assertFalse(TrustedRequestPolicy.isSafeExternalScheme("content"));
         assertFalse(TrustedRequestPolicy.isSafeExternalScheme("intent"));
+    }
+
+    @Test public void voicePickerRequiresExactChatScopeAndReviewedTypes() {
+        String[] exact = { "audio/wav,audio/mpeg,audio/mp4,audio/x-m4a,audio/webm,audio/ogg,video/mp4,video/webm" };
+        assertTrue(TrustedRequestPolicy.requestsVoiceMedia(exact));
+        assertTrue(TrustedRequestPolicy.isAllowedVoicePicker(
+            "https://localhost/chat.html?legacy=7", exact, false, true));
+        assertFalse(TrustedRequestPolicy.isAllowedVoicePicker(
+            "https://localhost/legacy-chat.html", exact, false, true));
+        assertFalse(TrustedRequestPolicy.isAllowedVoicePicker(
+            "https://localhost/chat.html", exact, false, false));
+        assertFalse(TrustedRequestPolicy.isAllowedVoicePicker(
+            "https://localhost/chat.html", new String[] { "audio/*" }, false, true));
+        assertFalse(TrustedRequestPolicy.isAllowedVoicePicker(
+            "https://localhost/chat.html", exact, true, true));
     }
 }

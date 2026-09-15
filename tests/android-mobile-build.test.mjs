@@ -116,7 +116,9 @@ test("native host denies cleartext, backup, broad files, camera and unrestricted
   assert.doesNotMatch(networkSecurity, /src="user"|debug-overrides|overridePins/);
   const isrgRoot = await readFile(path.join(root, "android", "app", "src", "main", "res", "raw", "isrg_root_x1.pem"), "utf8");
   assert.match(isrgRoot, /^-----BEGIN CERTIFICATE-----[\s\S]+-----END CERTIFICATE-----\s*$/);
-  assert.equal(createHash("sha256").update(isrgRoot).digest("hex"), "22b557a27055b33606b6559f37703928d3e4ad79f110b407d04986e1843543d1");
+  // PEM line endings are transport text; authenticate the accepted LF form on
+  // both Unix and Windows worktrees without weakening the pinned certificate.
+  assert.equal(createHash("sha256").update(isrgRoot.replace(/\r\n/g, "\n")).digest("hex"), "22b557a27055b33606b6559f37703928d3e4ad79f110b407d04986e1843543d1");
   const activity = await readFile(path.join(root, "android", "app", "src", "main", "java", "com", "waffleberry", "legarya", "MainActivity.java"), "utf8");
   assert.match(activity, /MIXED_CONTENT_NEVER_ALLOW/);
   assert.match(activity, /setAllowFileAccess\(false\)/);

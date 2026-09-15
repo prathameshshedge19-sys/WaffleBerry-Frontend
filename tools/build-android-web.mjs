@@ -19,7 +19,7 @@ const htmlFiles = [
 const cssFiles = [
   "auth.css", "back-navigation.css", "chat-header.css", "chat.css", "gateway.css", "i18n.css",
   "invite.css", "legacy-chat.css", "legacy-deletion.css", "live-voice.css", "media-sources.css",
-  "personality-dashboard.css", "plan-usage.css", "product-guide.css", "rya-core.css", "stories.css",
+  "personality-dashboard.css", "plan-usage.css", "preserved-voice.css", "product-guide.css", "rya-core.css", "stories.css",
   "style.css", "timeline.css", "visual-presence.css",
 ];
 const jsFiles = [
@@ -29,7 +29,7 @@ const jsFiles = [
   "legacy-chat.js", "legacy-chat-portrait.mjs", "legacy-deletion.js", "legarya-soundscape.js",
   "live-voice.mjs", "live-voice-policy.mjs", "markdown.js", "media-client.js", "media-sources.js",
   "memory-dashboard.js", "memory-earth.js", "microphone-ownership.js", "personality-dashboard.js",
-  "plan-copy.mjs", "plan-usage.mjs", "playback-envelope.mjs", "product-guide.js", "progression.js",
+  "plan-copy.mjs", "plan-usage.mjs", "playback-envelope.mjs", "preserved-voice-settings.mjs", "product-guide.js", "progression.js",
   "progress-presentation.js", "realtime-client.mjs", "realtime-pcm.mjs", "realtime-playback.mjs",
   "realtime-worklet.js", "request-deadline.js", "reset-password.js", "rya.bundle.js", "rya.js",
   "rya-intro.js", "rya-renderer.mjs", "rya-speech-state.js", "rya-touch-reactions.js",

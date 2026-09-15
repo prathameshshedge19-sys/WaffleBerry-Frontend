@@ -75,6 +75,8 @@ public class LegaryaNativePlugin extends Plugin {
         }
     }
 
+    static boolean isAppForeground() { return appForeground; }
+
     static synchronized boolean consumeAudioGrant(Uri origin, String[] resources, Context context) {
         boolean allowed = TrustedRequestPolicy.isAllowedMicrophoneRequest(
             origin == null ? "" : origin.toString().replaceAll("/$", ""),

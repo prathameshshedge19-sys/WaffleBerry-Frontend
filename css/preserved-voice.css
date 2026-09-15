@@ -1,0 +1,22 @@
+.preserved-voice-dialog{border:1px solid rgba(222,190,125,.28);border-radius:22px;background:#11100e;color:#f8f1e5;width:min(92vw,560px);padding:0;box-shadow:0 24px 90px #000b}
+.preserved-voice-dialog::backdrop{background:rgba(0,0,0,.72);backdrop-filter:blur(3px)}
+.preserved-voice-panel{display:grid;gap:18px;padding:24px}
+.preserved-voice-panel header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.preserved-voice-panel header small,.preserved-voice-label{color:#c9aa70;text-transform:uppercase;letter-spacing:.13em;font-size:.68rem}
+.preserved-voice-panel h2,.preserved-voice-panel p{margin:0}
+.preserved-voice-panel h2{font:600 2rem/1.1 "Cormorant Garamond",serif}
+.preserved-voice-panel button,.preserved-voice-upload{border:1px solid rgba(222,190,125,.3);border-radius:12px;background:#1d1a15;color:inherit;padding:10px 14px;cursor:pointer;font:inherit;text-align:center}
+.preserved-voice-panel button:disabled,.preserved-voice-upload.is-disabled{opacity:.45;cursor:not-allowed}
+.preserved-voice-close{padding:6px 10px!important;background:transparent!important}
+.preserved-voice-state{display:grid;gap:6px;padding:15px;border-radius:14px;background:rgba(255,255,255,.045)}
+.preserved-voice-state strong{font-size:1.05rem}.preserved-voice-state span{color:#c9c1b4;font-size:.88rem}
+.preserved-voice-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.preserved-voice-upload{display:grid;place-items:center}.preserved-voice-upload input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.preserved-voice-file{color:#d8cfbf;font-size:.84rem;overflow-wrap:anywhere}
+.preserved-voice-consent{display:grid;gap:12px;padding:15px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#0c0b0a}
+.preserved-voice-consent label{display:flex;gap:10px;align-items:flex-start;font-size:.9rem;line-height:1.45}
+.preserved-voice-consent input{margin-top:.25rem;accent-color:#c9aa70}.preserved-voice-consent select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#171512;color:inherit}
+.preserved-voice-primary{background:#d2af6e!important;color:#15120d!important;font-weight:600!important}.preserved-voice-danger{color:#ffb7ae!important}
+.preserved-voice-notice{min-height:1.4em;color:#cfc4b3;font-size:.88rem}.preserved-voice-notice.error{color:#ffb7ae}
+.preserved-voice-meter{font-variant-numeric:tabular-nums;color:#d2af6e}
+@media(max-width:560px){.preserved-voice-dialog{width:100vw;max-width:none;margin:auto 0 0;border-radius:22px 22px 0 0}.preserved-voice-panel{padding:20px}.preserved-voice-actions{grid-template-columns:1fr}}

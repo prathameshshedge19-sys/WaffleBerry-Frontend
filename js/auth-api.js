@@ -262,6 +262,19 @@
     return fetchWithToken(path, options, true, mediaBase);
   };
 
+  const authenticatedVoiceFetch = (path, options = {}) => {
+    const uuid = "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}";
+    const route = new RegExp(`^/legacies/[1-9][0-9]*/voice-profile/enrollments/${uuid}/content$`);
+    if (!route.test(path) || options.method !== "PUT" || !options.body) {
+      throw new ApiError("Invalid preserved-voice upload request.", { kind: "validation" });
+    }
+    const mediaBase = config.mediaBaseUrl || API_BASE_URL;
+    if (mediaBase !== API_BASE_URL && mediaBase !== "https://89-167-14-211.sslip.io/api/v1") {
+      throw new ApiError("Preserved-voice transfers are not configured.", { kind: "configuration" });
+    }
+    return fetchWithToken(path, { ...options, redirect: "error", cache: "no-store" }, true, mediaBase);
+  };
+
   const authenticatedVisualFetch = (path, options = {}) => {
     const uuid = "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}";
     const route = new RegExp(`^/legacies/[1-9][0-9]*/visual-companion/(active|versions/${uuid})/assets/${uuid}/content$`);
@@ -321,6 +334,7 @@
     apiRequest,
     authenticatedFetch,
     authenticatedMediaFetch,
+    authenticatedVoiceFetch,
     authenticatedVisualFetch,
     streamRequest,
     authenticateUser,

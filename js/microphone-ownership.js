@@ -11,9 +11,10 @@
   const streams = new Set();
   const busy = () => new DOMException("Another voice feature is using the microphone.", "NotReadableError");
 
-  async function capture(constraints, requireLock = true, { signal } = {}) {
+  async function capture(constraints, requireLock = true, { signal, owner = "l15" } = {}) {
     if (!constraints?.audio) return original(constraints);
-    const owner = requireLock ? "l15" : "l12";
+    owner = requireLock ? owner : "l12";
+    if (!["l12", "l15", "enrollment"].includes(owner)) throw new TypeError("Unknown microphone owner.");
     if (!navigator.locks && requireLock) throw new DOMException("Live voice requires microphone ownership support.", "NotSupportedError");
     if (reserved) throw busy();
     reserved = true;
