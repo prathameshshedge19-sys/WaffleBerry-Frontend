@@ -9,15 +9,18 @@ const native=read('android/app/src/main/java/com/waffleberry/legarya/TrustedRequ
 const activity=read('android/app/src/main/java/com/waffleberry/legarya/MainActivity.java');
 const manifest=read('android/app/src/main/AndroidManifest.xml');
 
-test('owner-only Preserved Voice surface has explicit consent and no clone preview',()=>{
+test('owner-only Preserved Voice surface has explicit consent and bounded clone preview',()=>{
   assert.match(html,/id="openPreservedVoice"[^>]+hidden/);
   assert.match(html,/preserved-voice-settings\.mjs/);
   assert.match(ui,/legacy\.access_role!==['"]owner['"]/);
   assert.match(ui,/value\.capabilities\?\.can_enroll/);
   assert.match(ui,/data-consented type="checkbox"/);
   assert.match(ui,/presented_copy_digest:profile\.consent\.copy_digest/);
-  assert.match(ui,/No cloned preview is available in this phase/);
-  assert.doesNotMatch(ui,/synthesize|IndicF5Provider|Hear sample/);
+  assert.match(ui,/Hear cloned preview/);
+  assert.match(ui,/voice-profile\/preview/);
+  assert.match(ui,/attempt<40/);
+  assert.match(ui,/URL\.revokeObjectURL/);
+  assert.doesNotMatch(ui,/IndicF5Provider|authoritative_text|voice_profile_id/);
 });
 
 test('record and upload use bounded reviewed media and shared microphone ownership',()=>{
@@ -47,7 +50,8 @@ test('polling and mutation are fenced by account, Legacy, generation and lifecyc
 test('voice upload fetch cannot accept arbitrary paths or expose object keys',()=>{
   assert.match(auth,/authenticatedVoiceFetch/);
   assert.match(auth,/voice-profile\/enrollments\/\$\{uuid\}\/content/);
-  assert.match(auth,/options\.method !== "PUT"/);
+  assert.match(auth,/validUpload/);
+  assert.match(auth,/validGenerated/);
   assert.doesNotMatch(ui,/object_key|storage_bucket|encryption_key/);
 });
 

@@ -30,6 +30,7 @@
   let voiceDraft = false;
   let selectedVoice = "marin";
   let playing = null;
+  let transientPlaybackUrl = null;
   let contextVersion = 0;
   let playbackVersion = 0;
   let transcriptionController = null;
@@ -76,6 +77,11 @@
   const stopSpeech = () => {
     ++playbackVersion;
     playbackAudio.pause();
+    if (transientPlaybackUrl) {
+      URL.revokeObjectURL(transientPlaybackUrl);
+      transientPlaybackUrl = null;
+      playbackAudio.removeAttribute("src");
+    }
     if (!playing) return;
     playing.audio.pause();
     playing.audio.currentTime = 0;
@@ -235,6 +241,49 @@
     return url;
   };
 
+  const legacyScopeCurrent = (scope) => {
+    const current = window.LegaryaLiveChat?.context?.();
+    return current?.mode === "legacy" && current.legacyId === scope.legacyId
+      && current.conversationId === scope.conversationId && current.version === scope.version
+      && current.accountEpoch === scope.accountEpoch;
+  };
+
+  const fetchLegacyAudio = async (messageId) => {
+    const scope = window.LegaryaLiveChat?.context?.();
+    if (!scope?.legacyId || !scope?.conversationId || scope.mode !== "legacy") throw new Error("Legacy playback context is unavailable.");
+    const route = `/legacy-conversations/${scope.conversationId}/messages/${messageId}/speech`;
+    let response = await authenticatedFetch(route, { method: "POST" });
+    let delivery = response.headers.get("X-Voice-Delivery") || "preserved";
+    let blob;
+    if ((response.headers.get("content-type") || "").includes("application/json")) {
+      let job = await response.json();
+      for (let attempt = 0; legacyScopeCurrent(scope) && ["queued", "running"].includes(job.state) && attempt < 40; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, Math.min(2000, Math.max(500, job.poll_after_ms || 1500))));
+        if (!legacyScopeCurrent(scope)) throw new Error("Legacy playback context changed.");
+        job = await apiRequest(`/voice-synthesis/jobs/${job.job_id}`, { authenticated: true });
+      }
+      if (!legacyScopeCurrent(scope)) throw new Error("Legacy playback context changed.");
+      if (job.state === "ready") {
+        response = await window.LegaryaAuthApi.authenticatedVoiceFetch(`/voice-synthesis/jobs/${job.job_id}/content`, { method: "GET" });
+        delivery = "preserved";
+      } else if (job.fallback_available) {
+        response = await authenticatedFetch(`${route}?standard_fallback=true`, { method: "POST" });
+        delivery = "standard_fallback";
+      } else throw new Error("Voice playback unavailable.");
+    }
+    blob = await response.blob();
+    if (!legacyScopeCurrent(scope)) throw new Error("Legacy playback context changed.");
+    const url = URL.createObjectURL(blob);
+    return { url, delivery, ephemeral: true };
+  };
+
+  const disclose = (button, delivery) => {
+    if (!button || !delivery) return;
+    let label = button.parentElement?.querySelector(".message-voice-disclosure");
+    if (!label) { label = document.createElement("small"); label.className = "message-voice-disclosure"; button.after(label); }
+    label.textContent = delivery === "preserved" ? "Preserved AI voice" : "Standard AI voice";
+  };
+
   const play = async (button, path, body, key, expectedContext = contextVersion) => {
     if (playing?.button === button) return stopSpeech();
     stopSpeech();
@@ -244,10 +293,17 @@
       button?.setAttribute("aria-label", "Loading audio");
       if (button) button.title = "Loading audio";
       setIcon(button, "loading");
-      const url = await fetchAudio(path, body, key);
-      if (expectedContext !== contextVersion || playback !== playbackVersion) return;
+      const result = path === "__legacy_preserved__"
+        ? await fetchLegacyAudio(body.message_id)
+        : { url: await fetchAudio(path, body, key), delivery: null };
+      if (expectedContext !== contextVersion || playback !== playbackVersion) {
+        if (result.ephemeral) URL.revokeObjectURL(result.url);
+        return;
+      }
       const audio = playbackAudio;
-      audio.src = url;
+      audio.src = result.url;
+      transientPlaybackUrl = result.ephemeral ? result.url : null;
+      disclose(button, result.delivery);
       playing = { audio, button };
       button?.classList.remove("is-loading");
       button?.classList.add("is-playing");
@@ -280,9 +336,15 @@
     button.innerHTML = "<span aria-hidden=\"true\">♪</span>";
     button.innerHTML = '<span class="voice-icon" data-voice-icon aria-hidden="true"></span>';
     setIcon(button, "speaker");
-    button.addEventListener("click", () => void play(button, "/voice/synthesize", { message_id: Number(messageId), voice: selectedVoice }, `${messageId}:${selectedVoice}`));
+    const playback = () => {
+      const scope = window.LegaryaLiveChat?.context?.();
+      return scope?.mode === "legacy"
+        ? play(button, "__legacy_preserved__", { message_id: Number(messageId) }, `legacy:${scope.conversationId}:${messageId}`)
+        : play(button, "/voice/synthesize", { message_id: Number(messageId), voice: selectedVoice }, `${messageId}:${selectedVoice}`);
+    };
+    button.addEventListener("click", () => void playback());
     row.querySelector(".message-label")?.append(button);
-    if (autoPlay) void play(button, "/voice/synthesize", { message_id: Number(messageId), voice: selectedVoice }, `${messageId}:${selectedVoice}`);
+    if (autoPlay) void playback();
   };
 
   const selectVoice = async (voice) => {
