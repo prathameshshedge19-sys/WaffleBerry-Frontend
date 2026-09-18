@@ -1,4 +1,4 @@
-import { RealtimeClient } from "./realtime-client.mjs?v=l19c1";
+import { RealtimeClient } from "./realtime-client.mjs?v=l21e1";
 import { liveVoiceAvailability, liveVoiceError, liveWebsocketUrl } from "./live-voice-policy.mjs?v=plans1";
 import { createRyaRenderer } from "./rya-renderer.mjs";
 import "./legarya-soundscape.js?v=3.6";
@@ -138,6 +138,12 @@ if (adapter && entry) {
       // Playback emits speaking only on the running AudioContext clock.
       if (event.type !== "listening" || client.stream) show(event.type);
       if (event.type === "listening" && event.source === "microphone") { try { visualPresence?.setCallState("capturing"); } catch { releasePortrait(); } }
+    } else if (event.type === "voice_delivery" && context.mode === "legacy") {
+      find("#liveCallDisclosure").textContent = event.delivery == null
+        ? "AI Legacy · AI voice, grounded in preserved memories."
+        : event.delivery === "preserved"
+        ? "AI Legacy · Preserved AI voice, grounded in preserved memories."
+        : "AI Legacy · Standard AI voice, grounded in preserved memories.";
     } else if (event.type === "assistant_completed") {
       void refresh().catch(() => {});
     } else if (event.type === "utterance_failed") {
@@ -186,6 +192,7 @@ if (adapter && entry) {
   async function finish(message = "Your saved messages are back in this chat.", error = false) {
     if (finishing || finished || !active) return;
     finishing = true; ++serial;
+    if (context?.mode === "legacy") find("#liveCallDisclosure").textContent = "AI Legacy · AI voice, grounded in preserved memories.";
     refreshQueue?.controller.abort();
     const token = serial;
     resume.hidden = true;
@@ -279,6 +286,7 @@ if (adapter && entry) {
     client.invalidate(); releasePresence(); partials.clear(); preview.textContent = "";
     context = null; boundId = null; active = finishing = reconnecting = false; finished = true;
     find(".live-call-presence").replaceChildren(); find("#liveCallTitle").textContent = "Live Voice";
+    find("#liveCallDisclosure").textContent = "AI voice";
     dialog.close(); adapter.setLive(false); updateEntry();
   }
   const retireAccount = () => { enabled = false; retire(); };

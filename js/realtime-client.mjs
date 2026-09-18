@@ -179,11 +179,24 @@ export class RealtimeClient {
             if (event.session_id !== this.sessionId || event.generation !== this.connectionGeneration) return;
             if (!validId(event.turn_id) || typeof event.active_generation_id !== "string" || !event.active_generation_id
                 || event.active_generation_id.length > 128 || (event.response_id != null && (typeof event.response_id !== "string" || event.response_id.length > 128))) throw new Error("Invalid live response.");
+            if (["voice_profile_id", "profile_id", "voice_profile_version_id", "profile_version_id", "reference_asset_id", "reference_id", "reference_transcript", "model_name", "model_path", "storage_key", "object_key"].some(key => key in event)) throw new Error("Private live voice metadata is forbidden.");
             if (["assistant_thinking", "assistant_started"].includes(event.type)) this.playback?.begin(event);
+            if (event.type === "assistant_started" && event.voice_delivery != null) {
+              if (!["preserved", "standard"].includes(event.voice_delivery)
+                  || !/^[a-f0-9]{64}$/.test(event.authoritative_text_digest || "")) throw new Error("Invalid live voice delivery.");
+              if (this.playback?.same(event)) {
+                if (this.voiceDelivery?.claim === event.active_generation_id) {
+                  if (this.voiceDelivery.delivery !== event.voice_delivery || this.voiceDelivery.digest !== event.authoritative_text_digest) throw new Error("Live voice delivery changed.");
+                } else {
+                  this.voiceDelivery = { claim: event.active_generation_id, delivery: event.voice_delivery, digest: event.authoritative_text_digest };
+                  this.onEvent({ type: "voice_delivery", delivery: event.voice_delivery });
+                }
+              }
+            }
             if (event.type === "assistant_audio") { this.playback?.frame(event); return; }
             if (event.type === "assistant_audio_end") this.playback?.finish(event);
             if (["assistant_completed", "assistant_interrupted"].includes(event.type)
-                && this.playback?.binding?.active_generation_id === event.active_generation_id) this.playback.clear();
+                && this.playback?.binding?.active_generation_id === event.active_generation_id) { this.playback.clear(); this.clearVoiceDelivery(); }
             if (["assistant_completed", "assistant_interrupted"].includes(event.type)) {
               const key = `${event.type}:${event.active_generation_id}`;
               if (this.completions?.has(key)) return;
@@ -266,6 +279,7 @@ export class RealtimeClient {
     finally { if (this.current(epoch)) this.resuming = false; }
   }
   cleanupCapture() {
+    this.clearVoiceDelivery();
     for (const remove of this.trackListeners || []) remove();
     this.trackListeners = [];
     this.captureController?.abort();
@@ -293,7 +307,13 @@ export class RealtimeClient {
   }
   stopSpeaking() {
     const binding = this.playback?.clear(); // local stop always precedes network I/O
+    this.clearVoiceDelivery();
     if (binding) this.sendPlayback({ type: "interrupt", ...binding });
+  }
+  clearVoiceDelivery() {
+    if (!this.voiceDelivery) return;
+    this.voiceDelivery = null;
+    this.onEvent({ type: "voice_delivery", delivery: null });
   }
   fail(message) { this.invalidate(); this.onEvent({ type: "error", message }); }
   invalidate(reconcile = false) {

@@ -52,7 +52,7 @@ function harness() {
     for(const [id,t] of [...timers])if(t.due<=clock){if(t.interval)t.due=clock+t.interval;else timers.delete(id);t.fn();}await tick();};
   const emit = name => {for(const fn of listeners.get(name)||[])fn();};
   const connect = async (pending,generation=1) => {await tick();const socket=sockets.at(-1);assert(socket);socket.open();socket.event({type:'ready',session_id:'session',generation});await pending;return socket;};
-  const start = () => client.start({legacy_id:1,mode:'rya'});
+  const start = (scope={legacy_id:1,mode:'rya'}) => client.start(scope);
   const end = async () => {const pending=client.stop();sockets.at(-1)?.event({type:'ended'});await pending;await tick();};
   const baseline = () => {assert.equal(sockets.filter(s=>s.readyState!==3).length,0,'open sockets');assert.equal(contexts.filter(c=>c.state!=='closed').length,0,'contexts');
     assert.equal(tracks.filter(t=>t.readyState!=='ended').length,0,'microphones');assert.equal(nodes.filter(n=>n.live).length,0,'nodes');assert.equal(locks,0,'output locks');
@@ -117,6 +117,100 @@ test('C2A: duplicate ready/finals/completion and provisional-after-final are bou
   assert.equal(h.timers.size,1);assert.equal(h.events.filter(e=>e.type==='transcript_final').length,1);
   assert.equal(h.events.filter(e=>e.type==='assistant_completed').length,1);assert.equal(h.events.filter(e=>e.type==='transcript_provisional').length,0);
   await h.end();h.baseline();h.client.dispose();
+});
+
+test('C2A: preserved delivery is disclosed without accepting private voice identifiers',async()=>{
+  const h=harness(),s=await h.connect(h.start()),digest='a'.repeat(64);
+  s.event({type:'assistant_started',...binding,voice_delivery:'preserved',authoritative_text_digest:digest});
+  assert.deepEqual(h.events.find(e=>e.type==='voice_delivery'),{type:'voice_delivery',delivery:'preserved'});
+  assert.equal(h.client.playback.binding.active_generation_id,binding.active_generation_id);
+  h.client.stopSpeaking();
+  await h.end();h.baseline();h.client.dispose();
+
+  const rejected=harness(),socket=await rejected.connect(rejected.start());
+  socket.event({type:'assistant_started',...binding,voice_delivery:'preserved',authoritative_text_digest:digest,voice_profile_id:'private'});
+  await tick();assert.equal(rejected.client.state,'idle');rejected.baseline();rejected.client.dispose();
+});
+
+test('L21.5: retired synthesis completion cannot change disclosure or restart PCM',async()=>{
+  const h=harness(),s=await h.connect(h.start()),digest='a'.repeat(64);
+  s.event({type:'assistant_thinking',...binding,response_id:null});
+  h.client.stopSpeaking();
+  const count=h.events.filter(e=>e.type==='voice_delivery').length;
+  s.event({type:'assistant_started',...binding,voice_delivery:'preserved',authoritative_text_digest:digest});
+  s.event({type:'assistant_audio',...binding,sequence:0,pcm:Buffer.alloc(2400).toString('base64')});
+  assert.equal(h.events.filter(e=>e.type==='voice_delivery').length,count);
+  assert.equal(h.client.playback.binding,null);
+  assert.equal(h.client.playback.nodes.size,0);
+  await h.end();h.baseline();h.client.dispose();
+});
+
+test('L21.5: delivery duplicates are idempotent, stale completion cannot clear a successor, and conflicts fail closed',async()=>{
+  const h=harness(),s=await h.connect(h.start({legacy_id:1,mode:'legacy'}));
+  const first={type:'assistant_started',...binding,voice_delivery:'preserved',authoritative_text_digest:'d'.repeat(64)};
+  s.event(first);s.event(first);
+  assert.equal(h.events.filter(e=>e.type==='voice_delivery').length,1);
+  s.event({type:'assistant_completed',...binding});
+  assert.equal(h.client.voiceDelivery,null);
+  const next={...first,active_generation_id:'next-claim',response_id:'next-response'};
+  s.event(next);s.event({type:'assistant_completed',...binding});
+  assert.equal(h.client.voiceDelivery.claim,'next-claim');
+  s.event({...next,voice_delivery:'standard'});
+  assert.equal(h.client.state,'idle');assert.equal(h.client.voiceDelivery,null);
+  h.baseline();h.client.dispose();
+});
+
+test('L21.5: 100 Legacy synthesis/playback retirements fence 600 delayed callbacks',async()=>{
+  const h=harness(),digest='b'.repeat(64);
+  for(let i=0;i<100;i++){
+    const old=await h.connect(h.start({legacy_id:1,mode:'legacy'}));
+    const live={...binding,active_generation_id:`live-${i}`,response_id:`answer-${i}`};
+    old.event({type:'assistant_thinking',...live,response_id:null});
+    const started={type:'assistant_started',...live,voice_delivery:'preserved',authoritative_text_digest:digest};
+    const audio={type:'assistant_audio',...live,sequence:0,pcm:Buffer.alloc(2400).toString('base64')};
+    if(i%2){old.event(started);old.event(audio);assert.equal(h.client.voiceDelivery.delivery,'preserved');}
+    const callback=old.onmessage,worklet=h.client.worklet.port.onmessage;
+    const latePlayback=[...h.client.playback.nodes][0]?.onended||(()=>{});
+    const timer=[...h.timers.values()][0].fn;
+    if(i%3===0)h.changeAccount();else h.client.invalidate();
+    assert.equal(h.client.voiceDelivery??null,null);
+    const next=await h.connect(h.start({legacy_id:2,mode:'legacy'}));
+    const count=h.events.length;
+    callback({data:JSON.stringify(started)});callback({data:JSON.stringify(audio)});
+    callback({data:JSON.stringify({type:'assistant_completed',...live})});
+    worklet({data:{type:'speech_started'}});latePlayback();timer();
+    assert.equal(h.events.length,count);assert.equal(h.client.socket,next);
+    assert.equal(h.client.playback.binding,null);assert.equal(h.client.voiceDelivery??null,null);
+    await h.end();h.baseline();
+  }
+  h.client.dispose();
+});
+
+test('L21.5: 50 reconnects retire preserved speech and require a new explicit microphone generation',async()=>{
+  const h=harness(),digest='c'.repeat(64);
+  for(let i=0;i<50;i++){
+    const old=await h.connect(h.start({legacy_id:1,mode:'legacy'}));
+    const event={type:'assistant_started',...binding,voice_delivery:'preserved',authoritative_text_digest:digest};
+    old.event(event);const callback=old.onmessage;old.close();
+    assert.equal(h.client.voiceDelivery,null);
+    const replacement=await h.connect(h.client.reconnect(),3),count=h.events.length;
+    callback({data:JSON.stringify(event)});
+    replacement.event(event); // old connection generation on the new socket
+    assert.equal(h.events.length,count);assert.equal(h.client.stream,null);
+    await h.client.resumeCapture();
+    replacement.event({...event,generation:3,active_generation_id:`fresh-${i}`,voice_delivery:'standard'});
+    assert.equal(h.client.voiceDelivery.delivery,'standard');
+    h.client.stopSpeaking();assert.equal(h.client.voiceDelivery,null);
+    await h.end();h.baseline();
+  }
+  h.client.dispose();
+});
+
+for(const field of ['profile_id','profile_version_id','reference_id','reference_transcript','model_path','object_key']) test(`L21.5: ${field} is rejected before disclosure`,async()=>{
+  const h=harness(),s=await h.connect(h.start({legacy_id:1,mode:'legacy'}));
+  s.event({type:'assistant_started',...binding,voice_delivery:'preserved',authoritative_text_digest:'a'.repeat(64),[field]:'private'});
+  assert.equal(h.client.state,'idle');assert.equal(h.events.filter(e=>e.type==='voice_delivery').length,0);
+  h.baseline();h.client.dispose();
 });
 
 for(const value of [null,[],42,{}, {type:{}},{type:'ready',generation:-1,session_id:'session'}, {...final,content:{}},
