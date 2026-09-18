@@ -9,3 +9,13 @@ node_modules/
 coverage/
 *.log
 *.tmp
+# CLI upload exclusions. Git deployments use the explicit dist/web output.
+android/
+mobile/
+tools/*
+!tools/build-static-web.mjs
+!tools/static-web-assets.json
+dist/
+capacitor.config.json
+package.json
+package-lock.json

@@ -264,8 +264,11 @@
 
   const authenticatedVoiceFetch = (path, options = {}) => {
     const uuid = "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}";
-    const route = new RegExp(`^/legacies/[1-9][0-9]*/voice-profile/enrollments/${uuid}/content$`);
-    if (!route.test(path) || options.method !== "PUT" || !options.body) {
+    const upload = new RegExp(`^/legacies/[1-9][0-9]*/voice-profile/enrollments/${uuid}/content$`);
+    const generated = new RegExp(`^/voice-synthesis/jobs/${uuid}/content$`);
+    const validUpload = upload.test(path) && options.method === "PUT" && options.body;
+    const validGenerated = generated.test(path) && (!options.method || options.method === "GET") && !options.body;
+    if (!validUpload && !validGenerated) {
       throw new ApiError("Invalid preserved-voice upload request.", { kind: "validation" });
     }
     const mediaBase = config.mediaBaseUrl || API_BASE_URL;

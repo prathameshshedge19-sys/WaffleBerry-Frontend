@@ -44,13 +44,16 @@ a { color: inherit; text-decoration: none; }
   height: 100%;
   min-height: 0;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 22px 14px 14px;
   border-right: 1px solid var(--line);
   background:
     radial-gradient(circle at 25% 4%, rgba(217, 154, 82, 0.07), transparent 28%),
     var(--sidebar);
 }
+.sidebar > * { flex-shrink: 0; }
 .sidebar-top { display: flex; min-height: 40px; align-items: center; justify-content: space-between; padding: 0 7px; }
 .brand { display: inline-flex; align-items: center; font-family: "Cormorant Garamond", Georgia, serif; font-size: 28px; font-weight: 600; line-height: 1; }
 .brand .rya-core-icon { margin-right: 8px; }
@@ -79,7 +82,7 @@ a { color: inherit; text-decoration: none; }
 }
 .new-chat-button span:first-child { font-size: 20px; font-weight: 300; line-height: 1; }
 .new-chat-button:hover { transform: translateY(-1px); box-shadow: inset 0 1px rgba(255,255,255,.62), 0 11px 30px rgba(217,154,82,.22), 0 0 24px rgba(255,226,168,.08); }
-.sidebar-actions { display:grid; flex:0 0 auto; gap:7px; margin:9px 2px 0; }
+.sidebar-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); flex:0 0 auto; gap:7px; margin:9px 2px 0; }
 .journey-summary{display:grid;gap:7px;margin:8px 2px 0;padding:9px 10px;border:1px solid rgba(243,201,130,.12);border-radius:8px;background:rgba(255,238,210,.025)}.journey-progress-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 1px 6px;border-bottom:1px solid rgba(243,201,130,.1)}.journey-summary small{color:var(--muted);font-size:8px;letter-spacing:.08em;text-transform:uppercase}.journey-progress-row strong{color:rgba(243,217,177,.76);font-size:9px;font-weight:400}.journey-streak{display:flex;min-width:0;align-items:center;gap:10px;padding:2px 1px 1px}.journey-streak .preservation-ring--sidebar{width:34px;height:34px}.journey-streak .preservation-ring--sidebar::before{width:25px;height:25px}.journey-streak .preservation-ring--sidebar i{font-size:9px}.journey-streak-copy{display:grid;min-width:0;flex:1;grid-template-columns:minmax(0,1fr);gap:2px}.journey-streak-copy small{font-size:7px}.journey-streak-copy strong{color:#f3c982;font:500 11px/1.05 Inter,sans-serif;letter-spacing:.06em;text-shadow:0 0 12px rgba(243,201,130,.14)}.journey-streak-copy strong b{font:600 22px/.9 "Cormorant Garamond",serif;letter-spacing:0}.journey-streak-copy>span{color:rgba(245,238,228,.66);font-size:8px;line-height:1.3}.journey-streak.is-milestone{animation:streak-milestone 2.1s ease}.journey-streak.is-milestone .preservation-ring{box-shadow:0 0 24px rgba(243,201,130,.34),inset 0 0 0 1px rgba(255,237,204,.5)}.journey-streak.is-milestone strong{color:#ffe0a3;text-shadow:0 0 16px rgba(243,201,130,.36)}
 .preservation-ring{display:grid;width:42px;height:42px;flex:0 0 auto;place-items:center;border-radius:50%;background:conic-gradient(rgba(243,201,130,.18) 0 100%);box-shadow:inset 0 0 0 1px rgba(243,201,130,.12);transition:background 650ms ease,box-shadow 650ms ease}.preservation-ring::before{grid-area:1/1;width:32px;height:32px;border-radius:50%;background:#100d09;content:""}.preservation-ring i{z-index:1;grid-area:1/1;color:rgba(243,217,177,.46);font-size:12px;font-style:normal;transition:color 500ms ease,text-shadow 500ms ease}.preservation-ring.is-complete{background:conic-gradient(#f3c982 0 100%);box-shadow:0 0 18px rgba(243,201,130,.22),inset 0 0 0 1px rgba(255,237,204,.4)}.preservation-ring.is-complete i{color:#ffe6b3;text-shadow:0 0 8px rgba(255,221,158,.7)}.preservation-ring.is-completing{animation:ring-complete 750ms ease}.preservation-ring--small{width:28px;height:28px}.preservation-ring--small::before{width:21px;height:21px}.preservation-ring--small i{font-size:8px}@keyframes ring-complete{0%{background:conic-gradient(#f3c982 0%,rgba(243,201,130,.18) 0)}50%{background:conic-gradient(#f3c982 65%,rgba(243,201,130,.18) 65%)}100%{background:conic-gradient(#f3c982 100%,rgba(243,201,130,.18) 100%)}}
 .journey-summary.is-milestone{animation:journey-shimmer 2.1s ease}@keyframes journey-shimmer{0%,100%{box-shadow:none}35%{border-color:rgba(255,226,168,.42);box-shadow:0 0 24px rgba(243,201,130,.14)}}
@@ -87,6 +90,10 @@ a { color: inherit; text-decoration: none; }
 .memories-button { display:flex; width:100%; min-height:42px; align-items:center; gap:11px; margin:0; padding:0 17px; border:1px solid rgba(243,217,177,.16); border-radius:999px; color:rgba(245,238,228,.82); background:rgba(255,238,210,.025); cursor:pointer; font-size:12px; transition:border-color 220ms ease,background 220ms ease,color 220ms ease; }
 .memories-button:hover { border-color:rgba(255,226,168,.38); color:var(--gold); background:rgba(255,238,210,.055); }
 .memories-button-icon { color:var(--champagne); font-size:17px; line-height:1; }
+.sidebar-actions .memories-button { min-width:0; min-height:44px; gap:8px; padding:8px 10px; border-radius:12px; font-size:11px; line-height:1.3; text-align:left; }
+#openPreservedVoice { grid-column:1 / -1; }
+.sidebar-voice-copy { display:grid; gap:2px; }
+.sidebar-voice-copy small { color:var(--muted); font-size:10px; }
 
 .legacy-context { position: relative; margin: 11px 2px 0; }
 .legacy-button { display: grid; width: 100%; min-height: 48px; grid-template-columns: minmax(0,1fr) 22px; align-items: center; padding: 6px 11px 6px 14px; border: 1px solid rgba(243,217,177,.14); border-radius: 8px; color: var(--ivory); background: rgba(255,238,210,.025); cursor: pointer; text-align: left; transition: border-color 220ms ease, background 220ms ease; }
@@ -109,7 +116,7 @@ a { color: inherit; text-decoration: none; }
 .legacy-option.is-active strong { color: var(--gold); }
 .create-legacy-button { margin-top: 5px; border-top: 1px solid var(--line); color: var(--champagne); font-size: 10px; }
 
-.recent-chats { display:flex; min-height:0; flex:1 1 auto; flex-direction:column; margin-top:24px; overflow:hidden; }
+.recent-chats { display:flex; min-height:164px; flex:1 0 164px; flex-direction:column; margin-top:16px; overflow:hidden; }
 .recent-chats h2 { flex:0 0 auto; margin:0 10px 10px; color:rgba(167,155,139,.72); font-size:9px; font-weight:500; letter-spacing:.15em; text-transform:uppercase; }
 .conversation-list-scroll { min-height:0; flex:1 1 auto; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; scrollbar-color:rgba(213,190,153,.34) transparent; scrollbar-width:thin; }
 .conversation-list-scroll::-webkit-scrollbar { width:5px; }

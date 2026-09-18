@@ -117,3 +117,11 @@ test("prominent streak remains compact in mobile drawer and recent chats remain 
   assert.match(builderStyles, /\.conversation-list-scroll\s*\{[^}]*overflow-y:auto/);
   assert.match(builderStyles, /prefers-reduced-motion:reduce[\s\S]*?\.journey-streak\.is-milestone/);
 });
+
+test("saved chats retain height and short-screen sidebar overflow stays reachable", () => {
+  assert.match(builderStyles, /\.sidebar\s*\{[^}]*overflow-y: auto/);
+  assert.match(builderStyles, /\.recent-chats\s*\{[^}]*min-height:164px;[^}]*flex:1 0 164px/);
+  assert.match(builderStyles, /\.sidebar-actions\s*\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(builderMarkup, /css\/chat\.css\?v=4\.3/);
+  assert.match(visitorMarkup, /css\/chat\.css\?v=4\.3/);
+});
