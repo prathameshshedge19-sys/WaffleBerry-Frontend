@@ -6,6 +6,27 @@ import { RealtimePlayback } from "../js/realtime-playback.mjs";
 import { RealtimeClient } from "../js/realtime-client.mjs";
 
 const binding = { session_id: "session", generation: 1, turn_id: 1, active_generation_id: "claim", response_id: "resp" };
+
+test("L21 final: delayed PCM frames never drain before the single response seal",()=>{
+  const h=harness();
+  for(let chunk=0;chunk<3;chunk++){
+    h.frame(chunk);h.sources.at(-1).onended();h.advance((chunk+1)*30);
+    assert.equal(h.events.filter(e=>e.type==="playback_drained").length,0);
+    assert.equal(h.playback.binding.active_generation_id,"claim");
+  }
+  h.playback.finish({...binding,sequence:2,samples:3600,seal:"s".repeat(43)});
+  h.advance(91);
+  assert.equal(h.events.filter(e=>e.type==="playback_drained").length,1);
+  assert.equal(h.events.at(-1).samples,3600);
+});
+
+test("L21 final: response failure discards queued PCM and cannot drain partial answer",()=>{
+  const h=harness();h.frame(0);h.frame(1);
+  const callbacks=h.sources.map(n=>n.onended);
+  h.playback.clear();callbacks.forEach(fn=>fn());h.frame(2);h.advance(100);
+  assert.equal(h.playback.binding,null);assert(h.sources.every(n=>n.stopped));
+  assert(!h.events.some(e=>e.type==="playback_drained"));
+});
 function harness() {
   const events=[],states=[],sources=[],timers=new Map(); let serial=0;
   const context={ currentTime:0,state:"running",outputLatency:.1,baseLatency:0,destination:{},

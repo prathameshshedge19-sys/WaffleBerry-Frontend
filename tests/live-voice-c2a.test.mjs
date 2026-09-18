@@ -9,6 +9,32 @@ const deferred = () => { let resolve, reject; const promise = new Promise((a,b) 
 const binding = {session_id:'session',generation:1,turn_id:1,active_generation_id:'claim',response_id:'response'};
 const final = {type:'transcript_final',item_id:'item',message_id:1,conversation_id:7,legacy_id:1,mode:'rya',content:'Synthetic QA'};
 
+test('L21 final: 100 response retirements reject 500 delayed frame and drain callbacks',async()=>{
+  const h=harness();
+  for(let i=0;i<100;i++){
+    const old=await h.connect(h.start({legacy_id:1,mode:'legacy'}));
+    const start={type:'assistant_started',...binding,voice_delivery:'preserved',authoritative_text_digest:'d'.repeat(64)};
+    old.event(start);
+    for(let sequence=0;sequence<3;sequence++)old.event({type:'assistant_audio',...binding,sequence,pcm:Buffer.alloc(2400).toString('base64')});
+    const callback=old.onmessage,ended=[...h.client.playback.nodes].map(n=>n.onended);
+    if(i%3===0)h.client.stopSpeaking();
+    else if(i%3===1)h.changeAccount();
+    else h.emit('popstate');
+    await h.end();
+    const next=await h.connect(h.start({legacy_id:2,mode:'legacy'}));
+    const count=h.events.length;
+    callback({data:JSON.stringify({...start})});
+    for(let sequence=3;sequence<6;sequence++)callback({data:JSON.stringify({type:'assistant_audio',...binding,sequence,pcm:Buffer.alloc(2400).toString('base64')})});
+    callback({data:JSON.stringify({type:'assistant_audio_end',...binding,sequence:5,samples:7200,seal:'s'.repeat(43)})});
+    ended.forEach(fn=>fn());await h.advance(100);
+    assert.equal(h.events.length,count);assert.equal(h.client.socket,next);
+    assert.equal(h.client.playback.nodes.size,0);
+    assert(!next.sent.some(e=>e.type==='playback_drained'));
+    await h.end();h.baseline();
+  }
+  h.client.dispose();
+});
+
 function harness() {
   const timers=new Map(), listeners=new Map(), sockets=[], contexts=[], tracks=[], nodes=[], events=[], requests=[];
   let clock=0, serial=0, account=1, locks=0;

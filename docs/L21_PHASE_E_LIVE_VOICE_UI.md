@@ -59,8 +59,9 @@ brain/browser and reused that standard result for two fallback labels; these
 are not measured end-to-end Live Call latency or independent fallback runs.
 The backend audit document details the evidence limits and reproduced tests.
 The UI does not hide that delay with speculative speech or chunking. Full
-latency qualification and any safe pipelining remain L21.6. No IndicF5 setting
-was changed and no L21.6 implementation was started.
+latency qualification and any safe pipelining now belong to L22 under the final
+roadmap decision. No IndicF5 setting was changed. See L21_FINAL_ACCEPTANCE_UI.md
+for final hardening; preserved Live remains production OFF.
 
 Both worktrees remain uncommitted at the published L21.4 HEADs. The audit did
 not commit, push, merge, tag, deploy or migrate production.
